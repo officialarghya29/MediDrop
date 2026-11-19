@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:medidrop;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+medidrop:
+  jwt:
+    secret: test-only-medidrop-secret-with-enough-length-1234567890
+    access-token-minutes: 15
+  otp:
+    expose-in-response: true
+  storage:
+    provider: local
+    local-path: ./target/test-storage
+  payments:
+    provider: sandbox
+  seed:
+    enabled: false
+
+logging:
+  level:
+    root: WARN

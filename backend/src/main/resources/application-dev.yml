@@ -1,0 +1,27 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+medidrop:
+  jwt:
+    secret: ${MEDIDROP_JWT_SECRET:dev-only-medidrop-secret-change-before-deploy-9f3c1a}
+  otp:
+    expose-in-response: ${MEDIDROP_OTP_EXPOSE:true}
+  mail:
+    provider: ${MEDIDROP_MAIL_PROVIDER:console}
+  sms:
+    provider: ${MEDIDROP_SMS_PROVIDER:console}
+  payments:
+    provider: ${MEDIDROP_PAYMENTS_PROVIDER:sandbox}
+  maps:
+    provider: ${MEDIDROP_MAPS_PROVIDER:haversine}
+  seed:
+    enabled: ${MEDIDROP_SEED_ENABLED:true}
+    admin-password: ${MEDIDROP_ADMIN_PASSWORD:Admin@12345}
+
+logging:
+  level:
+    root: INFO
+    com.medidrop: INFO
+    org.hibernate.SQL: WARN
