@@ -70,7 +70,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentDtos.PaymentResponse verify(Long customerId, PaymentDtos.VerifyRequest request) {
-        Payment payment = paymentRepository.findByProviderOrderId(request.providerOrderId())
+        Payment payment = paymentRepository.findForUpdateByProviderOrderId(request.providerOrderId())
                 .orElseThrow(() -> ApiException.notFound("Payment attempt not found"));
         if (!payment.getCustomerId().equals(customerId)) {
             throw ApiException.forbidden("This payment belongs to another account");
@@ -114,7 +114,7 @@ public class PaymentService {
             log.warn("Webhook {} ignored: no order reference", event);
             return;
         }
-        Payment payment = paymentRepository.findByProviderOrderId(providerOrderId).orElse(null);
+        Payment payment = paymentRepository.findForUpdateByProviderOrderId(providerOrderId).orElse(null);
         if (payment == null) {
             log.warn("Webhook {} references unknown payment order {}", event, providerOrderId);
             return;
@@ -143,7 +143,7 @@ public class PaymentService {
         if (!(gateway instanceof SandboxPaymentGateway sandbox)) {
             throw ApiException.forbidden("Sandbox completion is only available with the sandbox provider");
         }
-        Payment payment = paymentRepository.findByProviderOrderId(providerOrderId)
+        Payment payment = paymentRepository.findForUpdateByProviderOrderId(providerOrderId)
                 .orElseThrow(() -> ApiException.notFound("Payment attempt not found"));
         if (!payment.getCustomerId().equals(customerId)) {
             throw ApiException.forbidden("This payment belongs to another account");
@@ -164,14 +164,10 @@ public class PaymentService {
     public PaymentDtos.RefundResponse refund(Long adminId, PaymentDtos.RefundRequest request) {
         Order order = orderRepository.findById(request.orderId())
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
-        Payment payment = paymentRepository.findByOrderId(order.getId()).stream()
-                .filter(p -> p.getStatus() == PaymentStatus.CAPTURED
-                        || p.getStatus() == PaymentStatus.PARTIALLY_REFUNDED)
+        Payment payment = paymentRepository.findRefundableForUpdate(order.getId()).stream()
                 .findFirst()
                 .orElseThrow(() -> ApiException.conflict("No captured payment exists for this order"));
-        BigDecimal alreadyRefunded = refundRepository.findAll().stream()
-                .filter(r -> r.getOrderId().equals(order.getId()) && "PROCESSED".equals(r.getStatus()))
-                .map(Refund::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal alreadyRefunded = refundRepository.sumProcessedForOrder(order.getId());
         BigDecimal amount = request.amount() == null ? payment.getAmount().subtract(alreadyRefunded)
                 : request.amount();
         if (amount.compareTo(BigDecimal.ZERO) <= 0

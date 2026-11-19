@@ -26,9 +26,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByPharmacyIdOrderByCreatedAtDesc(Long pharmacyId, Pageable pageable);
 
+    Page<Order> findByPharmacyIdAndStatusOrderByCreatedAtDesc(Long pharmacyId, OrderStatus status,
+                                                              Pageable pageable);
+
+    Optional<Order> findByTrackingKey(String trackingKey);
+
     List<Order> findTop5ByCustomerIdOrderByCreatedAtDesc(Long customerId);
 
-    List<Order> findByCustomerIdAndStatusIn(Long customerId, Collection<OrderStatus> statuses);
+    Page<Order> findByCustomerIdAndStatusIn(Long customerId, Collection<OrderStatus> statuses,
+                                            Pageable pageable);
+
+    long countByCustomerIdAndStatusIn(Long customerId, Collection<OrderStatus> statuses);
 
     Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
 

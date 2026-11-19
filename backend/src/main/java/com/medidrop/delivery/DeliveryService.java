@@ -103,15 +103,8 @@ public class DeliveryService {
         long completed = assignmentRepository.countByPartnerIdAndStatus(partner.getId(),
                 AssignmentStatus.DELIVERED);
         Instant startOfDay = LocalDate.now(ZoneId.of("Asia/Kolkata")).atStartOfDay(ZoneId.of("Asia/Kolkata")).toInstant();
-        BigDecimal today = assignmentRepository.findByPartnerIdOrderByCreatedAtDesc(partner.getId(),
-                        org.springframework.data.domain.PageRequest.of(0, 200)).getContent().stream()
-                .filter(a -> a.getStatus() == AssignmentStatus.DELIVERED && a.getDeliveredAt() != null
-                        && a.getDeliveredAt().isAfter(startOfDay))
-                .map(a -> BigDecimal.valueOf(a.getPayout())).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal total = assignmentRepository.findByPartnerIdOrderByCreatedAtDesc(partner.getId(),
-                        org.springframework.data.domain.PageRequest.of(0, 1000)).getContent().stream()
-                .filter(a -> a.getStatus() == AssignmentStatus.DELIVERED)
-                .map(a -> BigDecimal.valueOf(a.getPayout())).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal today = BigDecimal.valueOf(assignmentRepository.sumPayoutSince(partner.getId(), startOfDay));
+        BigDecimal total = BigDecimal.valueOf(assignmentRepository.sumPayout(partner.getId()));
         List<DeliveryDtos.AssignmentRow> active = activeRows(partner.getId());
         return new DeliveryDtos.DashboardResponse(toProfile(partner), partner.isOnline(), pending,
                 activeCount, completed, today, total, active);
@@ -143,7 +136,7 @@ public class DeliveryService {
                 ? assignmentRepository.findByPartnerIdOrderByCreatedAtDesc(partner.getId(),
                 org.springframework.data.domain.PageRequest.of(0, 100)).getContent()
                 : assignmentRepository.findByPartnerIdAndStatusIn(partner.getId(),
-                List.of(AssignmentStatus.valueOf(status.toUpperCase())));
+                List.of(parseStatus(status)));
         return rows.stream().map(this::toRow).toList();
     }
 
@@ -397,6 +390,14 @@ public class DeliveryService {
             }
             messagingTemplate.convertAndSend("/topic/delivery/" + partner.getId(), payload);
         });
+    }
+
+    private AssignmentStatus parseStatus(String value) {
+        try {
+            return AssignmentStatus.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw ApiException.badRequest("Unknown delivery status: " + value);
+        }
     }
 
     private DeliveryPartner requirePartner(Long userId) {

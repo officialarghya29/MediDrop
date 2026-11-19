@@ -155,13 +155,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 18 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 20 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 18 tests | **18 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 20 tests | **20 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -171,10 +171,17 @@ admin routes, COD orders move through pharmacy acceptance and preparation, deliv
 handover fails without the OTP, sandbox payments reconcile back to the order, and admin reporting reflects
 the newly created data.
 
-**A real bug caught by this validation:** unfiltered catalogue browse returned `500` on PostgreSQL because
-Hibernate bound a null search term as `bytea`, breaking `lower(?)`. The fix coalesces the term in JPQL; it is
-covered by `MedicineSearchTest` and two new smoke checks (browse and term-less search). This is why the suite
-now runs **33** checks, not 31.
+**Bugs caught by this validation, not hidden:** unfiltered catalogue browse returned `500` on PostgreSQL
+because Hibernate bound a null search term as `bytea`, breaking `lower(?)`. The fix coalesces the term in JPQL;
+it is covered by `MedicineSearchTest` and two smoke checks (browse and term-less search), which is why the suite
+runs **33** checks, not 31.
+
+A later stabilization pass tightened the product paths around it: public tracking now resolves through the
+indexed tracking key instead of scanning the orders table; the Active, Delivered and Cancelled tabs filter and
+paginate in SQL (they previously fell through to an unfiltered list); status counts are database counts; stock
+restoration, coupon redemption, refresh-token rotation and refunds take row locks so concurrent requests cannot
+lose updates; and the H2 test schema now initialises every table instead of silently skipping `coupons`.
+`OrderQueryTest` covers the filters, counts and tracking lookup.
 
 ---
 
@@ -342,7 +349,7 @@ Full endpoint catalogue: [docs/api.md](docs/api.md).
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 18 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 20 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 

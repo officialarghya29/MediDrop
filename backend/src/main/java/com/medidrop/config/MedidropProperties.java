@@ -16,6 +16,7 @@ public class MedidropProperties {
     private String frontendBaseUrl = "http://localhost:5173";
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
+    private Security security = new Security();
     private Otp otp = new Otp();
     private Storage storage = new Storage();
     private Maps maps = new Maps();
@@ -37,6 +38,16 @@ public class MedidropProperties {
     @Setter
     public static class Cors {
         private List<String> allowedOrigins = List.of("http://localhost:5173");
+    }
+
+    @Getter
+    @Setter
+    public static class Security {
+        /**
+         * Only enable behind a proxy that overwrites X-Forwarded-For. When disabled the
+         * limiter keys on the socket address so clients cannot spoof their identity.
+         */
+        private boolean trustForwardedFor = false;
     }
 
     @Getter

@@ -3,7 +3,10 @@ package com.medidrop.delivery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -21,4 +24,19 @@ public interface DeliveryAssignmentRepository extends JpaRepository<DeliveryAssi
     long countByPartnerIdAndStatusIn(Long partnerId, Collection<AssignmentStatus> statuses);
 
     long countByPartnerIdAndStatus(Long partnerId, AssignmentStatus status);
+
+    @Query("""
+            select coalesce(sum(a.payout), 0) from DeliveryAssignment a
+            where a.partnerId = :partnerId
+              and a.status = com.medidrop.delivery.AssignmentStatus.DELIVERED
+              and a.deliveredAt >= :from
+            """)
+    long sumPayoutSince(@Param("partnerId") Long partnerId, @Param("from") Instant from);
+
+    @Query("""
+            select coalesce(sum(a.payout), 0) from DeliveryAssignment a
+            where a.partnerId = :partnerId
+              and a.status = com.medidrop.delivery.AssignmentStatus.DELIVERED
+            """)
+    long sumPayout(@Param("partnerId") Long partnerId);
 }

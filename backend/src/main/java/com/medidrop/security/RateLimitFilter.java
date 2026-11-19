@@ -2,6 +2,7 @@ package com.medidrop.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medidrop.common.ApiResponse;
+import com.medidrop.config.MedidropProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,6 +35,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Map<String, Deque<Long>> hits = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
+    private final MedidropProperties properties;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -60,16 +62,30 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
             window.addLast(now);
         }
-        if (hits.size() > 10_000) {
-            hits.clear();
+        if (hits.size() > 5_000) {
+            // Drop only windows that have fully expired; clearing the map would reset active limits.
+            hits.entrySet().removeIf(entry -> {
+                Deque<Long> candidate = entry.getValue();
+                synchronized (candidate) {
+                    return candidate.isEmpty() || now - candidate.peekLast() > WINDOW_MS;
+                }
+            });
         }
         chain.doFilter(request, response);
     }
 
     private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        if (properties.getSecurity().isTrustForwardedFor()) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                // The trusted proxy appends the real peer last; earlier entries are client-controlled.
+                String[] chain = forwarded.split(",");
+                return chain[chain.length - 1].trim();
+            }
+            String realIp = request.getHeader("X-Real-IP");
+            if (realIp != null && !realIp.isBlank()) {
+                return realIp.trim();
+            }
         }
         return request.getRemoteAddr();
     }

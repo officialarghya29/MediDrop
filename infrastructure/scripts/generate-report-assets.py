@@ -197,7 +197,7 @@ def main() -> None:
 
     suites = [
         {"label": "API smoke · live PostgreSQL", "tests": 33},
-        {"label": "Backend · JUnit", "tests": 18},
+        {"label": "Backend · JUnit", "tests": 20},
         {"label": "Frontend · Vitest", "tests": 13},
     ]
     latency_chart(data)

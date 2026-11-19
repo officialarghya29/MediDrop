@@ -65,6 +65,8 @@ medidrop:
     issuer: medidrop
   cors:
     allowed-origins: ${MEDIDROP_CORS_ORIGINS:http://localhost:5173}
+  security:
+    trust-forwarded-for: ${MEDIDROP_TRUST_FORWARDED_FOR:false}
   otp:
     length: 6
     expiry-minutes: 10

@@ -4,13 +4,15 @@
 
 | Layer | Command | What it covers |
 | --- | --- | --- |
-| Backend unit/integration | `cd backend && mvn test` | State machine, pricing, auth flow, payment signatures |
+| Backend unit/integration | `cd backend && mvn test` | State machine, pricing, auth flow, payment signatures, order filters and tracking lookup |
 | API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 33 end-to-end checks against a running API |
 | Frontend unit | `cd frontend && npm test` | Formatting helpers and shared UI primitives |
 | Frontend build | `cd frontend && npm run build` | TypeScript strict typecheck + production bundle |
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
-database. The smoke script exercises the real PostgreSQL schema, Flyway migrations and HTTP security.
+database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
+`value` column is otherwise reserved by H2). The suite currently runs 20 tests. The smoke script exercises
+the real PostgreSQL schema, Flyway migrations and HTTP security.
 
 ## Backend tests
 
@@ -19,6 +21,7 @@ database. The smoke script exercises the real PostgreSQL schema, Flyway migratio
 - `AuthFlowTest` — registration, login, refresh rotation, OTP verification, RBAC rejection.
 - `PaymentSignatureTest` — HMAC verification, tampered payload rejection, sandbox guard.
 - `MedicineSearchTest` — unfiltered browse and term-less search, the PostgreSQL null-parameter regression.
+- `OrderQueryTest` — Active/Delivered/Cancelled filtering, status counts, pagination and keyed tracking lookup.
 
 Run a single class:
 

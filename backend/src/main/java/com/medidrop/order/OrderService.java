@@ -82,6 +82,10 @@ public class OrderService {
             OrderStatus.DELIVERY_ASSIGNED, OrderStatus.PICKED_UP, OrderStatus.OUT_FOR_DELIVERY,
             OrderStatus.CANCELLATION_REQUESTED);
 
+    private static final Set<OrderStatus> CANCELLED_STATUSES = EnumSet.of(
+            OrderStatus.CANCELLED, OrderStatus.PRESCRIPTION_REJECTED, OrderStatus.FAILED,
+            OrderStatus.REFUNDED);
+
     @Transactional
     public OrderDtos.OrderDetail place(Long customerId, OrderDtos.PlaceOrderRequest request, String idempotencyKey) {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
@@ -135,14 +139,11 @@ public class OrderService {
 
         Coupon coupon = null;
         if (request.couponCode() != null && !request.couponCode().isBlank()) {
-            coupon = couponRepository.findByCodeIgnoreCase(request.couponCode().trim())
+            // Lock before reading usage so a single-use coupon cannot be redeemed twice concurrently.
+            coupon = couponRepository.findForUpdateByCode(request.couponCode().trim())
                     .orElseThrow(() -> ApiException.badRequest("Invalid coupon code"));
         }
-        BigDecimal subtotal = snapshot.subtotal();
-        var totals = pricingService.totals(subtotal, coupon, distance);
-        if (coupon != null) {
-            totals = pricingService.totals(subtotal, coupon, distance);
-        }
+        var totals = pricingService.totals(snapshot.subtotal(), coupon, distance);
 
         // Lock inventory rows in a deterministic order to prevent overselling and deadlocks.
         List<CartService.SnapshotLine> ordered = snapshot.lines().stream()
@@ -246,15 +247,17 @@ public class OrderService {
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50),
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Order> orders;
-        if ("active".equalsIgnoreCase(filter)) {
-            orders = new org.springframework.data.domain.PageImpl<>(
-                    orderRepository.findByCustomerIdAndStatusIn(customerId, ACTIVE_STATUSES),
-                    pageable, countActive(customerId));
-        } else if ("completed".equalsIgnoreCase(filter)) {
-            orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId, pageable)
-                    .map(o -> o);
-        } else {
+        if (filter == null || filter.isBlank() || "all".equalsIgnoreCase(filter)) {
             orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId, pageable);
+        } else if ("active".equalsIgnoreCase(filter)) {
+            orders = orderRepository.findByCustomerIdAndStatusIn(customerId, ACTIVE_STATUSES, pageable);
+        } else if ("delivered".equalsIgnoreCase(filter) || "completed".equalsIgnoreCase(filter)) {
+            orders = orderRepository.findByCustomerIdAndStatusIn(customerId,
+                    List.of(OrderStatus.DELIVERED), pageable);
+        } else if ("cancelled".equalsIgnoreCase(filter)) {
+            orders = orderRepository.findByCustomerIdAndStatusIn(customerId, CANCELLED_STATUSES, pageable);
+        } else {
+            throw ApiException.badRequest("Unsupported order filter: " + filter);
         }
         Map<Long, Pharmacy> pharmacies = pharmacyMap(orders.getContent());
         Map<Long, Long> itemCounts = itemCounts(orders.getContent());
@@ -277,18 +280,11 @@ public class OrderService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Order> orders = (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status))
                 ? orderRepository.findByPharmacyIdOrderByCreatedAtDesc(pharmacy.getId(), pageable)
-                : orderRepository.findByPharmacyIdOrderByCreatedAtDesc(pharmacy.getId(), pageable)
-                .map(o -> o);
-        List<Order> filtered = orders.getContent().stream()
-                .filter(o -> status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)
-                        || o.getStatus().name().equalsIgnoreCase(status))
-                .toList();
+                : orderRepository.findByPharmacyIdAndStatusOrderByCreatedAtDesc(pharmacy.getId(),
+                parseStatus(status), pageable);
         Map<Long, Long> itemCounts = itemCounts(orders.getContent());
-        List<OrderDtos.OrderSummary> rows = filtered.stream()
-                .map(o -> summary(o, pharmacy, itemCounts.getOrDefault(o.getId(), 0L).intValue()))
-                .toList();
-        return new PageResponse<>(rows, orders.getNumber(), orders.getSize(), orders.getTotalElements(),
-                orders.getTotalPages(), orders.isFirst(), orders.isLast());
+        return PageResponse.of(orders, o -> summary(o, pharmacy,
+                itemCounts.getOrDefault(o.getId(), 0L).intValue()));
     }
 
     @Transactional(readOnly = true)
@@ -367,7 +363,7 @@ public class OrderService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Order> orders = (status == null || status.isBlank())
                 ? orderRepository.findAll(pageable)
-                : orderRepository.findByStatusOrderByCreatedAtDesc(OrderStatus.valueOf(status.toUpperCase()), pageable);
+                : orderRepository.findByStatusOrderByCreatedAtDesc(parseStatus(status), pageable);
         Map<Long, Pharmacy> pharmacies = pharmacyMap(orders.getContent());
         Map<Long, User> customers = userRepository.findAllById(
                         orders.getContent().stream().map(Order::getCustomerId).distinct().toList())
@@ -387,9 +383,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderDtos.TrackingResponse tracking(String trackingKey) {
-        Order order = orderRepository.findAll().stream()
-                .filter(o -> trackingKey.equals(o.getTrackingKey()))
-                .findFirst()
+        Order order = orderRepository.findByTrackingKey(trackingKey)
                 .orElseThrow(() -> ApiException.notFound("Tracking link is invalid"));
         DeliveryAssignment assignment = assignmentRepository.findByOrderId(order.getId()).orElse(null);
         OrderDtos.PartnerInfo partner = null;
@@ -440,11 +434,10 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderDtos.StatusCounts counts(Long customerId) {
         long total = orderRepository.countByCustomerId(customerId);
-        long active = orderRepository.findByCustomerIdAndStatusIn(customerId, ACTIVE_STATUSES).size();
-        long delivered = orderRepository.findByCustomerIdAndStatusIn(customerId,
-                List.of(OrderStatus.DELIVERED)).size();
-        long cancelled = orderRepository.findByCustomerIdAndStatusIn(customerId,
-                List.of(OrderStatus.CANCELLED, OrderStatus.PRESCRIPTION_REJECTED, OrderStatus.FAILED)).size();
+        long active = orderRepository.countByCustomerIdAndStatusIn(customerId, ACTIVE_STATUSES);
+        long delivered = orderRepository.countByCustomerIdAndStatusIn(customerId,
+                List.of(OrderStatus.DELIVERED));
+        long cancelled = orderRepository.countByCustomerIdAndStatusIn(customerId, CANCELLED_STATUSES);
         return new OrderDtos.StatusCounts(total, active, delivered, cancelled);
     }
 
@@ -510,8 +503,11 @@ public class OrderService {
     }
 
     private void restoreStock(Order order, Long actorId, String reason) {
-        for (OrderItem item : orderItemRepository.findByOrderId(order.getId())) {
-            inventoryRepository.findById(item.getInventoryId()).ifPresent(inventory -> {
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId()).stream()
+                .sorted(Comparator.comparing(OrderItem::getInventoryId)).toList();
+        for (OrderItem item : items) {
+            // Lock inventory before crediting so a concurrent cancel cannot lose the update.
+            inventoryRepository.findForUpdate(item.getInventoryId()).ifPresent(inventory -> {
                 inventory.setStockQuantity(inventory.getStockQuantity() + item.getQuantity());
                 inventoryRepository.save(inventory);
                 InventoryTransaction tx = new InventoryTransaction();
@@ -622,8 +618,12 @@ public class OrderService {
         return counts;
     }
 
-    private long countActive(Long customerId) {
-        return orderRepository.findByCustomerIdAndStatusIn(customerId, ACTIVE_STATUSES).size();
+    private OrderStatus parseStatus(String value) {
+        try {
+            return OrderStatus.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw ApiException.badRequest("Unknown order status: " + value);
+        }
     }
 
     private double distanceKm(double lat1, double lng1, double lat2, double lng2) {

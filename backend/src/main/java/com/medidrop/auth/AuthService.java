@@ -94,7 +94,7 @@ public class AuthService {
     @Transactional
     public AuthDtos.AuthResponse refresh(String rawToken) {
         String hash = Crypto.sha256Hex(rawToken);
-        RefreshToken token = refreshTokenRepository.findByTokenHash(hash)
+        RefreshToken token = refreshTokenRepository.findForUpdateByTokenHash(hash)
                 .orElseThrow(() -> ApiException.unauthorized("Invalid refresh token"));
         if (token.isRevoked() || token.getExpiresAt().isBefore(Instant.now())) {
             throw ApiException.unauthorized("Refresh token expired. Please sign in again.");
