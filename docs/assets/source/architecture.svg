@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" font-family="Inter, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05110f"/>
+      <stop offset="0.6" stop-color="#061820"/>
+      <stop offset="1" stop-color="#0a2029"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#34d3a0" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0.5"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#15323c" stroke-width="1" opacity="0.5"/>
+    </pattern>
+    <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)" opacity="0.45"/>
+  <ellipse cx="830" cy="380" rx="430" ry="240" fill="#34d3a0" opacity="0.06" filter="url(#blur)"/>
+
+  <g transform="translate(80,64)">
+    <text x="0" y="18" fill="#a7f3d3" font-size="12" letter-spacing="3" font-weight="600">SYSTEM MAP · REQUEST PATH</text>
+    <text x="0" y="62" fill="#ecfdf6" font-size="40" font-weight="800" letter-spacing="-1">One transactional core. Four operational surfaces.</text>
+    <text x="0" y="94" fill="#7f9aa5" font-size="15">Every order touches stock, pricing, prescriptions and payments inside one ACID boundary.</text>
+  </g>
+
+  <g font-size="13">
+    <!-- experience -->
+    <g transform="translate(80,184)">
+      <text x="0" y="0" fill="#54737d" font-size="11" letter-spacing="2.2">EXPERIENCE</text>
+      <rect x="0" y="18" width="300" height="112" rx="16" fill="#081b22" stroke="#1c4652"/>
+      <text x="20" y="48" fill="#ecfdf6" font-size="16" font-weight="700">React 18 SPA</text>
+      <text x="20" y="72" fill="#7f9aa5">Storefront · pharmacy · rider · admin</text>
+      <text x="20" y="94" fill="#4f6d78" font-size="11">TanStack Query · React Router · Tailwind</text>
+      <rect x="20" y="104" width="86" height="18" rx="6" fill="#0b2a26"/>
+      <text x="28" y="117" fill="#a7f3d3" font-size="10">VITE BUILD</text>
+    </g>
+
+    <g transform="translate(80,346)">
+      <rect x="0" y="0" width="300" height="96" rx="16" fill="#081b22" stroke="#1c4652"/>
+      <text x="20" y="30" fill="#ecfdf6" font-size="16" font-weight="700">nginx edge</text>
+      <text x="20" y="54" fill="#7f9aa5">SPA fallback · /api proxy · /ws upgrade</text>
+      <text x="20" y="76" fill="#4f6d78" font-size="11">TLS · gzip · security headers · asset cache</text>
+    </g>
+
+    <path d="M380 376H470" stroke="url(#edge)" stroke-width="2"/>
+    <path d="M462 370L474 376L462 382" fill="none" stroke="#34d3a0" stroke-width="2"/>
+    <text x="392" y="364" fill="#54737d" font-size="10">HTTPS</text>
+
+    <!-- api core -->
+    <g transform="translate(500,184)">
+      <text x="0" y="0" fill="#54737d" font-size="11" letter-spacing="2.2">CONTROL PLANE · SPRING BOOT 3.3 / JAVA 21</text>
+      <rect x="0" y="18" width="700" height="390" rx="22" fill="#071820" stroke="#1f5a4c"/>
+      <g transform="translate(24,44)">
+        <g>
+          <rect x="0" y="0" width="200" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">auth &amp; security</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">JWT · Argon2id · RBAC</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">rotating refresh tokens</text>
+        </g>
+        <g transform="translate(216,0)">
+          <rect x="0" y="0" width="200" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">catalogue</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">pg_trgm search · suggestions</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">category · manufacturer</text>
+        </g>
+        <g transform="translate(432,0)">
+          <rect x="0" y="0" width="220" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">pharmacy &amp; inventory</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">approvals · stock ledger</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">batches · expiry · radius</text>
+        </g>
+
+        <g transform="translate(0,94)">
+          <rect x="0" y="0" width="200" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">cart &amp; pricing</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">live revalidation</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">coupons · delivery fee</text>
+        </g>
+        <g transform="translate(216,94)">
+          <rect x="0" y="0" width="200" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">order engine</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">state machine · invoices</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">idempotency · reviews</text>
+        </g>
+        <g transform="translate(432,94)">
+          <rect x="0" y="0" width="220" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">prescriptions</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">private files · review</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">approve / reject · audit</text>
+        </g>
+
+        <g transform="translate(0,188)">
+          <rect x="0" y="0" width="200" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">payments</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">Razorpay · sandbox</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">HMAC · webhooks · refunds</text>
+        </g>
+        <g transform="translate(216,188)">
+          <rect x="0" y="0" width="200" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">delivery</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">auto-assign · OTP</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">WebSocket live location</text>
+        </g>
+        <g transform="translate(432,188)">
+          <rect x="0" y="0" width="220" height="78" rx="12" fill="#0a232a" stroke="#1b3b46"/>
+          <text x="16" y="30" fill="#ecfdf6" font-size="14" font-weight="700">governance</text>
+          <text x="16" y="52" fill="#7f9aa5" font-size="11">admin · reporting · audit</text>
+          <text x="16" y="68" fill="#4f6d78" font-size="10">notifications · support</text>
+        </g>
+      </g>
+
+      <g transform="translate(24,330)">
+        <rect x="0" y="0" width="652" height="34" rx="8" fill="#0b242c" stroke="#17313d"/>
+        <text x="14" y="22" fill="#6ee7b7" font-size="11" letter-spacing="1.4">TRANSACTION BOUNDARY · order + stock + payment + history commit together</text>
+      </g>
+    </g>
+
+    <path d="M1200 376H1240" stroke="#1f4a55" stroke-width="2"/>
+    <path d="M1232 370L1244 376L1232 382" fill="none" stroke="#38bdf8" stroke-width="2"/>
+
+    <!-- data -->
+    <g transform="translate(1248,184)">
+      <text x="0" y="0" fill="#54737d" font-size="11" letter-spacing="2.2">STATE</text>
+      <rect x="0" y="18" width="272" height="132" rx="16" fill="#081b22" stroke="#1c4652"/>
+      <text x="20" y="48" fill="#ecfdf6" font-size="16" font-weight="700">PostgreSQL 16</text>
+      <text x="20" y="72" fill="#7f9aa5" font-size="12">34 tables · 94 indexes</text>
+      <text x="20" y="94" fill="#7f9aa5" font-size="12">Flyway · pg_trgm</text>
+      <text x="20" y="116" fill="#4f6d78" font-size="11">UTC storage · optimistic locks</text>
+    </g>
+    <g transform="translate(1248,346)">
+      <rect x="0" y="0" width="272" height="96" rx="16" fill="#081b22" stroke="#1c4652"/>
+      <text x="20" y="30" fill="#ecfdf6" font-size="16" font-weight="700">Prescription vault</text>
+      <text x="20" y="54" fill="#7f9aa5" font-size="12">Private files, scoped reads</text>
+      <text x="20" y="76" fill="#4f6d78" font-size="11">FileStorage abstraction · volume</text>
+    </g>
+    <g transform="translate(1248,466)">
+      <rect x="0" y="0" width="272" height="96" rx="16" fill="#081b22" stroke="#1c4652"/>
+      <text x="20" y="30" fill="#ecfdf6" font-size="16" font-weight="700">tracking channel</text>
+      <text x="20" y="54" fill="#7f9aa5" font-size="12">STOMP /ws · unguessable key</text>
+      <text x="20" y="76" fill="#4f6d78" font-size="11">no PII on the public topic</text>
+    </g>
+
+    <!-- providers -->
+    <g transform="translate(80,600)">
+      <text x="0" y="0" fill="#54737d" font-size="11" letter-spacing="2.2">PROVIDER SEAMS · INTERCHANGEABLE</text>
+      <g transform="translate(0,18)">
+        <rect x="0" y="0" width="340" height="92" rx="14" fill="#0a1a22" stroke="#17313b" stroke-dasharray="5 6"/>
+        <text x="18" y="30" fill="#ecfdf6" font-size="14" font-weight="700">PaymentGateway</text>
+        <text x="18" y="52" fill="#7f9aa5" font-size="12">Razorpay (HMAC) · sandbox (test-flagged)</text>
+        <text x="18" y="74" fill="#4f6d78" font-size="11">sandbox refuses prod · webhook replay-safe</text>
+      </g>
+      <g transform="translate(364,18)">
+        <rect x="0" y="0" width="300" height="92" rx="14" fill="#0a1a22" stroke="#17313b" stroke-dasharray="5 6"/>
+        <text x="18" y="30" fill="#ecfdf6" font-size="14" font-weight="700">MapsProvider</text>
+        <text x="18" y="52" fill="#7f9aa5" font-size="12">Google geocoding · Haversine</text>
+        <text x="18" y="74" fill="#4f6d78" font-size="11">fallback measures, never invents</text>
+      </g>
+      <g transform="translate(688,18)">
+        <rect x="0" y="0" width="320" height="92" rx="14" fill="#0a1a22" stroke="#17313b" stroke-dasharray="5 6"/>
+        <text x="18" y="30" fill="#ecfdf6" font-size="14" font-weight="700">Mail / SMS / OCR</text>
+        <text x="18" y="52" fill="#7f9aa5" font-size="12">console by default · interfaces ready</text>
+        <text x="18" y="74" fill="#4f6d78" font-size="11">no flow depends on optional providers</text>
+      </g>
+      <g transform="translate(1032,18)">
+        <rect x="0" y="0" width="408" height="92" rx="14" fill="#0b2a26" stroke="#1c5c4c"/>
+        <text x="18" y="30" fill="#a7f3d3" font-size="14" font-weight="700">Verified locally</text>
+        <text x="18" y="52" fill="#9fbfc7" font-size="12">PostgreSQL migrations · 18 backend tests</text>
+        <text x="18" y="74" fill="#9fbfc7" font-size="12">33 live API checks · 13 frontend tests</text>
+      </g>
+    </g>
+
+    <text x="80" y="790" fill="#4f6d78" font-size="11.5">Solid lines are in-process calls. Dashed cards are provider interfaces selected by configuration.</text>
+    <text x="80" y="814" fill="#4f6d78" font-size="11.5">The public tracking page reads a keyed projection, never the customer record.</text>
+  </g>
+</svg>
