@@ -20,10 +20,11 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
     @Query("""
             select m from Medicine m
             where m.active = true
-              and (:q is null or lower(m.name) like lower(concat('%', :q, '%'))
-                   or lower(coalesce(m.brand,'')) like lower(concat('%', :q, '%'))
-                   or lower(coalesce(m.genericName,'')) like lower(concat('%', :q, '%'))
-                   or lower(coalesce(m.strength,'')) like lower(concat('%', :q, '%')))
+              and (coalesce(:q, '') = ''
+                   or lower(m.name) like lower(concat('%', coalesce(:q, ''), '%'))
+                   or lower(coalesce(m.brand,'')) like lower(concat('%', coalesce(:q, ''), '%'))
+                   or lower(coalesce(m.genericName,'')) like lower(concat('%', coalesce(:q, ''), '%'))
+                   or lower(coalesce(m.strength,'')) like lower(concat('%', coalesce(:q, ''), '%')))
               and (:categoryId is null or m.categoryId = :categoryId)
               and (:manufacturerId is null or m.manufacturerId = :manufacturerId)
               and (:prescriptionRequired is null or m.prescriptionRequired = :prescriptionRequired)
@@ -34,6 +35,6 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
                           @Param("prescriptionRequired") Boolean prescriptionRequired,
                           Pageable pageable);
 
-    @Query("select distinct m.name from Medicine m where m.active = true and lower(m.name) like lower(concat(:q, '%'))")
+    @Query("select distinct m.name from Medicine m where m.active = true and lower(m.name) like lower(concat(coalesce(:q, ''), '%'))")
     List<String> suggest(@Param("q") String q, Pageable pageable);
 }

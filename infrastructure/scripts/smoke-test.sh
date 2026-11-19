@@ -41,6 +41,12 @@ INVENTORY_ID=$(printf '%s' "$PROFILE" | jget "['data']['availability'][0]['inven
 [ -n "$INVENTORY_ID" ] && pass "Availability exposes purchasable inventory" || fail "Availability inventory id"
 CATEGORIES=$(curl -s "$BASE/api/v1/medicines/categories" | jget "['data']")
 echo "$CATEGORIES" | grep -q "Prescription" && pass "Categories listed" || fail "Categories listed"
+BROWSE=$(curl -s "$BASE/api/v1/medicines?size=12")
+BROWSE_TOTAL=$(printf '%s' "$BROWSE" | jget "['data']['totalElements']")
+[ -n "$BROWSE_TOTAL" ] && [ "$BROWSE_TOTAL" -gt 0 ] \
+  && pass "Unfiltered catalogue browse ($BROWSE_TOTAL medicines)" || fail "Unfiltered catalogue browse"
+UNFILTERED_SEARCH=$(curl -s "$BASE/api/v1/medicines/search?size=5" | jget "['data']['page']")
+expect_eq "$UNFILTERED_SEARCH" "0" "Search without a term returns page zero"
 
 say "2. Role-based access control"
 CUSTOMER_TOKEN=$(login customer@medidrop.local 'Demo@12345')

@@ -5,7 +5,7 @@
 | Layer | Command | What it covers |
 | --- | --- | --- |
 | Backend unit/integration | `cd backend && mvn test` | State machine, pricing, auth flow, payment signatures |
-| API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 31 end-to-end checks against a running API |
+| API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 33 end-to-end checks against a running API |
 | Frontend unit | `cd frontend && npm test` | Formatting helpers and shared UI primitives |
 | Frontend build | `cd frontend && npm run build` | TypeScript strict typecheck + production bundle |
 
@@ -18,6 +18,7 @@ database. The smoke script exercises the real PostgreSQL schema, Flyway migratio
 - `PricingServiceTest` — subtotal, delivery fee thresholds, coupon caps, tax rounding.
 - `AuthFlowTest` — registration, login, refresh rotation, OTP verification, RBAC rejection.
 - `PaymentSignatureTest` — HMAC verification, tampered payload rejection, sandbox guard.
+- `MedicineSearchTest` — unfiltered browse and term-less search, the PostgreSQL null-parameter regression.
 
 Run a single class:
 
@@ -33,9 +34,10 @@ mvn -Dtest=OrderStateMachineTest test
 infrastructure/scripts/smoke-test.sh
 ```
 
-It checks catalogue and pharmacy discovery, unauthenticated 401s, customer 403 on pharmacy endpoints, COD
-order placement, pharmacy acceptance and preparation, delivery auto-assignment, OTP handover, sandbox
-payment reconciliation and admin reporting. See the script header for environment overrides.
+It checks catalogue browse and search (including the null-term path), pharmacy discovery, unauthenticated
+401s, customer 403 on admin endpoints, COD order placement, pharmacy acceptance and preparation, delivery
+auto-assignment, OTP handover, sandbox payment reconciliation and admin reporting. See the script header for
+environment overrides.
 
 ## Frontend tests
 

@@ -12,7 +12,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     @Query("""
             select a from AuditLog a
-            where (:action is null or lower(a.action) = lower(:action))
+            where (:action is null or lower(a.action) = lower(coalesce(:action, '')))
               and (:actorId is null or a.actorUserId = :actorId)
             order by a.createdAt desc
             """)
