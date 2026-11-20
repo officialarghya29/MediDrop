@@ -55,9 +55,11 @@ These are build/test facts, not performance results:
   every 2 seconds. Search **5,001 requests · p50 5.3 ms · p95 7.9 ms · p99 9.1 ms · 0 errors**;
   orders **31 · p50 23.5 ms · p95 28.7 ms · p99 33.7 ms · 0 errors**.
 - Two-instance run: two API processes on one PostgreSQL database; three search workers distributed
-  across both; each COD order added on one node and submitted on the next. Search **4,263 requests**,
-  split **2,132 / 2,131**, with both nodes at p95 **16.8 ms** (overall p50 11.1, p99 21.7, max 80.9)
-  and 0 errors; orders **31 · p50 63.7 ms · p95 93.9 ms · p99 701.5 ms · 0 errors**.
+  across both; each COD order added on one node and submitted on the next. Local search **4,263
+  requests**, split **2,132 / 2,131**, with both nodes at p95 **16.8 ms** (p99 21.7, max 80.9) and 0
+  errors; orders **31 · p50 63.7 ms · p95 93.9 ms · p99 701.5 ms · 0 errors**.
+- CI run `44774274592`: **4,913 searches at p95 11.5 ms** and **31 orders at p95 51.6 ms**, 0 errors,
+  across the same two-instance topology.
 - Targets: search p95 < 300 ms, order p95 < 800 ms. Both configurations pass.
 - Limits: this proves horizontal HTTP routing and shared-database cart/token state on the demo
   catalogue. It is not a 250K multi-instance run, a PostGIS workload or a production load balancer.

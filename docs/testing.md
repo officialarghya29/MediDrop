@@ -110,9 +110,10 @@ It logs in as the documented demo customer, ensures an address, then distributes
 across the nodes while placing real COD orders at two-second intervals. Each order is added on one
 node and submitted on the next, so the run exercises shared cart and token state. It fails on any
 transport/API error, empty search result, unused instance, order not reaching `PAYMENT_CONFIRMED`,
-search p95 ≥ 300 ms or order p95 ≥ 800 ms. The two-instance run completed **4,263 searches** (2,132 /
-2,131 per node) at p95 **16.8 ms** and **31 orders** at p95 **93.9 ms**, zero errors. A single-instance
-run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
+search p95 ≥ 300 ms or order p95 ≥ 800 ms. CI run `44774274592` completed **4,913 searches** at p95
+**11.5 ms** and **31 orders** at p95 **51.6 ms**, zero errors. The local per-node run recorded 2,132 /
+2,131 searches at p95 **16.8 ms** and orders at p95 **93.9 ms**. A single-instance run remains recorded
+at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
 
 The search side uses the 18-row demo catalogue, not the 250K dataset; the 250K gate is the scale
 test. The soak gate is about sustained concurrency and write-path stability.

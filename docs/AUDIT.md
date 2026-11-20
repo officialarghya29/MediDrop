@@ -179,7 +179,7 @@ Console subpages, keyboard, screen-reader, touch-target, Ops Night, i18n and 144
 | Non-provider secret patterns / validity checks | **Disabled** (unavailable on this plan) |
 | Dependabot alerts / security updates | **Enabled** (2026-11-20) |
 | Dependabot version updates | **Minor/patch only**; semver-major ignored in `.github/dependabot.yml` |
-| Latest CI on `main` | Green for the 0.1.7 release commit; 0.1.8 adds the soak step |
+| Latest CI on `main` | Green for `bb176f6`; two API instances and the cross-node soak passed (4,913 searches p95 11.5 ms, 31 orders p95 51.6 ms) |
 
 The public visibility exposes the source and this audit, including the historical P0 descriptions. No
 token or `.env` file is tracked, but a public security audit is still a disclosure decision. Branch

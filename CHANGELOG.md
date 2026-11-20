@@ -38,9 +38,11 @@ after its gate passes.
 - Frontend: **13 passed, 0 failed**; production build passed.
 - Browser + axe: **16 passed, 0 failed** (five public, eleven authenticated) with zero WCAG A/AA
   violations.
-- Two-instance soak: **4,263 searches** (2,132 / 2,131 per node) at p95 **16.8 ms**, and **31 real
-  cross-node COD orders** at p95 **93.9 ms** over 60 seconds, zero errors; targets 300 ms and 800 ms.
-- Single-instance soak remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
+- Two-instance CI soak: **4,913 searches** at p95 **11.5 ms**, and **31 real cross-node COD orders**
+  at p95 **51.6 ms** over 60 seconds, zero errors; targets 300 ms and 800 ms.
+- Local per-node two-instance run: **4,263 searches** (2,132 / 2,131), p95 **16.8 ms**; orders p95
+  **93.9 ms**. Single-instance run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders
+  p95 28.7 ms**.
 - Lighthouse mobile, median of three runs: home **performance 91 / accessibility 100 / best-practices
   100 / SEO 92**; search **92 / 100 / 100 / 92**. The runner fails below 90/100/100/90 on the median;
   it remains manual because a prior sample scored 82.

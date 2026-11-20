@@ -145,6 +145,8 @@ Still open in M1:
   instance, non-confirmed order or p95 above target.
 - Two-instance local run: **4,263 searches** (2,132 / 2,131 per node) at p95 **16.8 ms**, and **31
   cross-node orders** at p95 **93.9 ms**, zero errors, against 300 ms and 800 ms targets.
+- Two-instance CI run `44774274592`: **4,913 searches at p95 11.5 ms** and **31 orders at p95 51.6
+  ms**, zero errors.
 - Single-instance run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
 - Extended Playwright + axe to cart, orders, order detail, prescriptions, profile, notifications,
   public tracking, checkout, pharmacy, delivery and admin using role-scoped DTO fixtures and seeded

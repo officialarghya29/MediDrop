@@ -48,8 +48,8 @@
 | **Browser + axe** | **16 passed, 0 failures** · Chrome · 390 px |
 | **Live API** | **33 checks, 0 failed** against PostgreSQL 16 |
 | **Search p95** | **280.5 ms** at **250K** medicines, 100 requests |
-| **Order p95** | **93.9 ms** across **31** real cross-node COD orders in a 60-second soak |
-| **Sustained search** | **4,263 requests across 2 instances · p95 16.8 ms · 0 errors** |
+| **Order p95** | **51.6 ms** across **31** real cross-node COD orders in the CI soak |
+| **Sustained search** | **4,913 requests across 2 instances · p95 11.5 ms · 0 errors** |
 | **Lighthouse mobile** | **91 home / 92 search performance · 100 accessibility** (median of 3) |
 | **Stock race** | **50 concurrent checkouts on stock 10 → 10 orders, 0 oversold** |
 | **Schema** | **33 tables · 37 indexes · Flyway V1–V7** |
@@ -63,8 +63,9 @@ This patch closes the three gates left open by 0.1.7 without changing the releas
 
 - **Two-instance search and order load is measured.** CI now starts two API processes against one
   PostgreSQL database. `soak-check.py` distributes three search workers across both nodes and adds
-  each COD order on one node before submitting it on the next. It completed **4,263 searches**
-  (2,132 / 2,131 per node) at p95 **16.8 ms**, and **31 orders** at p95 **93.9 ms**, with zero errors.
+  each COD order on one node before submitting it on the next. The CI run completed **4,913
+  searches** at p95 **11.5 ms** and **31 orders** at p95 **51.6 ms**, zero errors; a local per-node
+  run recorded 2,132 / 2,131 searches at p95 **16.8 ms** and orders at p95 **93.9 ms**.
 - **All customer and role surfaces have automated axe coverage.** The Playwright gate checks 16
   journeys: public home, search, medicine detail, sign-in and search-to-detail, plus cart, checkout,
   orders, order detail, prescriptions, profile, notifications, public tracking, pharmacy, delivery
@@ -283,7 +284,7 @@ These are live screenshots of this repository against its own API and seeded Pos
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
 | Browser + axe | `cd frontend && npm run test:e2e` | 16 journeys | **16 passed, 0 violations** |
-| Two-instance soak | `infrastructure/scripts/soak-check.py --base-url … --base-url …` | 60 s | **4,263 searches · 31 orders · 0 errors** |
+| Two-instance soak | `infrastructure/scripts/soak-check.py --base-url … --base-url …` | 60 s | **4,913 searches · 31 orders · 0 errors** |
 | Lighthouse | `infrastructure/scripts/lighthouse-check.py` | 3 mobile runs | **91 / 92 performance · 100 accessibility** |
 | Stock race | `infrastructure/scripts/stock-race-check.py` | 50 checkouts | **10 winners · 40 conflicts · 0 oversold** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
