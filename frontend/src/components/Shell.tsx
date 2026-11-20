@@ -280,7 +280,12 @@ export default function Shell() {
         <footer className="no-print border-t border-white/70 bg-white/45 backdrop-blur-sm">
           <div className="container-page grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
             <div>
-              <Logo />
+              <img
+                src="/brand/banner.png"
+                alt="MediDrop — healthcare, delivered"
+                className="h-12 w-auto max-w-full"
+                draggable={false}
+              />
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
                 Neighbourhood pharmacies, live stock and pharmacist-checked prescriptions — with delivery you can
                 actually follow.

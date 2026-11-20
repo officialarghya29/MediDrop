@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/hero.png" alt="MediDrop — hyperlocal medicine delivery infrastructure" width="100%" />
+  <img src="docs/assets/brand-banner.png" alt="MediDrop — healthcare, delivered" width="82%" />
 </p>
 
 <p align="center">
@@ -9,6 +9,10 @@
   <img src="https://img.shields.io/badge/React-18-17313d" alt="React 18" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-17313d" alt="PostgreSQL 16" />
   <img src="https://img.shields.io/badge/Region-Kolkata,_India-34d3a0" alt="Kolkata, India" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/brand-emblem.png" alt="MediDrop shield emblem" width="86" />
 </p>
 
 <p align="center">
@@ -318,7 +322,7 @@ MediDrop/
 │   ├── src/main/java/com/medidrop/       auth · catalogue · pharmacy · inventory · cart ·
 │   │                                     order · prescription · payment · delivery ·
 │   │                                     admin · reporting · notification · support · audit
-│   ├── src/main/resources/db/migration/  V1 schema · V2 indexes · V3 trigram search
+│   ├── src/main/resources/db/migration/  V1 schema · V2 indexes · V3 trigram search · V4 release markers
 │   ├── src/test/java/com/medidrop/       state machine · pricing · auth · payments · search
 │   └── Dockerfile
 ├── frontend/

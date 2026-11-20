@@ -34,14 +34,13 @@ function AuthShell({
           <div className="grid-lines pointer-events-none absolute inset-0" />
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-grape-500/35 blur-3xl" />
           <div className="relative">
-            <div className="flex items-center gap-3">
-              <LogoMark size={42} />
-              <div>
-                <p className="font-display text-lg font-bold leading-none">MediDrop</p>
-                <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-brand-200">Local care network</p>
-              </div>
+            <div>
+              <LogoMark size={104} variant="emblem" />
+              <p className="mt-3 text-[9px] font-bold uppercase tracking-[0.18em] text-brand-200">
+                Kolkata&apos;s local care network
+              </p>
             </div>
-            <h2 className="mt-12 font-display text-4xl font-bold leading-[1.02] tracking-tight">
+            <h2 className="mt-10 font-display text-4xl font-bold leading-[1.02] tracking-tight">
               Health, but make it <span className="gradient-text">make sense</span>.
             </h2>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-300">
