@@ -107,14 +107,18 @@ jobs:
           MEDIDROP_STORAGE_PATH: /tmp/medidrop-storage
         run: |
           nohup java -jar target/medidrop-api-1.0.0.jar > "$API_LOG" 2>&1 &
+          # Health can be UP while the ApplicationRunner seed is still committing,
+          # so readiness must also require a non-empty catalogue.
           for attempt in $(seq 1 60); do
-            if curl -fsS http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'; then
-              echo "API ready after ${attempt} attempt(s)"
+            if READY=$(curl -fsS 'http://127.0.0.1:8080/api/v1/medicines?size=1' 2>/dev/null \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["totalElements"])' 2>/dev/null) \
+                && [ "${READY:-0}" -ge 1 ]; then
+              echo "API ready with seeded catalogue after ${attempt} attempt(s)"
               exit 0
             fi
             sleep 2
           done
-          echo "API did not become ready"
+          echo "API did not become ready with seeded data"
           cat "$API_LOG"
           exit 1
       - name: Run end-to-end smoke suite
