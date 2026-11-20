@@ -35,6 +35,12 @@ MediDrop must not claim to be “launch-ready”, “compliant” or legally cle
 | C-22 | Language | English/Hindi/Bengali availability and clear consent text | English-only UI | **NEEDS PRODUCT/LEGAL REVIEW** |
 | C-23 | Telemedicine / remote care | Whether any future consultation feature triggers telemedicine rules | No consultation feature; do not add one without review | **NEEDS LEGAL VERIFICATION** |
 | C-24 | Grievance / escalation | Named grievance officer, response timelines, escalation | No published officer or SLA | **NEEDS LEGAL VERIFICATION / GAP** |
+| C-25 | Advertising and delivery-time claims | No unverified “10-minute” or guaranteed-time claims; drug advertising restrictions; counsel review of “Verified. Fast. Affordable.” | No 10-minute wording found; ETA is a point estimate, not a range; no counsel review | **NEEDS LEGAL VERIFICATION** |
+| C-26 | Rider welfare and insurance | Gig-worker welfare, insurance, no punitive timers, safety pause, working-hour limits | No punitive timer found; no rider insurance, safety pause, shift cap or batching policy | **NEEDS LEGAL VERIFICATION / GAP** |
+| C-27 | Cold-chain storage and transport | Temperature-controlled storage/transport for flagged products; audit trail | No `requires_cold_chain`, cold-chain node capability or insulated-bag flow | **NEEDS LEGAL VERIFICATION / GAP** |
+| C-28 | Feature flags and compliance sign-off | RX/substitution/Express/cold-chain/vault cannot be enabled without recorded sign-off; kill switches | No feature flags, `ComplianceSignoff`, per-node/global kill switch or production refusal | **NEEDS LEGAL / ENGINEERING VERIFICATION** |
+| C-29 | Staged pilot | Stage 0 demo, Stage 1 OTC-only closed beta, Stage 2 Rx/substitution only after pharmacist and legal sign-off | No DEMO_MODE, permanent banner or stage gate; RX flow is always available | **NEEDS LEGAL / OPERATIONAL VERIFICATION** |
+| C-30 | Licensed fulfilment premises | Every node must be a licensed pharmacy premises; no unlicensed dark stores | Pharmacy licence field and manual approval; no node-capacity/cold-chain verification | **NEEDS LEGAL VERIFICATION** |
 
 ## 2. Current hard blockers
 
@@ -50,8 +56,25 @@ The following are engineering-visible blockers, independent of the final legal a
 8. **No published legal pages, grievance officer or consumer complaint route.**
 9. **No consent ledger or notification quiet hours.**
 10. **No live payment/provider certification.**
+11. **No DEMO_MODE, feature flags or ComplianceSignoff.** RX/substitution/Express cannot be safely
+    staged or killed in code.
+12. **No rider welfare controls.** No insurance, safety pause, shift cap or batching policy.
+13. **No cold-chain capability or temperature audit.**
+14. **No licensed-node premise verification beyond a licence number field.**
 
-## 3. What must be reviewed by a lawyer before any real sale
+## 3. Addendum v5 pilot gates
+
+Before Stage 0/1, engineering must provide and counsel must review:
+
+- `DEMO_MODE` with a permanent banner and refusal to start in the production profile.
+- DB-backed `EXPRESS_ENABLED`, `RX_ENABLED`, `SUBSTITUTION_ENABLED`, `COLD_CHAIN_ENABLED` and
+  `VAULT_ENABLED` flags, fail-closed by default.
+- A `ComplianceSignoff` record (who, when, document reference) required before RX or substitution
+  can be enabled.
+- Per-node and global kill switches, with an audit trail.
+- A Stage 1 scope limited to OTC/wellness/personal care, with RX and substitution off.
+
+## 4. What must be reviewed by a lawyer before any real sale
 
 - Online pharmacy licensing and permissible delivery model in West Bengal.
 - Schedule H/H1/X handling, prescription retention and record formats.
@@ -62,8 +85,12 @@ The following are engineering-visible blockers, independent of the final legal a
 - GST invoice content, HSN/SAC and numbering.
 - Payment/COD terms and refund timelines.
 - Any future telemedicine, AI advice or substitution feature.
+- Advertising and delivery-time claims, including the absence of a “10-minute” guarantee.
+- Rider welfare, insurance, shift caps and safety pause.
+- Cold-chain storage/transport and temperature record retention.
+- Licensed premises for every fulfilment node.
 
-## 4. Engineering position
+## 5. Engineering position
 
 The correct engineering position is:
 

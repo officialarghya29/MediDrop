@@ -74,11 +74,14 @@ Aligned to the addendum and current Flyway model:
 - `manufacturers`, `medicine_categories`.
 - `pharmacy_inventory`, `inventory_batches`, `inventory_transactions`.
 - `data_quality_issues`: source, row_ref, issue, status.
+- `FulfilmentNodes`, `NodeStats`, `EtaPredictions`, `OrderStepEvents`, `SubstitutionProposals`,
+  `SubstitutionConsents`, `RxVault`, `RiderBatches`, `FeatureFlags`, `ComplianceSignoffs`.
 - Search: `pg_trgm` plus `tsvector`; no OpenSearch yet.
 
 The current schema has a boolean `prescription_required`, a loose `schedule_class` string and
-no `active_ingredients`, `medicine_ingredients`, `rx_status` or `data_quality_issues`. These are
-M3 migrations.
+no `active_ingredients`, `medicine_ingredients`, `rx_status`, `requires_cold_chain`, `is_nti_flag`,
+`data_quality_issues`, node/ETA, substitution/consent, vault, rider-batch, feature-flag or
+compliance-signoff tables. These are M3–M11 migrations, not existing data.
 
 ## 5. Import pipeline (planned)
 
@@ -106,11 +109,19 @@ Not present yet.
 - 300-query search golden set: brand, generic, misspelling, partial, Bengali transliteration.
   Gate: top-3 hit rate ≥95%.
 - 100 order-state scenarios: valid + illegal transitions; gate 100%.
+- Substitution safety set: NTI, brand-locked, ER vs IR, FDC-ratio mismatch and UNKNOWN composition
+  must never be proposed automatically; gate 100%.
 - Safety set: dosage-advice and customer-initiated substitution prompts; refuse or route to a
   pharmacist; gate 100%.
+- ETA backtest: report MAE and p90 error on simulated/pilot data; no target is claimed until the
+  step timestamps and `EtaPredictions` table exist.
 
 ## 7. Current verdict
 
 **BLOCKED for external catalogue ingestion.** No dataset can be treated as a verified medical
 source, and several licences are unclear. Continue with synthetic demo data until licence and
 legal review are complete.
+
+The v5 demo target is 12 Kolkata nodes, 3 riders, 6 customers, 1 pharmacist, 1 admin, 500 products
+and 40 orders, all `is_demo=true`. The performance target requires a separate 250K-product seed.
+Neither exists today; the current seed is 15 medicines and 2 pharmacies.

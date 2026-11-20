@@ -64,6 +64,11 @@ Only when `MEDIDROP_SEED_ENABLED=true`:
 
 These credentials are demo-only. Never seed a production database with them.
 
+## Memory files
+
+Read all of these at session start: `docs/AUDIT.md`, `docs/PROGRESS.md`, `docs/DECISIONS.md`,
+`docs/RUNBOOK.md`, `docs/DATA_SOURCES.md`, `docs/COMPLIANCE.md`, `docs/PERF.md`, `docs/A11Y.md`.
+
 ## Test gates
 
 ```bash
@@ -85,6 +90,13 @@ infrastructure/scripts/smoke-test.sh
 ```
 
 Expected current baseline: **28** backend tests, **13** frontend tests, **33** smoke checks.
+
+The current gate is **not** the v5 Part 8 gate. There is no Testcontainers/PostGIS, Playwright,
+axe, Lighthouse, coverage threshold, 50-way checkout harness or 250K-product performance run.
+Do not claim Part 8 from a green CI run. See `docs/PERF.md` and `docs/A11Y.md`.
+
+`DEMO_MODE`, the v5 feature flags and `ComplianceSignoff` are not implemented. Do not set
+undocumented environment variables and assume they gate RX, substitution or Express.
 
 ## Compose validation
 
@@ -173,7 +185,8 @@ Do not commit tokens or real `.env` files. The audit used ephemeral local tokens
 - Health: `GET /actuator/health`; Compose healthchecks use it.
 - Logs: API stdout. Never log tokens, OTPs or prescription contents.
 - Migrations: Flyway on boot; run one instance during migration.
-- Backups: nightly `pg_dump` + storage volume snapshot; restore quarterly.
+- Backups: **no tested restore exists yet**. M15 must add a backup/restore drill for PostgreSQL and
+  the prescription volume before any pilot.
 - Scale: API is stateless apart from in-memory rate limits and WebSocket sessions; use sticky
   sessions for `/ws` and Redis for distributed limits.
 - Time: UTC in storage; reports use `Asia/Kolkata`.

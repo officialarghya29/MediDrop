@@ -5,7 +5,7 @@
 **Decision:** M0 changes documentation only. No application code, migration, dependency,
 Docker or frontend behavior is changed.
 
-**Reason:** Addendum v3 Part 2 explicitly says “CHANGE NOTHING” and requires approval before
+**Reason:** Addendum v5 Part 2 explicitly says “CHANGE NOTHING” and requires approval before
 M1. Changing code during M0 would destroy the audit baseline.
 
 ## D-002 — Use a labelled 36-item reconstruction for Section 24
@@ -13,7 +13,7 @@ M1. Changing code during M0 would destroy the audit baseline.
 **Decision:** The audit uses a 36-item reconstruction derived from the addendum and current
 surface, and marks it clearly as reconstructed.
 
-**Reason:** The addendum references the original 36 Section 24 checkboxes, but the pasted text
+**Reason:** The Addendum v5 still references the original 36 Section 24 checkboxes, but the pasted text
 does not contain them and they are absent from the repository and Git history. Inventing a
 verbatim claim would violate the evidence rule. The reconstruction still exposes the real gaps
 and gives M1 a testable gate. Exact final sign-off remains blocked until the original text is
@@ -49,7 +49,8 @@ are documented in `PROGRESS.md`. No production data was touched.
 ## D-006 — Do not “fix” P0 findings in M0
 
 **Decision:** Record cross-tenant invoice access, direct refund transitions, missing pharmacist
-role/controlled-medicine rules and the OTP projection gap; do not patch them in this milestone.
+role/controlled-medicine rules, the OTP projection gap and the missing pilot gate; do not patch
+them in this milestone.
 
 **Reason:** The addendum requires the audit to stop for approval. Fixing P0s before the audit is
 accepted would mix discovery and remediation and make the gate unverifiable.
@@ -65,7 +66,7 @@ distributed-consistency risk without a demonstrated scaling need.
 ## D-008 — Treat the current UI as functional but not yet launch-grade
 
 **Decision:** Do not spend M0 on a visual redesign. Keep the existing brand foundation and
-route the futuristic layer to M11.
+route the futuristic layer to M14.
 
 **Reason:** P0 correctness and legal gaps dominate. A design pass before fixing authorization
 and pharmacist identity would polish the wrong layer.
@@ -77,11 +78,39 @@ and pharmacist identity would polish the wrong layer.
 
 **Reason:** Explicit user instruction.
 
-## D-010 — Milestone order changes at M1/M2
+## D-010 — Use the Addendum v5 milestone order
 
-**Decision:** Pull the invoice IDOR, refund bypass, OTP projection and audit-log/concurrency
-defects into M1; put pharmacist identity and abuse controls in M2.
+**Decision:** Keep the v5 order M1–M15, with the current-flow P0 fixes in M1 and the pilot gate
+(DEMO_MODE, feature flags, ComplianceSignoff) in M2.
 
-**Reason:** These are not “auth polish”; they are direct cross-tenant/financial/clinical
-failures. They must be closed before catalogue or design work. The addendum allows the
-milestone order to be adjusted to what is already done and what the audit finds.
+**Reason:** The invoice IDOR, refund bypass and OTP projection are direct security/financial/clinical
+failures. The v5 engines (Node Selection, ETA, Rx Vault, Savings, cold chain) depend on later
+catalogue, inventory, prescription and tracking work. Starting them before the P0 fixes would put
+polish ahead of safety. M1 closes the current-flow P0s; M2 closes the pilot gate before Stage 0/1.
+
+## D-011 — Audit v5 engines as MISSING, not as backlog fiction
+
+**Decision:** Record the v5 Node Selection, ETA, Rx Vault, Savings, cold chain, dispatch and step-event
+engines as MISSING; do not describe the existing pharmacy radius, Haversine route or order history as
+partial versions of those engines.
+
+**Reason:** A radius filter, a point ETA and status history are useful foundations, but they do not
+provide eligibility ranking, ETA ranges/calibration, verified refills, substitution safety or funnel
+timestamps. Labelling them as done would create fake capability.
+
+## D-012 — PERF and A11Y are registers, not claims
+
+**Decision:** Add `docs/PERF.md` and `docs/A11Y.md` with target/status/evidence tables; every
+unmeasured target is marked NOT VERIFIED or BLOCKED.
+
+**Reason:** Addendum v5 Part 8 requires 250K-seed p95 numbers, 50-way inventory proof, axe zero
+serious/critical and Lighthouse ≥90. None can be proven in the current 15-product, H2, no-axe
+environment. A register that says so is more useful than an invented pass.
+
+## D-013 — Do not advertise unimplemented v5 flags
+
+**Decision:** Do not add `DEMO_MODE`, `EXPRESS_ENABLED`, `RX_ENABLED`, `SUBSTITUTION_ENABLED`,
+`COLD_CHAIN_ENABLED` or `VAULT_ENABLED` to `.env.example` until the backend reads and enforces them.
+
+**Reason:** An environment variable that the app ignores looks like a safety control but is not one.
+The pilot gate is a code change in M2, not a documentation change in M0.

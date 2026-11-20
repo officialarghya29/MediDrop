@@ -1,33 +1,58 @@
-# M0 repository audit
+# M0 repository audit — Addendum v5
 
 - Audit date: 2026-11-20
 - Repository: `officialarghya29/MediDrop` (private)
 - Branch: `main`
-- Audited commit: `0e9b76c79b39b1139f57681500448dbb55d4b9f8`
+- Audited application commit: `0e9b76c79b39b1139f57681500448dbb55d4b9f8`
+- Documentation baseline: `4a37d33f64b61b237e3796273e5961acc4609f16`
 - Audit process: clean API process on `:8081`, PostgreSQL 16 on `:5433`, seeded demo database
 - Application code changed in M0: **none**. This file and the other `docs/` memory files are the only M0 changes.
 
 ## 1. Scope and checklist basis
 
-The supplied Addendum v3 includes Part 2 and repeatedly references the **36 checkboxes in original Section 24**, but the 36 lines themselves were not included in the addendum or found in the repository or its history.
+The supplied **Addendum v5** supersedes all earlier addenda. It requires M0 to audit the existing
+repository against the 36 items in original Section 24 **plus** the Part 8 quality gates, and to
+change no application code.
 
-The matrix below is therefore a **36-item reconstruction** from the supplied addendum, the existing product surface, `docs/order-lifecycle.md`, and the current API. It is not claimed to be a verbatim copy of the unavailable original Section 24. Exact acceptance sign-off is **BLOCKED** until the original 36 lines are reconciled against this matrix.
+The 36 original Section 24 lines are still not included in the pasted addendum and were not found
+in the repository or its Git history. The 36-row matrix in Section 4 is therefore a clearly
+labelled reconstruction. Part 8 is audited separately in **Section 4A**, and the new v5 engines
+and schema in **Section 4B**. Exact final sign-off remains **BLOCKED** until the original 36 lines
+are supplied and reconciled.
 
-The audit still applies the addendum's evidence rule: no item below receives a status without a file path, command result, test result or live HTTP result.
+The audit still applies the evidence rule: no item gets a status without a file path, command
+result, test result or live HTTP result. This file and the other `docs/` memory files are the only
+M0 changes; no Java, TypeScript, SQL, Docker or nginx application file was changed.
 
 ## 2. Verdict
 
-**Not launch-ready.** The codebase is materially stronger than a demo: PostgreSQL migrations, server-side pricing, JWT rotation, private prescription files, a single order state machine, real database-backed dashboards, a working 33-check smoke suite, and CI all function.
+**Not launch-ready, and not yet a v5 product.** The existing core is materially stronger than a
+demo: PostgreSQL migrations, server-side pricing, JWT rotation, private prescription files, a
+single order state machine, database-backed dashboards, a 33-check smoke suite and CI all work.
+But v5's differentiated engines are absent, and Part 8 is mostly unproven.
 
-M0 nevertheless found **five P0 issues** that block real healthcare use:
+M0 found **five current-flow P0 issues** that block real healthcare use:
 
 1. A pharmacy can read another pharmacy's order invoice.
 2. An admin can mark a delivered order `REFUNDED` without creating a refund or calling the gateway.
 3. There is no separate, verified pharmacist role; the pharmacy owner account approves prescriptions.
 4. Controlled/restricted medicine handling and CDSCO schedule classification are absent.
-5. The customer-facing handover OTP is not returned on the order page (only buried in a notification), so the visible UI cannot complete delivery without leaving the order screen.
+5. The customer-facing handover OTP is not returned on the order page (only in a notification), so
+   the visible UI cannot complete delivery without leaving the order screen.
 
-The repository must not be described as launch-ready, legally compliant, or production-certified until the P0 items, external provider certification and legal review are closed.
+One additional **P0 pilot gate** is missing:
+
+6. **The v5 pilot cannot be gated in code.** There is no `DEMO_MODE`, no DB-backed feature flags
+   (`EXPRESS_ENABLED`, `RX_ENABLED`, `SUBSTITUTION_ENABLED`, `COLD_CHAIN_ENABLED`, `VAULT_ENABLED`)
+   and no `ComplianceSignoff` workflow. A production-profile process can run without the required
+   RX/substitution sign-off. This must close before Stage 0/1, not just before scale.
+
+The v5 Node Selection, ETA, Rx Vault, Savings and cold-chain engines are **MISSING**, not merely
+undocumented. They are recorded in Section 4B and must not be mistaken for existing capability.
+
+The repository must not be described as launch-ready, legally compliant, production-certified or a
+v5 Verified-Fast implementation until these gaps, external provider certification and legal review
+are closed.
 
 ## 3. Environment, build and dependency evidence
 
@@ -43,7 +68,10 @@ The repository must not be described as launch-ready, legally compliant, or prod
 | Compose from example | `docker compose --env-file .env.example config` with required secrets added | **exit 0** |
 | nginx syntax | previous M0 infrastructure run (`nginx -t` in Docker) | **passed** |
 | OpenAPI after clean boot | `GET /v3/api-docs` | **200**, 96,425 bytes, ~1.5 s |
+| Part 8 harness | repository search + `frontend/package.json` + `.github/workflows/ci.yml` | **ABSENT**: no Testcontainers, Playwright, axe, Lighthouse or coverage gate |
+| v5 engines/schema | search for `FulfilmentNode`, `EtaPrediction`, `RxVault`, `Substitution`, `FeatureFlag`, `ComplianceSignoff`, `requiresColdChain`, `OrderStepEvent` | **NO IMPLEMENTATION** found outside docs and generic settings |
 | CI at audited commit | GitHub Actions run `44698246524` | **3/3 jobs successful** |
+| CI at docs baseline | GitHub Actions run `44703376130` on `4a37d33` | **3/3 jobs successful** |
 
 Residual Maven advisories:
 
@@ -143,6 +171,43 @@ Status meanings: **VERIFIED** = works and has direct evidence; **PARTIAL** = exi
 
 The 36 gates above are a reconstruction, not a verbatim copy of the unavailable original
 Section 24. Exact sign-off remains blocked until the original lines are supplied.
+
+## 4A. Addendum v5 Part 8 quality gates
+
+These gates are additional to the 36 original Section 24 items. **NOT VERIFIED** means the
+repository has no test or environment that can prove the claim; it is not a pass.
+
+| # | Part 8 gate | Status | Evidence |
+| --- | --- | --- | --- |
+| P8-1 | Negative authorization tests for every cross-account access; rider never sees Rx content; only verified pharmacists approve Rx/substitution | **PARTIAL** | 28 backend tests and live RBAC checks exist. Live audit found two cross-tenant reads (invoice, review history) and no separate pharmacist role. Rider Rx visibility was not exercised. |
+| P8-2 | Table-driven order state machine; every illegal transition rejected; history written | **BROKEN** | `OrderStateMachine` is an `EnumMap`, but explicitly allows `DELIVERED → REFUNDED`, `CANCELLED → REFUNDED` and `FAILED → REFUNDED`. Live admin PATCH produced `200 REFUNDED` with no refund row. History is written. |
+| P8-3 | 50 parallel checkouts on stock 10 = exactly 10 successes | **MISSING** | Only a two-customer, one-unit race was run: one `200`, one `500`. No 50-way harness or atomic-decrement test. |
+| P8-4 | Payments: tampered signature rejected; duplicate webhook once; client success never trusted; amount equals server total | **PARTIAL** | `PaymentSignatureTest`; live invalid webhook → `401`; totals are server-calculated. Duplicate webhook replay, provider refunds and live Razorpay were not certified. |
+| P8-5 | Rx/UNKNOWN items can never reach `DELIVERY_ASSIGNED` without pharmacist approval | **MISSING** | `Medicine.prescriptionRequired` is a boolean and defaults false; no `rx_status=UNKNOWN` model, schedule enforcement or approval gate query. The existing review gate is order-level, not item-level. |
+| P8-6 | Security: gitleaks history clean; no high/critical dependencies; login/OTP/search/upload limits; upload sniffing; signed URLs ≤5 min; PII-redacted logs; no health details in push/SMS | **PARTIAL** | Gitleaks 11 commits clean; npm 0; Maven OSV 2 Spring WebMVC advisories; no high/critical gate is configured. Rate limit is per IP+path, not per account/device. Upload magic-byte check passed. Storage is local private, not signed URLs. Log redaction and notification redaction are not proven. CI does not run a dependency/audit gate. |
+| P8-7 | Performance targets on a 250K-product seed; no N+1 | **NOT VERIFIED** | See `docs/PERF.md`. 15 products only; no PostGIS, load harness, percentiles or query-count assertions. |
+| P8-8 | UX: loading/empty/error/success on every screen; inline validation; 44px targets; axe zero serious/critical; 390/1440 screenshots | **PARTIAL** | Shared `PageLoader`, `EmptyState`, `Alert`, `FieldError` exist. No axe, Lighthouse, keyboard or screenshot gate; touch targets and i18n are unverified. See `docs/A11Y.md`. |
+| P8-9 | Reliability: Maps down → manual address + distance ETA; payments down → retry + cart kept; WebSocket reconnect; idempotency; backups with tested restore | **PARTIAL** | Haversine fallback returns distance and refuses geocoding; cart/order idempotency is sequential only; WebSocket auth tests exist but reconnect was not tested; no backup restore drill or payment retry test. |
+| P8-10 | Testing: Testcontainers (Postgres/PostGIS/Redis); Playwright journeys + failures + Express + substitution; CI blocks on lint/types/tests/E2E/audit/axe; 80% coverage target | **PARTIAL** | Backend tests use H2, not Testcontainers. No Playwright, axe, audit gate or coverage threshold. CI has backend, frontend and PostgreSQL smoke jobs only. |
+| P8-11 | Rider safety: no punitive timers; batching limits; cold-chain exclusion; safety pause | **MISSING** | No rider batch, dispatch engine, cold-chain flag or safety pause. Admin assigns manually; rider UI shows route only. |
+| P8-12 | Demo/pilot gates: permanent DEMO banner; prod refuses `DEMO_MODE=true`; RX/substitution require ComplianceSignoff; kill switches per node/global | **MISSING** | No `DEMO_MODE`, feature flags, signoff table or node/global kill switch. |
+
+## 4B. Addendum v5 engine and schema coverage
+
+| v5 capability | Status | Evidence |
+| --- | --- | --- |
+| Fulfilment node model and `NodeStats` | **MISSING** | `Pharmacy` has radius, `avgPrepMinutes`, `acceptingOrders` and rating. It has no capacity/hour, cold-chain flag, reliability stats or node health. |
+| Node Selection Engine (4.1) | **MISSING** | No ranked-node service, eligibility filters, configurable weights or reason codes. Cart/order currently resolve a single pharmacy. |
+| ETA Engine (4.2) | **MISSING** | `HaversineMapsService` computes `distance / 22 km/h` and a point estimate. No range, prep-time median, calibration, prediction log or ETA error metric. |
+| Rider dispatch (4.3) | **PARTIAL** | Admin force-assignment and rider status transitions exist. No pre-assignment on node acceptance, direction batching, shift caps or safety pause. |
+| Rx Vault (4.4) | **MISSING** | `Prescription` has file, review and OCR fields only. No prescriber details, validity window, allowed refills, refills used or fast-path refill. |
+| Savings Engine (4.5) | **MISSING** | No active-ingredient model, candidate generation, exclusions, substitution proposal, pharmacist approval or consent record. |
+| Cold chain (4.7) | **MISSING** | No `requires_cold_chain` field, cold-chain node capability, insulated-bag flow or batching exclusion. |
+| Feature flags and ComplianceSignoff (4.8) | **MISSING** | `system_settings` is a generic public key/value table. It has no audited feature-flag semantics, signoff record or fail-closed switch. |
+| Step-event instrumentation (0.5) | **MISSING** | `order_status_history` records status changes, not the timestamped accept/pack/assign/pickup/handover funnel. `OrderStepEvents` does not exist. |
+| v5 schema additions | **MISSING** | No `FulfilmentNodes`, `NodeStats`, `EtaPredictions`, `OrderStepEvents`, `SubstitutionProposals`, `SubstitutionConsents`, `RxVault`, `RiderBatches`, `FeatureFlags`, `ComplianceSignoffs`, `data_quality_issues`, `rx_status` or `requires_cold_chain`. |
+| Verified Chain, Pulse Tracker, Savings Compare, Live Ops Board, Control Tower | **MISSING** | Current UI has order status history, a basic map and dashboards. It has no v5 signature components or live ETA ring. |
+| i18n / PWA / Ops Night | **MISSING** | No i18n library, locale files, web manifest, service worker or dark Ops mode. |
 
 ## 5. Role flow results
 
@@ -319,60 +384,76 @@ at com.medidrop.order.OrderService.place(OrderService.java:153)
 
 ### P0 — unsafe or blocks real use
 
-1. **Invoice IDOR.** Scope `PharmacyOrderController.invoice` to the authenticated pharmacy; never allow a pharmacy to request an arbitrary order.
-2. **Refund state bypass.** Remove direct `DELIVERED/CANCELLED/FAILED → REFUNDED` admin edges. Refund must go through `PaymentService` and a provider/ledger record.
-3. **Pharmacist identity.** Add a `PHARMACIST` role or a verified pharmacist profile with registration number, state council, pharmacy link and approval authority. Only a verified pharmacist may approve/dispense Rx items.
-4. **Controlled medicines.** Implement schedule classification (H/H1/X), `UNKNOWN → REQUIRED`, restricted-product enforcement and legal review before any Rx sale.
-5. **Customer handover OTP.** Return the current handover OTP on the customer's own order detail (when assigned and not verified) or provide an unmistakable in-order reveal. Align four vs six digit copy. The notification-only fallback is not sufficient for the visible flow.
+1. **Invoice IDOR.** Scope `PharmacyOrderController.invoice` to the authenticated pharmacy; never
+   allow a pharmacy to request an arbitrary order.
+2. **Refund state bypass.** Remove direct `DELIVERED/CANCELLED/FAILED → REFUNDED` admin edges.
+   Refund must go through `PaymentService` and a provider/ledger record.
+3. **Pharmacist identity.** Add a `PHARMACIST` role or verified pharmacist profile with registration
+   number, state council, pharmacy link and approval authority. Only a verified pharmacist may
+   approve/dispense Rx items or substitutions.
+4. **Controlled medicines.** Implement schedule classification (H/H1/X), `UNKNOWN → REQUIRED`,
+   restricted-product enforcement and legal review before any Rx sale.
+5. **Customer handover OTP.** Return the current handover OTP on the customer's own order detail
+   (when assigned and not verified) or provide an unmistakable in-order reveal. Align four vs six
+   digit copy.
+6. **Pilot safety gate.** Add `DEMO_MODE`, DB-backed feature flags, `ComplianceSignoff`, per-node and
+   global kill switches. Until this exists, do not enable RX/substitution/Express in any real pilot.
+   This closes in M2, but blocks Stage 0/1.
 
 ### P1 — product quality and trust
 
-1. `admin/audit-logs` unfiltered query returns `500`; fix the nullable `:action` JPQL binding and add a regression test.
-2. Concurrency loser returns `500`; return `409` and test two-customer race.
+1. `admin/audit-logs` unfiltered query returns `500`; fix the nullable `:action` JPQL binding and add
+   a regression test.
+2. Concurrency loser returns `500`; return `409`, add the 50-way stock-10 gate and use an atomic
+   conditional decrement.
 3. Prescription review-history IDOR; scope by pharmacy/owner.
 4. No DB `CHECK (price <= mrp)` or non-negative stock constraints.
 5. Batch/expiry is bookkeeping only; no batch allocation, expiry exclusion or FEFO.
 6. No per-account/device lockout; OTP account enumeration.
 7. Admin bootstrap uses a known dev password; no rotation/one-time setup.
 8. OTP UI uses `deliveryOtp: null`; rider copy says 6 digits; no proof-of-delivery storage.
-9. No GST HSN columns, server-side invoice sequence or PDF.
-10. No returns/damaged/near-expiry dispute flow.
-11. No demo mode/banner/prod refusal.
-12. No data pipeline, no `data_quality_issues`, no catalogue licence tracking.
-13. Notifications are console/in-app; no real SMS, consent or quiet hours.
-14. Seed data is not fully `is_demo`; 15 products only.
-15. No backups/restore test, metrics, tracing or alerting implementation.
+9. No GST HSN columns, server-side invoice sequence or PDF; returns/damaged/near-expiry disputes absent.
+10. No data pipeline, `data_quality_issues`, 250K catalogue or licence tracking.
+11. No Node Selection, ETA range/calibration, Rx Vault, Savings Engine, cold chain or step events.
+12. No signed URLs, i18n, PWA shell, Ops Night mode or Verified Chain/Pulse UI.
+13. Notifications are console/in-app; no real SMS, consent, quiet hours or health-data redaction.
+14. Seed data is not fully `is_demo`; 15 products only, not 12 nodes / 500 products / 40 orders.
+15. No backups/restore test, metrics, tracing, alerting or incident playbook.
+16. No Testcontainers, Playwright, axe, Lighthouse, coverage gate or 250K performance harness.
 
 ### P2 — wow factor and long-term quality
 
-1. i18n (English/Hindi/Bengali), voice search and PWA shell.
-2. axe/Lighthouse CI, keyboard audit, reduced-motion audit.
-3. Admin live heatmap, command palette and SLA board.
-4. Real OCR with editable chips and pharmacist seal.
-5. Pulse Tracker route glow/ETA ring and live freshness indicator.
-6. Verified Chain timeline and My Cabinet/refill prediction.
-7. Better forecast model and evaluation harness.
-8. Expanded Kolkata seed (12 pharmacies, 500 products, 40 orders) with demo flags.
+1. Live ETA ring and glowing Pulse Tracker, with location freshness and honest ranges.
+2. Verified Chain timeline on every order; Savings Compare with explicit Decline.
+3. Rx Scan chips, pharmacist seal and My Cabinet expiry/refill rings.
+4. Pharmacy Live Ops Board with sound/visual alerts and pick-pack scan flow.
+5. Admin Control Tower heatmap, command palette and node health.
+6. Better forecast model, ETA v2, pre-positioning suggestions and Kolkata-wide demo seed.
+7. Accessibility/keyboard polish, reduced-motion and contrast audits.
+8. Voice search and Bengali/Hindi transliteration quality.
 
-## 11. Proposed milestone order after M0
+## 11. Proposed v5 milestone order after M0
 
-The addendum's order is mostly correct, but M0 evidence requires some P0 work before the nominal M2 auth milestone.
+The v5 order is retained, with the M0 findings made explicit. The two documentation-only
+requirements from M0 are complete; no milestone below has been started.
 
 | Milestone | Scope | Gate |
 | --- | --- | --- |
-| **M1** | Fix invoice IDOR, refund bypass, audit-log 500, concurrency 409, customer OTP projection; add regression tests. No new feature work. | All P0 security/finance/OTP tests pass; CI green. |
-| **M2** | Pharmacist role and verification; admin bootstrap; per-account rate limits/lockout; OTP enumeration fix. | A non-pharmacist cannot approve Rx; a verified pharmacist can; abuse tests pass. |
-| **M3** | Dataset licensing/pipeline, 500-product demo catalogue, typo search, 300-query golden set. | DATA_SOURCES complete; import report; top-3 ≥95%. |
-| **M4** | Batch/FEFO, expiry exclusion, DB constraints, no-oversell 409, partial-fulfilment rules. | Concurrency and expiry tests pass. |
-| **M5** | State machine cleanup, idempotency race, returns/disputes, GST HSN/PDF. | 100 order-state scenarios pass; direct refund impossible. |
-| **M6** | Prescription review IDOR, verified pharmacist, OCR assist, retention. | Cross-tenant review/file tests pass; OCR never authorizes. |
-| **M7** | Razorpay live sandbox certification, webhooks, refunds, COD rules. | Provider sandbox and replay tests pass. |
-| **M8** | Maps/PostGIS, coverage, ETA, tracking. | Geocoding and radius tests pass. |
-| **M9** | Delivery partner app, OTP UX, GPS reconnect, proof of delivery. | End-to-end delivery with visible OTP. |
-| **M10** | Admin Control Tower, reports, settings, audit viewer, command palette. | No 500s; every mutation audited. |
-| **M11** | Design tokens/component library, all four surfaces, i18n/PWA. | Screenshots at 390/1440, light/Ops Night, axe pass. |
-| **M12** | Forecast, explainable allocation, search quality. | Offline eval + explainability. |
-| **M13** | Security review, load test, backup restore, monitoring, deploy guide, legal review. | No launch claim until external legal/ops sign-off. |
+| **M1** | Foundation: close current-flow P0 1–5, plus the audit-log and concurrency P1 blockers; one-command local run; CI green; secret cleanup; design tokens and shared components. | Invoice/refund/OTP/auth tests pass; `docker compose up` works; CI green. |
+| **M2** | Auth + RBAC: Customer, Pharmacy owner, Pharmacist, Rider, Admin; JWT/refresh; OTP interface; audit log; secure admin bootstrap; DEMO_MODE, feature flags and ComplianceSignoff. | Non-pharmacist cannot approve; pilot flags fail closed; prod refuses DEMO_MODE. |
+| **M3** | Catalogue + v5 data pipeline, 250K-capable search, typo tolerance, admin categories. | Licence log complete; import report; top-3 ≥95%; search p95 measured. |
+| **M4** | Pharmacy/node onboarding, licence verification, inventory batch/expiry/audit, no oversell, scan pick/pack. | 50-way stock-10 test; expiry/FEFO; licensed-node gate. |
+| **M5** | Cart, checkout, backend pricing, state machine, idempotency, step-event instrumentation. | 100 state scenarios; no direct refund; step funnel complete. |
+| **M6** | Prescription upload, Rx Vault, pharmacist queue, OCR assist, private/signed access. | Verified pharmacist approval; vault validity/refills; cross-tenant tests. |
+| **M7** | Razorpay create/signature/webhooks/duplicate protection/refunds/COD. | Tampered/replayed webhook; amount match; sandbox certification. |
+| **M8** | Maps + PostGIS + Node Selection Engine + coverage. | Nearby p95 <200 ms; explainable reason codes; fallback tested. |
+| **M9** | Rider app + dispatch + live tracking + OTP + reconnect. | No punitive timer; batching/cold-chain rules; reconnect test. |
+| **M10** | ETA v1 + Pulse Tracker + Verified Chain UI. | Range shown; predicted-vs-actual logged; freshness badge. |
+| **M11** | Savings Engine + Savings Compare + consent + safety set. | 100% exclusion-set pass; no automatic substitution. |
+| **M12** | Admin Control Tower, reports, settings, audit viewer, node health. | No 500s; every mutation audited; live health view. |
+| **M13** | Cold chain, demand forecast, pre-positioning, ETA v2. | Cold-chain exclusion and capability tests; ETA MAE/p90 reported. |
+| **M14** | Design polish, i18n, PWA, accessibility. | 390/1440 screenshots; axe zero serious/critical; Lighthouse ≥90. |
+| **M15** | Hardening: security review, load test, backups/restore, monitoring, deploy guide, pilot readiness. | Part 8 + original 36 VERIFIED; go/no-go table; legal/ops sign-off. |
 
 ## 12. What was not verified
 
@@ -386,6 +467,11 @@ The addendum's order is mostly correct, but M0 evidence requires some P0 work be
 - Production backup/restore, monitoring and alerting.
 - Original Section 24 exact wording.
 - Legal/compliance sign-off.
+- Addendum v5 Node Selection, ETA, Rx Vault, Savings Engine, cold chain, rider dispatch, step events,
+  DEMO_MODE, feature flags and ComplianceSignoff.
+- The 50-way inventory gate, 250K-product performance test, axe/Lighthouse run, 390/1440 screenshots,
+  Testcontainers/Playwright journeys and coverage threshold.
+- Live node capacity, cold-chain capability, rider batching and ETA backtest data.
 
 ## 13. Audit artifacts
 
