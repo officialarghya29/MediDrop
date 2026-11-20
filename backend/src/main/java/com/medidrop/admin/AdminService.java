@@ -38,6 +38,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -126,7 +127,7 @@ public class AdminService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Pharmacy> pharmacies = status == null || status.isBlank()
                 ? pharmacyRepository.searchApproved(q, pageable)
-                : pharmacyRepository.searchByStatus(ApprovalStatus.valueOf(status.toUpperCase()), q, pageable);
+                : pharmacyRepository.searchByStatus(parseApprovalStatus(status), q, pageable);
         return PageResponse.of(pharmacies, p -> new AdminDtos.PharmacyRow(p.getId(), p.getName(), p.getCity(),
                 p.getLicenseNumber(), p.getPhone(), p.getStatus(), p.getCreatedAt(), p.getRating(),
                 pharmacyDocumentRepository.findByPharmacyId(p.getId()).stream()
@@ -141,7 +142,7 @@ public class AdminService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<DeliveryPartner> partners = status == null || status.isBlank()
                 ? partnerRepository.findAll(pageable)
-                : partnerRepository.findByStatus(ApprovalStatus.valueOf(status.toUpperCase()), pageable);
+                : partnerRepository.findByStatus(parseApprovalStatus(status), pageable);
         return PageResponse.of(partners, p -> new AdminDtos.PartnerRow(p.getId(), p.getFullName(), p.getPhone(),
                 p.getVehicleType(), p.getStatus(), p.isOnline(), p.getCompletedDeliveries(), p.getRating(),
                 p.getCreatedAt(), partnerDocumentRepository.findByPartnerId(p.getId()).stream()
@@ -246,13 +247,29 @@ public class AdminService {
 
     private void applyCoupon(Coupon coupon, AdminDtos.CouponRequest request) {
         coupon.setCode(request.code().trim().toUpperCase());
-        coupon.setType(Coupon.Type.valueOf(request.type().toUpperCase()));
+        coupon.setType(parseCouponType(request.type()));
         coupon.setValue(request.value());
         if (request.minOrderValue() != null) coupon.setMinOrderValue(request.minOrderValue());
         coupon.setMaxDiscount(request.maxDiscount());
         if (request.active() != null) coupon.setActive(request.active());
         coupon.setUsageLimit(request.usageLimit());
         coupon.setDescription(request.description());
+    }
+
+    private ApprovalStatus parseApprovalStatus(String status) {
+        try {
+            return ApprovalStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw ApiException.badRequest("Unknown approval status: " + status);
+        }
+    }
+
+    private Coupon.Type parseCouponType(String type) {
+        try {
+            return Coupon.Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            throw ApiException.badRequest("Unknown coupon type: " + type);
+        }
     }
 
     private AdminDtos.CouponRow couponRow(Coupon c) {

@@ -56,6 +56,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("select count(o) from Order o where o.createdAt >= :from")
     long countSince(@Param("from") Instant from);
 
+    List<Order> findByPlacedAtAfter(Instant from);
+
     @Query("""
             select o from Order o
             where o.pharmacyId = :pharmacyId and o.createdAt >= :from

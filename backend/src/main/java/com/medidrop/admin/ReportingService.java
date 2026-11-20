@@ -59,8 +59,7 @@ public class ReportingService {
     public AdminDtos.PlatformReport platform(int days) {
         int window = Math.min(Math.max(days, 7), 90);
         Instant from = Instant.now().minus(Duration.ofDays(window));
-        List<com.medidrop.order.Order> orders = orderRepository.findAll().stream()
-                .filter(o -> o.getPlacedAt().isAfter(from)).toList();
+        List<com.medidrop.order.Order> orders = orderRepository.findByPlacedAtAfter(from);
         BigDecimal gross = orders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
                 .map(com.medidrop.order.Order::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -72,9 +71,8 @@ public class ReportingService {
         BigDecimal aov = delivered == 0 ? BigDecimal.ZERO
                 : gross.divide(BigDecimal.valueOf(delivered), 2, RoundingMode.HALF_UP);
 
-        List<DeliveryAssignment> deliveredAssignments = assignmentRepository.findAll().stream()
-                .filter(a -> a.getStatus() == AssignmentStatus.DELIVERED && a.getDeliveredAt() != null
-                        && a.getDeliveredAt().isAfter(from)).toList();
+        List<DeliveryAssignment> deliveredAssignments = assignmentRepository
+                .findByStatusAndDeliveredAtAfter(AssignmentStatus.DELIVERED, from);
         double avgMinutes = deliveredAssignments.isEmpty() ? 0
                 : Math.round(deliveredAssignments.stream()
                 .mapToLong(a -> Duration.between(a.getAssignedAt(), a.getDeliveredAt()).toMinutes())

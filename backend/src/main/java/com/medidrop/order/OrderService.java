@@ -403,9 +403,13 @@ public class OrderService {
         }
         int eta = assignment != null && assignment.getEstimatedMinutes() != null
                 ? assignment.getEstimatedMinutes() : 0;
+        // A tracking link is shareable, so expose only the city and a neighbourhood-level
+        // coordinate. The exact street address and doorstep position must never be public.
+        Double destinationLat = Math.round(order.getLatitude() * 1000.0) / 1000.0;
+        Double destinationLng = Math.round(order.getLongitude() * 1000.0) / 1000.0;
         return new OrderDtos.TrackingResponse(order.getOrderNumber(), order.getStatus().name(),
                 order.getTrackingKey(), order.getUpdatedAt(), partner, lat, lng, updatedAt, eta,
-                order.getLine1() + ", " + order.getCity(), order.getLatitude(), order.getLongitude(),
+                "Delivery area, " + order.getCity(), destinationLat, destinationLng,
                 null, null);
     }
 

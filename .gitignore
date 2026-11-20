@@ -19,8 +19,10 @@ frontend/coverage/
 frontend/.vite/
 *.tsbuildinfo
 
-# Runtime data
+# Runtime data. The Java package com.medidrop.storage is source, not runtime data.
 storage/
+!backend/src/main/java/com/medidrop/storage/
+!backend/src/main/java/com/medidrop/storage/**
 uploads/
 logs/
 *.log

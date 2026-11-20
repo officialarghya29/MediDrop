@@ -155,13 +155,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 20 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 21 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 20 tests | **20 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 21 tests | **21 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -181,7 +181,11 @@ indexed tracking key instead of scanning the orders table; the Active, Delivered
 paginate in SQL (they previously fell through to an unfiltered list); status counts are database counts; stock
 restoration, coupon redemption, refresh-token rotation and refunds take row locks so concurrent requests cannot
 lose updates; and the H2 test schema now initialises every table instead of silently skipping `coupons`.
-`OrderQueryTest` covers the filters, counts and tracking lookup.
+`OrderQueryTest` covers the filters, counts and tracking lookup. A follow-up audit found and fixed the last
+unhandled enum filters (admin approvals and prescription queues now return `400`), stopped platform reports
+from loading every order and assignment in memory, and made the public tracking projection reveal only the
+city and a neighbourhood-level coordinate — never the street address. `AdminQueryTest` guards the admin
+filter path. CI now compiles from a clean checkout and runs the live smoke suite on PostgreSQL.
 
 ---
 
@@ -349,7 +353,7 @@ Full endpoint catalogue: [docs/api.md](docs/api.md).
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 20 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 21 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 

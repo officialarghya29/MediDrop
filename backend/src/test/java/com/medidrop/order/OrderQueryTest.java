@@ -92,6 +92,9 @@ class OrderQueryTest {
 
         assertThat(tracking.orderNumber()).isEqualTo(order.getOrderNumber());
         assertThat(tracking.status()).isEqualTo("OUT_FOR_DELIVERY");
+        assertThat(tracking.destinationLabel()).isEqualTo("Delivery area, Kolkata");
+        assertThat(tracking.destinationLatitude()).isEqualTo(22.573);
+        assertThat(tracking.destinationLongitude()).isEqualTo(88.364);
         assertThatThrownBy(() -> orderService.tracking("does-not-exist"))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("Tracking link is invalid");

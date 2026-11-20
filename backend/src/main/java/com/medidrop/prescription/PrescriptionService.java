@@ -161,8 +161,7 @@ public class PrescriptionService {
     public PageResponse<PrescriptionDtos.PendingReview> pharmacyQueue(Long userId, String status, int page, int size) {
         Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(userId)
                 .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
-        PrescriptionStatus filter = (status == null || status.isBlank())
-                ? PrescriptionStatus.UPLOADED : PrescriptionStatus.valueOf(status.toUpperCase());
+        PrescriptionStatus filter = parseStatus(status);
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50),
                 Sort.by(Sort.Direction.ASC, "createdAt"));
         Page<Prescription> prescriptions = prescriptionRepository
@@ -243,6 +242,15 @@ public class PrescriptionService {
                 .map(r -> new PrescriptionDtos.ReviewHistory(r.getId(), r.getDecision(), r.getComments(),
                         r.getReviewedAt()))
                 .toList();
+    }
+
+    private PrescriptionStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return PrescriptionStatus.UPLOADED;
+        try {
+            return PrescriptionStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw ApiException.badRequest("Unknown prescription status: " + status);
+        }
     }
 
     private PrescriptionDtos.PrescriptionResponse toDto(Prescription p, boolean staff) {
