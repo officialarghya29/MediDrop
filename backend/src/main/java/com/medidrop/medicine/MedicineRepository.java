@@ -22,9 +22,9 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
             where m.active = true
               and (coalesce(:q, '') = ''
                    or lower(m.name) like lower(concat('%', coalesce(:q, ''), '%'))
-                   or lower(coalesce(m.brand,'')) like lower(concat('%', coalesce(:q, ''), '%'))
-                   or lower(coalesce(m.genericName,'')) like lower(concat('%', coalesce(:q, ''), '%'))
-                   or lower(coalesce(m.strength,'')) like lower(concat('%', coalesce(:q, ''), '%')))
+                   or lower(m.brand) like lower(concat('%', coalesce(:q, ''), '%'))
+                   or lower(m.genericName) like lower(concat('%', coalesce(:q, ''), '%'))
+                   or lower(m.strength) like lower(concat('%', coalesce(:q, ''), '%')))
               and (:categoryId is null or m.categoryId = :categoryId)
               and (:manufacturerId is null or m.manufacturerId = :manufacturerId)
               and (:pharmacyId is null or exists (

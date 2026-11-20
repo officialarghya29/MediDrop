@@ -60,6 +60,18 @@ jobs:
         run: npm run build
       - name: Unit tests
         run: npm test
+      - name: Browser & accessibility gate
+        run: npm run test:e2e
+      - name: Upload browser failures
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failures
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload build output
         uses: actions/upload-artifact@v7
         with:

@@ -8,13 +8,16 @@
 | API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 33 end-to-end checks against a running API |
 | Stock race (live stack) | `infrastructure/scripts/stock-race-check.py` | 50 concurrent checkouts against stock 10 |
 | Frontend unit | `cd frontend && npm test` | Formatting helpers and shared UI primitives |
+| Browser + axe (built app) | `cd frontend && npm run test:e2e` | Public journeys and WCAG A/AA checks in Chrome at 390 px |
 | Frontend build | `cd frontend && npm run build` | TypeScript strict typecheck + production bundle |
+| 250K search (live stack) | `python3 infrastructure/scripts/catalogue-load-check.py` | Real HTTP search p95 over a 250,000-row catalogue |
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
 `value` column is otherwise reserved by H2). The suite currently runs **52 tests**. The smoke script
-exercises the real PostgreSQL schema, Flyway V1–V6, HTTP security and the seeded order flow. CI runs the
-backend and frontend gates plus the same smoke script against a disposable PostgreSQL 16 service.
+exercises the real PostgreSQL schema, Flyway V1–V7, HTTP security and the seeded order flow. CI runs the
+backend and frontend gates, the Playwright/axe gate and the same smoke script against a disposable
+PostgreSQL 16 service.
 
 ## Backend tests
 
@@ -69,7 +72,24 @@ python3 infrastructure/scripts/stock-race-check.py \
 
 It requires PyJWT and `psql`, or `--psql-container` for a Docker-only host. A pass is exactly ten
 `200` responses, forty `409` responses, ten orders, stock 0, ten sold ledger units and no other status.
-The 0.1.6 run passed all of those conditions on fresh PostgreSQL 16.
+The 0.1.7 run passed all of those conditions on fresh PostgreSQL 16.
+
+## 250K catalogue search
+
+The performance gate seeds **250,000** medicines and one inventory row each, then measures 100 real
+HTTP searches through the running API:
+
+```bash
+python3 infrastructure/scripts/catalogue-load-check.py \
+  --base-url http://127.0.0.1:8080 \
+  --rows 250000 --samples 100 --p95-ms 300 \
+  --psql-container medidrop-gate
+```
+
+It requires `psql`, or `--psql-container` for a Docker-only host. A run fails on any HTTP error, any
+empty result, or p95 at or above the target. The 0.1.7 run measured **p95 280.5 ms** on PostgreSQL 16
+after V7 added lowercased trigram expression indexes. This is a local single-node measurement, not a
+soak test; see `docs/PERF.md` for the exact environment and open targets.
 
 ## Frontend tests
 
@@ -77,10 +97,14 @@ The 0.1.6 run passed all of those conditions on fresh PostgreSQL 16.
 cd frontend
 npm test          # vitest run
 npm run build     # tsc -b && vite build
+npm run test:e2e  # Playwright + axe against the built preview
 ```
 
 Vitest uses jsdom with `src/test/setup.ts`. Component tests avoid network calls; data fetching is tested
-through the API smoke script instead of mocking every endpoint.
+through the API smoke script instead of mocking every endpoint. The browser gate uses deterministic
+public API fixtures, so it does not require PostgreSQL. It checks four public pages for WCAG A/AA axe
+violations and exercises search → medicine detail in a 390 px Chrome viewport. It is a public-page
+accessibility gate, not a substitute for keyboard, screen-reader, Lighthouse or role-dashboard audits.
 
 ## Not covered automatically
 
@@ -89,7 +113,9 @@ through the API smoke script instead of mocking every endpoint.
 - Google Maps geocoding
 - OCR extraction
 - Cross-browser visual regression
-- Sustained load and soak testing (the 50-way burst is now covered; the 250K/long-run gate is not)
+- Load/soak beyond the 50-way burst and the 100-request 250K search sample
+- Lighthouse and recorded keyboard/screen-reader passes
+- axe coverage for pharmacy, delivery and admin dashboards
 
 These are listed in `docs/deployment.md` as go-live checks. Add contract tests against the provider sandbox
 once credentials exist.

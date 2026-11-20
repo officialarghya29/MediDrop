@@ -30,7 +30,7 @@ export default function Logo({
   className?: string;
 }) {
   return (
-    <Link to={to} className={`inline-flex items-center gap-2.5 ${className}`} aria-label="MediDrop home">
+    <Link to={to} className={`inline-flex items-center gap-2.5 ${className}`} aria-label={compact ? 'MediDrop home' : undefined}>
       <LogoMark label="" />
       {!compact && (
         <span className="leading-tight">

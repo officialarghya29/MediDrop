@@ -12,8 +12,9 @@ Status: **M1 safety slice complete; the 50-way stock gate is closed. One-command
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
 - M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan, substitute feature,
-  fallback fix, 0.1.4 hardening, 0.1.5 provider-state checks and 0.1.6 edge hardening: **52 passed**.
-- Ran frontend tests: **13 passed**.
+  fallback fix, 0.1.4 hardening, 0.1.5 provider-state checks, 0.1.6 edge hardening and 0.1.7
+  measured-edge work: **52 passed**.
+- Ran frontend tests: **13 passed**; Playwright + axe public gate: **5 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
 - Ran an OSV batch scan of 101 Maven runtime packages: **2 residual Spring WebMVC advisories**.
@@ -131,8 +132,22 @@ Still open in M1:
 - Added `infrastructure/scripts/stock-race-check.py`, a black-box harness that seeds 50 customers and
   carts, then fires 50 simultaneous checkouts at one inventory row with stock 10.
 - Live PostgreSQL 16 result: **10 × 200, 40 × 409, 10 orders, stock 0, 10 SALE ledger units, 0 errors**.
-- This closes the previously open 50-way M1 evidence gap. The 250K catalogue, sustained load and
-  browser/accessibility gates remain open.
+- This closed the 50-way M1 evidence gap. At 0.1.6 the 250K catalogue, sustained load and
+  browser/accessibility gates were still open; 0.1.7 now covers 250K search and the public
+  browser/axe gate, while sustained load and full role accessibility remain open.
+
+## Measured edge (0.1.7)
+
+- `catalogue-load-check.py` seeds 250,000 medicines plus one inventory row each and measures 100 real
+  HTTP searches. Current result: **p50 189.1 ms, p95 280.5 ms, p99 286.8 ms, 0 errors** against the
+  300 ms target on PostgreSQL 16.
+- V7 replaced raw-column trigram indexes with lowercased expression indexes that match the actual
+  search predicate, and added a prefix index for suggestions.
+- Playwright and axe now run in the required frontend CI job: four public pages and a search-to-detail
+  journey pass with zero WCAG A/AA violations at 390 px.
+- The deferred minor/patch dependency batch is applied; production npm audit remains zero.
+- Limits: one local 250K run, no soak, no Lighthouse, no role-dashboard axe coverage and no recorded
+  keyboard/screen-reader pass.
 
 ## Edge hardening (0.1.6)
 
@@ -150,10 +165,12 @@ Still open in M1:
 
 `v0.1.4` added OTP identity guards, concurrent token locking, order versioning and rider
 reassignment. `v0.1.5` enforced suspended-provider state and recorded the measured 50-way stock
-result. `v0.1.6` is the current **foundation release**: it closes realtime and inactive-pharmacy
-edges, requires two-channel verification and adds production runtime/CI controls. It passes 52
-backend tests, 13 frontend tests, 33 live smoke checks and the 50-way stock gate. It is not the M1
-milestone tag and is not launch-ready; one-command/design-token polish and M2–M15 remain open.
+result. `v0.1.6` closed realtime and inactive-pharmacy edges and added runtime/CI controls. `v0.1.7`
+is the current **foundation release**: it measures 250K search, adds a Playwright/axe CI gate and
+refreshes the deferred dependencies. It passes 52 backend tests, 13 frontend tests, 5 browser/axe
+checks, 33 live smoke checks, the 50-way stock gate and the 250K search gate. It is not the M1
+milestone tag and is not launch-ready; sustained load, Lighthouse, full role accessibility and
+M2–M15 remain open.
 
 ## In progress
 

@@ -135,7 +135,23 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | Concurrent order transitions had no stale-write guard. | **FIXED** | `Order` carries `@Version`, `V6__order_version.sql` adds the column, and `OrderVersionTest` proves a stale write fails. |
 | A rejected rider left the order assigned with no replacement path. | **FIXED** | `DeliveryService.autoAssign` now distinguishes initial assignment from reassignment and preserves `DELIVERY_ASSIGNED`; `DeliveryReassignTest`. |
 | Console sidebar displayed a stale `v1.0` label. | **FIXED** | `Shell.tsx` reports `v0.1.4`. |
-| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS** in 0.1.6. Live providers and full browser/a11y/performance gates remain open; do not infer them from unit or smoke tests. |
+| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS (0.1.6)**. Public Playwright/axe and 250K search gates added in 0.1.7. Live providers, sustained load, Lighthouse and role-dashboard accessibility remain open. |
+
+### 0.1.7 measured edge (2026-11-20)
+
+This pass converted two open performance/accessibility claims into repeatable gates and applied the
+deferred dependency batch.
+
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| Search trigram indexes did not match the lowercased query, so PostgreSQL scanned the raw-name B-tree. | **FIXED** | `V7__catalogue_search_expressions.sql` replaces the raw indexes with lowercased expression indexes and adds a prefix index. `MedicineRepository.search` no longer wraps nullable columns in `coalesce`. |
+| No 250K catalogue performance evidence. | **FIXED** | `catalogue-load-check.py` seeds 250,000 medicines + inventory rows and runs 100 HTTP searches: **p50 189.1 ms, p95 280.5 ms, p99 286.8 ms, 0 errors** against a 300 ms target. |
+| No Playwright or axe gate in CI. | **FIXED (public pages)** | Playwright 1.65.1 + axe 4.14.0 in the required frontend job: home, search, medicine detail, sign-in and search-to-detail; **5 passed**, zero WCAG A/AA violations at 390 px. Role dashboards, keyboard, screen-reader and Lighthouse remain open. |
+| Logo accessible name omitted its visible tagline. | **FIXED** | The logo now uses its visible wordmark/tagline as the accessible name; the axe rule was not suppressed. |
+| Six deferred minor/patch dependency updates. | **APPLIED** | React Query 5.107.2, Zustand 4.5.7, TypeScript 5.9.3, Testing Library React 16.3.3, Autoprefixer 10.6.2, Springdoc 2.10.0. Backend 52 and frontend 13 tests pass. |
+
+Limits: one local 250K run, no soak, no Lighthouse, no role-dashboard axe coverage, no recorded
+keyboard/screen-reader pass. This is still not a launch-readiness claim.
 
 ### GitHub controls (reviewed 2026-11-20)
 
@@ -148,7 +164,7 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | Non-provider secret patterns / validity checks | **Disabled** (unavailable on this plan) |
 | Dependabot alerts / security updates | **Enabled** (2026-11-20) |
 | Dependabot version updates | **Minor/patch only**; semver-major ignored in `.github/dependabot.yml` |
-| Latest CI on `main` | Green for the 0.1.6 release commit |
+| Latest CI on `main` | Green for the 0.1.7 release commit |
 
 The public visibility exposes the source and this audit, including the historical P0 descriptions. No
 token or `.env` file is tracked, but a public security audit is still a disclosure decision. Branch
@@ -172,7 +188,7 @@ for this single-maintainer release rail.
 | Compose from example | `docker compose --env-file .env.example config` with required secrets added | **exit 0** |
 | nginx syntax | previous M0 infrastructure run (`nginx -t` in Docker) | **passed** |
 | OpenAPI after clean boot | `GET /v3/api-docs` | **200**, 96,425 bytes, ~1.5 s |
-| Part 8 harness | repository search + `frontend/package.json` + `.github/workflows/ci.yml` | **ABSENT**: no Testcontainers, Playwright, axe, Lighthouse or coverage gate |
+| Part 8 harness | repository search + `frontend/package.json` + `.github/workflows/ci.yml` | **PARTIAL**: 0.1.7 adds public Playwright/axe and a 250K search harness; still no Testcontainers, Lighthouse or coverage gate |
 | v5 engines/schema | search for `FulfilmentNode`, `EtaPrediction`, `RxVault`, `Substitution`, `FeatureFlag`, `ComplianceSignoff`, `requiresColdChain`, `OrderStepEvent` | **NO IMPLEMENTATION** found outside docs and generic settings |
 | CI at audited commit | GitHub Actions run `44698246524` | **3/3 jobs successful** |
 | CI at docs baseline | GitHub Actions run `44703376130` on `4a37d33` | **3/3 jobs successful** |
@@ -271,7 +287,7 @@ Status meanings: **VERIFIED** = works and has direct evidence; **PARTIAL** = exi
 | 33 | GST invoice and downloadable invoice | **PARTIAL** | Invoice includes order, seller, GSTIN, drug licence, buyer, line items, tax and payment method. No HSN line data, server-side invoice sequence or server-generated PDF; “download” is a browser print window. |
 | 34 | Notifications, consent and quiet hours | **PARTIAL** | In-app notifications and console email exist; SMS is console-only. No consent model, quiet hours, template governance or health-data redaction policy. |
 | 35 | Demo mode | **MISSING** | No `DEMO_MODE`, no permanent “no real payments or deliveries” banner and no startup refusal when demo mode is combined with the production profile. Seeding exists but is not a mode. |
-| 36 | Release operations: accessibility, i18n, PWA, backups and monitoring | **PARTIAL** | CI, tests and dependency checks are strong. No axe/Lighthouse CI, i18n framework, service worker/manifest, backup restore drill or monitoring/alerting implementation. |
+| 36 | Release operations: accessibility, i18n, PWA, backups and monitoring | **PARTIAL** | CI, tests and dependency checks are strong. Public Playwright/axe runs in CI; Lighthouse, i18n, service worker/manifest, backup restore drill and monitoring/alerting remain absent. |
 
 The 36 gates above are a reconstruction, not a verbatim copy of the unavailable original
 Section 24. Exact sign-off remains blocked until the original lines are supplied.
@@ -289,10 +305,10 @@ repository has no test or environment that can prove the claim; it is not a pass
 | P8-4 | Payments: tampered signature rejected; duplicate webhook once; client success never trusted; amount equals server total | **PARTIAL** | `PaymentSignatureTest`; live invalid webhook → `401`; totals are server-calculated. Duplicate webhook replay, provider refunds and live Razorpay were not certified. |
 | P8-5 | Rx/UNKNOWN items can never reach `DELIVERY_ASSIGNED` without pharmacist approval | **MISSING** | `Medicine.prescriptionRequired` is a boolean and defaults false; no `rx_status=UNKNOWN` model, schedule enforcement or approval gate query. The existing review gate is order-level, not item-level. |
 | P8-6 | Security: gitleaks history clean; no high/critical dependencies; login/OTP/search/upload limits; upload sniffing; signed URLs ≤5 min; PII-redacted logs; no health details in push/SMS | **PARTIAL** | Gitleaks 11 commits clean; npm 0 and now gated by `npm audit --omit=dev --audit-level=high` in CI; Maven OSV still reports 2 Spring WebMVC advisories. Rate limit is per IP+path, not per account/device. Upload magic-byte check passed. Storage is local private, not signed URLs. Log redaction and notification redaction are not proven. |
-| P8-7 | Performance targets on a 250K-product seed; no N+1 | **NOT VERIFIED** | See `docs/PERF.md`. 15 products only; no PostGIS, load harness, percentiles or query-count assertions. |
-| P8-8 | UX: loading/empty/error/success on every screen; inline validation; 44px targets; axe zero serious/critical; 390/1440 screenshots | **PARTIAL** | Shared `PageLoader`, `EmptyState`, `Alert`, `FieldError` exist. No axe, Lighthouse, keyboard or screenshot gate; touch targets and i18n are unverified. See `docs/A11Y.md`. |
+| P8-7 | Performance targets on a 250K-product seed; no N+1 | **PARTIAL** | Search p95 **280.5 ms** on 250,000 medicines, 100 requests, PostgreSQL 16. Other targets and N+1 query-count proof remain open; see `docs/PERF.md`. |
+| P8-8 | UX: loading/empty/error/success on every screen; inline validation; 44px targets; axe zero serious/critical; 390/1440 screenshots | **PARTIAL** | Public pages pass Playwright/axe WCAG A/AA at 390 px. Role dashboards, 1440 px screenshots, Lighthouse, keyboard, touch targets and i18n remain unverified. See `docs/A11Y.md`. |
 | P8-9 | Reliability: Maps down → manual address + distance ETA; payments down → retry + cart kept; WebSocket reconnect; idempotency; backups with tested restore | **PARTIAL** | Haversine fallback returns distance and refuses geocoding; cart/order idempotency is sequential only; WebSocket auth tests exist but reconnect was not tested; no backup restore drill or payment retry test. |
-| P8-10 | Testing: Testcontainers (Postgres/PostGIS/Redis); Playwright journeys + failures + Express + substitution; CI blocks on lint/types/tests/E2E/audit/axe; 80% coverage target | **PARTIAL** | Backend tests use H2, not Testcontainers. No Playwright, axe or coverage threshold. CI now gates production npm audits and has backend, frontend and PostgreSQL smoke jobs. |
+| P8-10 | Testing: Testcontainers (Postgres/PostGIS/Redis); Playwright journeys + failures + Express + substitution; CI blocks on lint/types/tests/E2E/audit/axe; 80% coverage target | **PARTIAL** | Backend tests use H2, not Testcontainers. CI now runs public Playwright/axe and blocks on it, but role journeys, failure paths, Express/substitution browser coverage and a coverage threshold are missing. |
 | P8-11 | Rider safety: no punitive timers; batching limits; cold-chain exclusion; safety pause | **MISSING** | No rider batch, dispatch engine, cold-chain flag or safety pause. Admin assigns manually; rider UI shows route only. |
 | P8-12 | Demo/pilot gates: permanent DEMO banner; prod refuses `DEMO_MODE=true`; RX/substitution require ComplianceSignoff; kill switches per node/global | **MISSING** | No `DEMO_MODE`, feature flags, signoff table or node/global kill switch. |
 
@@ -523,7 +539,7 @@ at com.medidrop.order.OrderService.place(OrderService.java:153)
 13. Notifications are console/in-app; no real SMS, consent, quiet hours or health-data redaction.
 14. Seed data is not fully `is_demo`; 15 products only, not 12 nodes / 500 products / 40 orders.
 15. No backups/restore test, metrics, tracing, alerting or incident playbook.
-16. No Testcontainers, Playwright, axe, Lighthouse, coverage gate or 250K performance harness.
+16. No Testcontainers, Lighthouse or coverage gate. Public Playwright/axe and a 250K search harness now exist.
 
 ### P2 — wow factor and long-term quality
 
@@ -566,15 +582,15 @@ requirements from M0 are complete; no milestone below has been started.
 - Google geocoding.
 - S3/object storage.
 - OCR extraction.
-- Browser-driven UI role flows, cross-browser visual regression, axe and Lighthouse.
+- Browser-driven role flows, cross-browser visual regression, full-surface axe and Lighthouse.
 - Load/soak testing.
 - Production backup/restore, monitoring and alerting.
 - Original Section 24 exact wording.
 - Legal/compliance sign-off.
 - Addendum v5 Node Selection, ETA, Rx Vault, Savings Engine, cold chain, rider dispatch, step events,
   DEMO_MODE, feature flags and ComplianceSignoff.
-- The 250K-product performance test, sustained load, axe/Lighthouse run, 390/1440 screenshots,
-  Testcontainers/Playwright journeys and coverage threshold.
+- Sustained load/soak, Lighthouse, full role-dashboard axe, keyboard/screen-reader audits,
+  390/1440 screenshots, Testcontainers and a coverage threshold.
 - Live node capacity, cold-chain capability, rider batching and ETA backtest data.
 
 ## 13. Audit artifacts

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/hero-v016.png" alt="MediDrop 0.1.6 — care at local velocity" width="100%" />
+  <img src="docs/assets/hero-v017.png" alt="MediDrop 0.1.7 — care at local velocity" width="100%" />
 </p>
 
 <p align="center">
@@ -31,30 +31,48 @@
 
 ---
 
-> **STATUS / 0.1.6 — pre-pilot foundation.** This is a working, CI-verified system, not a
-> `1.0.0` claim and not a licensed pharmacy service. Live provider certification, the 250K and
-> accessibility gates, legal review and operations sign-off remain open. The honest
-> boundary is documented in [Versions](docs/VERSIONS.md), [Progress](docs/PROGRESS.md) and
-> [Audit](docs/AUDIT.md).
+> **STATUS / 0.1.7 — pre-pilot foundation.** This is a working, CI-verified system, not a
+> `1.0.0` claim and not a licensed pharmacy service. Live provider certification, sustained load,
+> Lighthouse and full role-based accessibility audits, legal review and operations sign-off remain
+> open. The honest boundary is documented in [Versions](docs/VERSIONS.md),
+> [Progress](docs/PROGRESS.md) and [Audit](docs/AUDIT.md).
 
 ## / 00 · CURRENT SIGNAL
 
 | Signal | Reading |
 | --- | --- |
-| **Release** | `v0.1.6` — hardened edge |
-| **Continuity** | `v0.1.5` provider authority → `v0.1.6` realtime, tenancy and runtime hardening |
+| **Release** | `v0.1.7` — measured edge |
+| **Continuity** | `v0.1.6` runtime hardening → `v0.1.7` 250K search, axe, dependencies |
 | **Backend** | **52 passed, 0 failed** |
 | **Frontend** | **13 passed, 0 failed** |
+| **Browser + axe** | **5 passed, 0 failures** · Chrome · 390 px |
 | **Live API** | **33 checks, 0 failed** against PostgreSQL 16 |
+| **Search p95** | **280.5 ms** at **250K** medicines, 100 requests |
 | **Stock race** | **50 concurrent checkouts on stock 10 → 10 orders, 0 oversold** |
-| **Schema** | **33 tables · 36 indexes · Flyway V1–V6** |
+| **Schema** | **33 tables · 37 indexes · Flyway V1–V7** |
 | **Dependencies** | `npm audit --omit=dev`: **0 vulnerabilities** |
 | **Surface** | React SPA → nginx → Spring Boot → PostgreSQL |
 | **Region** | Kolkata, West Bengal · `22.5726° N, 88.3639° E` |
 
+### The 0.1.7 measured-edge pass
+
+This release turns two previously open claims into repeatable gates and applies the deferred
+dependency batch:
+
+- **250K catalogue search is measured.** `catalogue-load-check.py` seeds 250,000 medicines plus one
+  inventory row each, then measures 100 real HTTP searches. The first run exposed a concrete index
+  mismatch; V7 adds lowercased trigram expression indexes and a prefix index. p95 is now **280.5 ms**
+  against the **300 ms** target, with p50 189.1 ms and 0 errors.
+- **Public browser and axe journeys gate CI.** Playwright runs five checks against the built app at
+  390 px: home, search, medicine detail, sign-in and a search-to-detail journey. WCAG A/AA axe
+  violations fail the required frontend job. The gate found and fixed the logo accessible-name
+  mismatch instead of suppressing the rule.
+- **Deferred minor/patch dependencies are applied.** React Query, Zustand, TypeScript,
+  Testing Library, Autoprefixer and Springdoc are current; production npm audit remains at zero.
+
 ### The 0.1.6 hardened-edge pass
 
-This release closes the remaining session, tenancy and runtime edges found after the 0.1.5
+This release closed the remaining session, tenancy and runtime edges found after the 0.1.5
 state-authority pass:
 
 - **Suspended providers lose realtime access immediately.** Pharmacy tracking subscriptions require
@@ -157,8 +175,8 @@ order status → optimistic version → stale writer gets 409, not a silent over
 OTP / reset  → token row lock → one successful consumption
 ```
 
-The 50-way stock gate is now **measured**. That is a burst proof, not a licence to claim the race is
-solved at 250K products or under sustained load.
+The 50-way stock gate is now **measured**, and catalogue search has a measured 250K p95. Those are
+bounded proofs, not a licence to claim the system is solved under sustained load or soak.
 
 ---
 
@@ -232,7 +250,7 @@ These are live screenshots of this repository against its own API and seeded Pos
 ## / 05 · VERIFICATION DECK
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 52 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 52 backend tests, 13 frontend tests and 5 browser/axe checks" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
@@ -370,7 +388,8 @@ Nothing in the core flow depends on a credential that is absent. That is deliber
 
 | Version | Scope | State |
 | --- | --- | --- |
-| [`v0.1.6`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.6) | Realtime suspension enforcement, inactive-pharmacy RX guard, two-channel verification, graceful runtime, branch protection | **Latest foundation release** |
+| [`v0.1.7`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.7) | 250K search gate, WCAG axe browser gate, dependency refresh, lowercased search indexes | **Latest foundation release** |
+| [`v0.1.6`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.6) | Realtime suspension enforcement, inactive-pharmacy RX guard, two-channel verification, graceful runtime, branch protection | Previous release |
 | [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate, Dependabot and security policy | Previous release |
 | [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, concurrent token consumption, order version, rider reassignment, README command deck | Previous release |
 | [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Paused-pharmacy substitute fallback | Previous release |
@@ -383,7 +402,7 @@ The honest blockers are unchanged:
 - M2–M15, including a separate verified pharmacist role, pilot gates, node selection, ETA, Rx Vault,
   savings engine, cold chain, dispatch and ComplianceSignoff.
 - Live Razorpay, SMTP, SMS, Maps, S3 and OCR certification.
-- The 250K catalogue, sustained load, axe, Lighthouse and browser-driven journey gates.
+- Sustained load/soak, Lighthouse, full role-based axe coverage and recorded keyboard/screen-reader passes.
 - Legal, regulatory and operations sign-off for online pharmacy, Schedule H/H1/X handling,
   prescription retention, DPDP, GST and substitution.
 
@@ -411,7 +430,7 @@ validity checks remain unavailable on this plan.
 
 ```text
 Repository map
-├── backend/       Spring Boot API · Flyway V1–V6 · JUnit
+├── backend/       Spring Boot API · Flyway V1–V7 · JUnit
 ├── frontend/      React 18 SPA · Vitest · nginx
 ├── docs/          architecture · API · audits · release notes
 ├── infrastructure/ smoke suite · stock race · measurement scripts

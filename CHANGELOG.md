@@ -3,6 +3,40 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
+## [0.1.7] — 2026-11-20
+
+**Measured-edge patch. Pre-pilot; not `1.0.0`.**
+
+### Fixed
+
+- Catalogue search now uses lowercased trigram expression indexes. The previous indexes were on the
+  raw columns while every predicate used `lower(...)`, so PostgreSQL could not use them. V7 replaces
+  them with matching expression indexes and adds a prefix index for typeahead suggestions.
+- The logo accessible name no longer disagrees with its visible wordmark and tagline. The fix was
+  driven by the new axe gate; no accessibility rule was suppressed.
+
+### Added
+
+- `catalogue-load-check.py`: a repeatable 250,000-row, 100-request HTTP search gate with p50/p95/p99,
+  error and empty-result checks.
+- Playwright + axe browser gate for the public home, search, medicine detail and sign-in pages, plus
+  a search-to-detail journey. It runs in the required frontend CI job at 390 px.
+
+### Changed
+
+- Updated React Query **5.107.2**, Zustand **4.5.7**, TypeScript **5.9.3**, Testing Library React
+  **16.3.3**, Autoprefixer **10.6.2** and Springdoc **2.10.0**.
+
+### Verification
+
+- Backend: **52 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**; production build passed.
+- Browser + axe: **5 passed, 0 failed**.
+- 250K search: **p50 189.1 ms · p95 280.5 ms · p99 286.8 ms · 0 errors** against PostgreSQL 16.
+- Live API smoke: **33 passed, 0 failed**.
+- `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**.
+- Fresh PostgreSQL 16 migration: **V1–V7**.
+
 ## [0.1.6] — 2026-11-20
 
 **Production-hardening patch. Pre-pilot; not `1.0.0`.**

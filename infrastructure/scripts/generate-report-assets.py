@@ -162,7 +162,7 @@ def quality_chart(data: dict, suites: list[dict]) -> None:
     ax.set_facecolor(PANEL)
     fig.subplots_adjust(left=0.27, right=0.93, top=0.72, bottom=0.16)
 
-    colors = [ACCENT, ACCENT_2, "#a7f3d3"]
+    colors = [ACCENT, ACCENT_2, "#a7f3d3", "#c4b5fd"]
     bars = ax.barh(labels, values, height=0.42, color=colors, edgecolor="none", alpha=0.92)
     for bar, item in zip(bars, suites):
         ax.text(
@@ -180,7 +180,7 @@ def quality_chart(data: dict, suites: list[dict]) -> None:
 
     fig.text(0.02, 0.92, "VERIFICATION GATES · ALL GREEN", color=ACCENT, fontsize=10)
     fig.text(0.02, 0.835, "Every claim in this README has a runner behind it", color=TEXT, fontsize=20, fontweight="bold")
-    fig.text(0.02, 0.775, "JUnit on H2 · Vitest on jsdom · 33 HTTP checks against PostgreSQL 16", color=MUTED, fontsize=9)
+    fig.text(0.02, 0.775, "JUnit on H2 · Vitest on jsdom · Playwright + axe on Chrome · 33 HTTP checks against PostgreSQL 16", color=MUTED, fontsize=9)
     fig.savefig(ASSETS / "quality.png", facecolor=BG)
     plt.close(fig)
 
@@ -199,6 +199,7 @@ def main() -> None:
         {"label": "API smoke · live PostgreSQL", "tests": 33},
         {"label": "Backend · JUnit", "tests": 52},
         {"label": "Frontend · Vitest", "tests": 13},
+        {"label": "Browser + axe · Chrome", "tests": 5},
     ]
     latency_chart(data)
     quality_chart(data, suites)
