@@ -6,12 +6,13 @@
 | --- | --- | --- |
 | Backend unit/integration | `cd backend && mvn test` | State machine, pricing, auth flow, payment signatures, order filters and tracking lookup |
 | API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 33 end-to-end checks against a running API |
+| Stock race (live stack) | `infrastructure/scripts/stock-race-check.py` | 50 concurrent checkouts against stock 10 |
 | Frontend unit | `cd frontend && npm test` | Formatting helpers and shared UI primitives |
 | Frontend build | `cd frontend && npm run build` | TypeScript strict typecheck + production bundle |
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
-`value` column is otherwise reserved by H2). The suite currently runs **43 tests**. The smoke script
+`value` column is otherwise reserved by H2). The suite currently runs **45 tests**. The smoke script
 exercises the real PostgreSQL schema, Flyway V1–V6, HTTP security and the seeded order flow. CI runs the
 backend and frontend gates plus the same smoke script against a disposable PostgreSQL 16 service.
 
@@ -29,6 +30,7 @@ backend and frontend gates plus the same smoke script against a disposable Postg
   savings and the paused-cheapest-pharmacy fallback.
 - `OrderVersionTest` — a stale order write cannot overwrite a newer lifecycle transition.
 - `DeliveryReassignTest` — a rejected rider is replaced without moving the order backwards.
+- `SuspendedAuthorityTest` — suspended riders and pharmacies cannot advance existing work.
 - `AuthFlowTest` — includes locked-account OTP rejection and one-time code consumption.
 
 Run a single class:
@@ -50,6 +52,21 @@ It checks catalogue browse and search (including the null-term path), pharmacy d
 auto-assignment, OTP handover, sandbox payment reconciliation and admin reporting. See the script header for
 environment overrides.
 
+## Stock race
+
+The repeatable 50-way gate seeds 50 verified customers and carts directly in PostgreSQL, then fires
+50 simultaneous COD checkouts against a real API and inventory row with stock 10:
+
+```bash
+python3 infrastructure/scripts/stock-race-check.py \
+  --base-url http://127.0.0.1:8080 \
+  --jwt-secret "$MEDIDROP_JWT_SECRET"
+```
+
+It requires PyJWT and `psql`, or `--psql-container` for a Docker-only host. A pass is exactly ten
+`200` responses, forty `409` responses, ten orders, stock 0, ten sold ledger units and no other status.
+The 0.1.5 run passed all of those conditions on fresh PostgreSQL 16.
+
 ## Frontend tests
 
 ```bash
@@ -68,7 +85,7 @@ through the API smoke script instead of mocking every endpoint.
 - Google Maps geocoding
 - OCR extraction
 - Cross-browser visual regression
-- Load and soak testing
+- Sustained load and soak testing (the 50-way burst is now covered; the 250K/long-run gate is not)
 
 These are listed in `docs/deployment.md` as go-live checks. Add contract tests against the provider sandbox
 once credentials exist.

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/hero-v014.png" alt="MediDrop 0.1.4 — care at local velocity" width="100%" />
+  <img src="docs/assets/hero-v015.png" alt="MediDrop 0.1.5 — care at local velocity" width="100%" />
 </p>
 
 <p align="center">
@@ -31,9 +31,9 @@
 
 ---
 
-> **STATUS / 0.1.4 — pre-pilot foundation.** This is a working, CI-verified system, not a
-> `1.0.0` claim and not a licensed pharmacy service. Live provider certification, the full
-> 250K/50-way/accessibility gate, legal review and operations sign-off remain open. The honest
+> **STATUS / 0.1.5 — pre-pilot foundation.** This is a working, CI-verified system, not a
+> `1.0.0` claim and not a licensed pharmacy service. Live provider certification, the 250K and
+> accessibility gates, legal review and operations sign-off remain open. The honest
 > boundary is documented in [Versions](docs/VERSIONS.md), [Progress](docs/PROGRESS.md) and
 > [Audit](docs/AUDIT.md).
 
@@ -41,19 +41,33 @@
 
 | Signal | Reading |
 | --- | --- |
-| **Release** | `v0.1.4` — model hardening |
-| **Continuity** | `v0.1.3` fallback reliability → `v0.1.4` concurrency and identity hardening |
-| **Backend** | **43 passed, 0 failed** |
+| **Release** | `v0.1.5` — provider state authority |
+| **Continuity** | `v0.1.4` identity/lifecycle guards → `v0.1.5` suspension enforcement and stock proof |
+| **Backend** | **45 passed, 0 failed** |
 | **Frontend** | **13 passed, 0 failed** |
 | **Live API** | **33 checks, 0 failed** against PostgreSQL 16 |
+| **Stock race** | **50 concurrent checkouts on stock 10 → 10 orders, 0 oversold** |
 | **Schema** | **33 tables · 36 indexes · Flyway V1–V6** |
 | **Dependencies** | `npm audit --omit=dev`: **0 vulnerabilities** |
 | **Surface** | React SPA → nginx → Spring Boot → PostgreSQL |
 | **Region** | Kolkata, West Bengal · `22.5726° N, 88.3639° E` |
 
-### The 0.1.4 hardening pass
+### The 0.1.5 state-authority pass
 
-This release is deliberately narrow. It closes failure paths that could produce a wrong outcome:
+This release closes provider-state and stock-race gaps left after 0.1.4:
+
+- **Suspended riders lose write authority immediately.** Accepting, advancing or completing an
+  existing delivery now requires an `APPROVED` partner, not merely a valid login.
+- **Suspended pharmacies lose prescription access.** Review, queue and file reads require an active
+  approved pharmacy; the profile may still cancel an existing order but cannot accept, prepare or
+  hand over medicine.
+- **Inventory writes require an active pharmacy.** Suspension cannot be bypassed through stock or
+  catalogue maintenance endpoints.
+- **The 50-way stock gate is measured, not promised.** A repeatable harness fired 50 simultaneous
+  checkouts against a real PostgreSQL 16 instance with stock 10: exactly 10 won, 40 received `409`,
+  stock reached 0 and 10 ledger units were sold.
+
+Earlier lifecycle guards remain in place:
 
 - **Locked accounts cannot mint sessions through OTP.** Verification now rejects locked, disabled
   and deletion-pending accounts before issuing tokens.
@@ -115,7 +129,7 @@ When no pharmacy is supplied, MediDrop walks price-ordered stock until it finds 
 
 ### Concurrency, explicitly
 
-The 0.1.4 model does not claim that every race is solved. It makes the important races **safe to
+The 0.1.5 model does not claim that every race is solved. It makes the important races **safe to
 retry**:
 
 ```text
@@ -127,8 +141,8 @@ order status → optimistic version → stale writer gets 409, not a silent over
 OTP / reset  → token row lock → one successful consumption
 ```
 
-The 50-way stock gate is still **not** complete. That is a performance proof, not a licence to claim
-the race is solved.
+The 50-way stock gate is now **measured**. That is a burst proof, not a licence to claim the race is
+solved at 250K products or under sustained load.
 
 ---
 
@@ -202,15 +216,16 @@ These are live screenshots of this repository against its own API and seeded Pos
 ## / 05 · VERIFICATION DECK
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 43 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 45 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
-| Backend | `cd backend && mvn test` | 43 tests | **43 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 45 tests | **45 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
+| Stock race | `infrastructure/scripts/stock-race-check.py` | 50 checkouts | **10 winners · 40 conflicts · 0 oversold** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
 | Dependency audit | `npm audit --omit=dev` | production tree | **0 vulnerabilities** |
 
@@ -219,8 +234,11 @@ These are live screenshots of this repository against its own API and seeded Pos
 - Locked accounts cannot verify an OTP or receive an access/refresh pair.
 - A successful OTP is consumed once; replay is rejected.
 - OTP and password-reset rows are loaded for update, not read-then-write.
+- A suspended rider cannot accept a delivery that was assigned before suspension.
+- A suspended pharmacy cannot accept an order or open the prescription queue.
 - A stale order write cannot overwrite a newer order version.
 - A rejected rider is replaced without moving the order backwards.
+- Fifty simultaneous checkouts against ten units produce exactly ten orders and no negative stock.
 - Substitute filtering excludes different packs, Rx mismatches, blocked products, out-of-stock
   candidates and unavailable pharmacies.
 - Cancellation and prescription rejection restore stock and coupon capacity exactly once.
@@ -231,8 +249,9 @@ These are live screenshots of this repository against its own API and seeded Pos
 
 This repository has a habit of documenting its own failures. Earlier passes caught a PostgreSQL
 null-term browse `500`, invoice and review-history IDORs, a direct refund bypass, an OTP account
-enumeration oracle, a paused-cheapest-pharmacy substitute dead end, and a rider rejection that left
-the order assigned forever. Each fixed defect has a regression or a live reproduction note.
+enumeration oracle, a paused-cheapest-pharmacy substitute dead end, a rider rejection that left
+the order assigned forever, and suspended providers that could still advance assigned work. Each
+fixed defect has a regression or a live reproduction note.
 
 ---
 
@@ -298,9 +317,11 @@ production data.
 | Access tokens | HS256 JWT, 15-minute lifetime, issuer checked |
 | Refresh tokens | Opaque 256-bit values, SHA-256 hashed at rest, row-locked rotation |
 | Authorisation | Endpoint roles **plus** ownership/tenancy checks |
-| Prescriptions | Private storage; owner, linked pharmacy or admin only |
+| Prescriptions | Private storage; owner, active linked pharmacy or admin only |
 | Payments | Server-side HMAC verification, idempotent webhooks, admin-only refunds |
 | Account state | Locked, disabled and deletion-pending accounts are blocked at login, refresh and OTP |
+| Provider suspension | Suspended riders and pharmacies cannot advance work or read prescription data |
+| Disclosure | Private reporting path in [SECURITY.md](SECURITY.md) |
 | Abuse prevention | Per-instance rate limit on auth and webhook paths; generic auth errors |
 | Audit | Append-only rows for approvals, suspensions, refunds, settings and order actions |
 | Transport | TLS, HSTS, nosniff, frame, referrer and permissions policies at nginx |
@@ -330,10 +351,10 @@ Nothing in the core flow depends on a credential that is absent. That is deliber
 
 | Version | Scope | State |
 | --- | --- | --- |
-| [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, concurrent token consumption, order version, rider reassignment, README command deck | **Latest foundation release** |
+| [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate, Dependabot and security policy | **Latest foundation release** |
+| [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, concurrent token consumption, order version, rider reassignment, README command deck | Previous release |
 | [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Paused-pharmacy substitute fallback | Previous release |
-| [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison | Pre-release |
-| `v0.2.0-m1` | Remaining M1 gate: 50-way stock, one-command run, design tokens | In progress |
+| `v0.2.0-m1` | Remaining M1 gate: one-command run and design tokens (50-way stock closed) | In progress |
 
 ### Why this is not `1.0.0`
 
@@ -342,11 +363,11 @@ The honest blockers are unchanged:
 - M2–M15, including a separate verified pharmacist role, pilot gates, node selection, ETA, Rx Vault,
   savings engine, cold chain, dispatch and ComplianceSignoff.
 - Live Razorpay, SMTP, SMS, Maps, S3 and OCR certification.
-- The 250K catalogue, 50-way stock, axe, Lighthouse and browser-driven journey gates.
+- The 250K catalogue, sustained load, axe, Lighthouse and browser-driven journey gates.
 - Legal, regulatory and operations sign-off for online pharmacy, Schedule H/H1/X handling,
   prescription retention, DPDP, GST and substitution.
-- GitHub branch protection, secret scanning/push protection and Dependabot are still disabled; the
-  repository is public.
+- GitHub `main` branch protection remains a deliberate open decision. Secret scanning, push
+  protection and Dependabot alerts/security updates are enabled; the repository is public.
 
 No release on this rail is a launch-readiness claim.
 
@@ -365,13 +386,14 @@ No release on this rail is a launch-readiness claim.
 | [Versions](docs/VERSIONS.md) | SemVer and checkpoint rules |
 | [Progress](docs/PROGRESS.md) | What is done, open and blocked |
 | [Audit](docs/AUDIT.md) | Deep-scan findings and evidence |
+| [Security policy](SECURITY.md) | Private vulnerability reporting and scope |
 
 ```text
 Repository map
 ├── backend/       Spring Boot API · Flyway V1–V6 · JUnit
 ├── frontend/      React 18 SPA · Vitest · nginx
 ├── docs/          architecture · API · audits · release notes
-├── infrastructure/ smoke suite · measurement scripts
+├── infrastructure/ smoke suite · stock race · measurement scripts
 └── .github/       CI: backend, frontend, PostgreSQL smoke
 ```
 

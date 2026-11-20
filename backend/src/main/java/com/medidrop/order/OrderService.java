@@ -305,6 +305,12 @@ public class OrderService {
                 .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
         Order order = orderRepository.findByIdAndPharmacyId(orderId, pharmacy.getId())
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
+        // A suspended pharmacy may close an existing order, but it may not accept, prepare or
+        // hand over medicines. This is intentionally checked here rather than only at login.
+        if (target != OrderStatus.CANCELLED
+                && (pharmacy.getStatus() != ApprovalStatus.APPROVED || !pharmacy.isActive())) {
+            throw ApiException.forbidden("This pharmacy is not active. Contact support.");
+        }
         if (order.isPrescriptionRequired() && target == OrderStatus.PHARMACY_ACCEPTED) {
             Prescription rx = order.getPrescriptionId() == null ? null
                     : prescriptionRepository.findById(order.getPrescriptionId()).orElse(null);

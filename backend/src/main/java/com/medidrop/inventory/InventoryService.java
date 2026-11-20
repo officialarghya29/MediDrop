@@ -249,8 +249,8 @@ public class InventoryService {
 
     private Pharmacy approvedPharmacy(Long userId) {
         Pharmacy pharmacy = pharmacy(userId);
-        if (pharmacy.getStatus() != com.medidrop.common.ApprovalStatus.APPROVED) {
-            throw ApiException.forbidden("Pharmacy must be verified before managing inventory");
+        if (pharmacy.getStatus() != com.medidrop.common.ApprovalStatus.APPROVED || !pharmacy.isActive()) {
+            throw ApiException.forbidden("Pharmacy must be active before managing inventory");
         }
         return pharmacy;
     }

@@ -145,7 +145,7 @@ public class DeliveryService {
 
     @Transactional
     public DeliveryDtos.AssignmentRow accept(Long userId, Long assignmentId) {
-        DeliveryPartner partner = requirePartner(userId);
+        DeliveryPartner partner = requireActivePartner(userId);
         DeliveryAssignment assignment = assignmentRepository.findByIdAndPartnerId(assignmentId, partner.getId())
                 .orElseThrow(() -> ApiException.notFound("Delivery not found"));
         if (assignment.getStatus() != AssignmentStatus.ASSIGNED) {
@@ -184,7 +184,7 @@ public class DeliveryService {
     @Transactional
     public DeliveryDtos.AssignmentRow updateStatus(Long userId, Long assignmentId,
                                                    DeliveryDtos.StatusRequest request) {
-        DeliveryPartner partner = requirePartner(userId);
+        DeliveryPartner partner = requireActivePartner(userId);
         DeliveryAssignment assignment = assignmentRepository.findByIdAndPartnerId(assignmentId, partner.getId())
                 .orElseThrow(() -> ApiException.notFound("Delivery not found"));
         Order order = orderRepository.findById(assignment.getOrderId())
@@ -219,7 +219,7 @@ public class DeliveryService {
     @Transactional
     public DeliveryDtos.AssignmentRow complete(Long userId, Long assignmentId,
                                                DeliveryDtos.CompleteRequest request) {
-        DeliveryPartner partner = requirePartner(userId);
+        DeliveryPartner partner = requireActivePartner(userId);
         DeliveryAssignment assignment = assignmentRepository.findByIdAndPartnerId(assignmentId, partner.getId())
                 .orElseThrow(() -> ApiException.notFound("Delivery not found"));
         Order order = orderRepository.findById(assignment.getOrderId())
@@ -423,6 +423,14 @@ public class DeliveryService {
     private DeliveryPartner requirePartner(Long userId) {
         return partnerRepository.findByUserId(userId)
                 .orElseThrow(() -> ApiException.notFound("Delivery partner profile not found"));
+    }
+
+    private DeliveryPartner requireActivePartner(Long userId) {
+        DeliveryPartner partner = requirePartner(userId);
+        if (partner.getStatus() != ApprovalStatus.APPROVED) {
+            throw ApiException.forbidden("Your delivery account is not active. Contact support.");
+        }
+        return partner;
     }
 
     private List<DeliveryDtos.AssignmentRow> activeRows(Long partnerId) {

@@ -89,11 +89,13 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline: **43** backend tests, **13** frontend tests, **33** smoke checks.
+Expected current baseline: **45** backend tests, **13** frontend tests, **33** smoke checks and a
+passing 50-way stock race.
 Flyway now runs **V1–V6**; V6 adds the order optimistic-version column.
 
 The current gate is **not** the v5 Part 8 gate. There is no Testcontainers/PostGIS, Playwright,
-axe, Lighthouse, coverage threshold, 50-way checkout harness or 250K-product performance run.
+axe, Lighthouse, coverage threshold or 250K-product performance run. The 50-way stock harness exists,
+but it does not replace those gates.
 Do not claim Part 8 from a green CI run. See `docs/PERF.md` and `docs/A11Y.md`.
 
 `DEMO_MODE`, the v5 feature flags and `ComplianceSignoff` are not implemented. Do not set
@@ -116,8 +118,8 @@ Both were verified in M0.
 ## Version checkpoints
 
 Read `docs/VERSIONS.md`. A milestone tag is created only after its gate is green and the commit is
-pushed. Do not tag `v0.2.0-m1` until the remaining M1 items (50-way stock gate, one-command entry
-point, design tokens) close.
+pushed. Do not tag `v0.2.0-m1` until the remaining M1 items (one-command entry point and design
+tokens) close; the 50-way stock gate is already measured.
 
 ## Rebuilding the API safely
 
@@ -149,9 +151,9 @@ java -jar target/medidrop-api-*.jar --server.port=8081
    carry the same version.
 2. Run `mvn -B -ntp verify` and `npm test && npm run build`; wait for CI on the exact commit.
 3. Create an annotated tag and push it:
-   `git tag -a v0.1.4 -m "MediDrop 0.1.4" && git push origin v0.1.4`.
+   `git tag -a v0.1.5 -m "MediDrop 0.1.5" && git push origin v0.1.5`.
 4. Publish a **normal latest release** with attached artifacts:
-   `gh release create v0.1.4 --verify-tag --latest --notes-file docs/releases/v0.1.4.md`.
+   `gh release create v0.1.5 --verify-tag --latest --notes-file docs/releases/v0.1.5.md`.
    Use `--prerelease` only when the build is deliberately not the latest runnable foundation.
 5. Never label a build `1.0.0` or “launch-ready” until the Part 8/original-36 gate, provider
    certification and legal/ops sign-off are complete.

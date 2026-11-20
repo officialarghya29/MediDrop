@@ -31,11 +31,12 @@ claim `1.0.0` yet.
 | [`v0.1.1`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1) | M1 safety slice and deep-scan hardening; pre-pilot | **Released pre-release** |
 | [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison with safety filters | **Released pre-release** |
 | [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Substitute fallback reliability | Published foundation release |
-| [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, versioned order transitions, rider reassignment; current foundation release | **Published latest release** |
-| `v0.2.0-m1` | Remaining M1 gate: 50-way stock, one-command run, design tokens | In progress |
+| [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate | **Current foundation release** |
+| [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, versioned order transitions, rider reassignment | Previous release |
+| `v0.2.0-m1` | Remaining M1 gate: one-command run, design tokens (50-way stock closed) | In progress |
 | `v0.3.0-m2` | Five roles, pilot gates, DEMO_MODE and ComplianceSignoff | Not started |
 
-`v0.1.1` and `v0.1.2` remain historical pre-releases. `v0.1.4` is the current downloadable
+`v0.1.1` and `v0.1.2` remain historical pre-releases. `v0.1.5` is the current downloadable
 foundation build and the latest normal release; this is still not a pilot-readiness claim.
 
 ## Why this helps

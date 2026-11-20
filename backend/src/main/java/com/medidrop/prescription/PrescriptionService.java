@@ -141,7 +141,11 @@ public class PrescriptionService {
             case CUSTOMER -> prescription.getCustomerId().equals(actorId);
             case PHARMACY -> {
                 Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(actorId).orElse(null);
-                yield pharmacy != null && pharmacy.getId().equals(prescription.getPharmacyId());
+                // Suspension must remove PHI access immediately, not just block new reviews.
+                yield pharmacy != null
+                        && pharmacy.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED
+                        && pharmacy.isActive()
+                        && pharmacy.getId().equals(prescription.getPharmacyId());
             }
             case ADMIN -> true;
             default -> false;
@@ -160,8 +164,7 @@ public class PrescriptionService {
 
     @Transactional(readOnly = true)
     public PageResponse<PrescriptionDtos.PendingReview> pharmacyQueue(Long userId, String status, int page, int size) {
-        Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(userId)
-                .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
+        Pharmacy pharmacy = activePharmacy(userId);
         PrescriptionStatus filter = parseStatus(status);
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50),
                 Sort.by(Sort.Direction.ASC, "createdAt"));
@@ -185,8 +188,8 @@ public class PrescriptionService {
                                                         PrescriptionDtos.ReviewDecisionRequest request) {
         Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(pharmacistUserId)
                 .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
-        if (pharmacy.getStatus() != com.medidrop.common.ApprovalStatus.APPROVED) {
-            throw ApiException.forbidden("Pharmacy must be verified before reviewing prescriptions");
+        if (pharmacy.getStatus() != com.medidrop.common.ApprovalStatus.APPROVED || !pharmacy.isActive()) {
+            throw ApiException.forbidden("Pharmacy must be active before reviewing prescriptions");
         }
         if (!pharmacy.isPharmacistVerified()
                 || pharmacy.getPharmacistRegistrationNumber() == null
@@ -246,14 +249,22 @@ public class PrescriptionService {
 
     @Transactional(readOnly = true)
     public List<PrescriptionDtos.ReviewHistory> reviews(Long userId, Long prescriptionId) {
-        Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(userId)
-                .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
+        Pharmacy pharmacy = activePharmacy(userId);
         prescriptionRepository.findByIdAndPharmacyId(prescriptionId, pharmacy.getId())
                 .orElseThrow(() -> ApiException.notFound("Prescription not found"));
         return reviewRepository.findByPrescriptionIdOrderByReviewedAtDesc(prescriptionId).stream()
                 .map(r -> new PrescriptionDtos.ReviewHistory(r.getId(), r.getDecision(), r.getComments(),
                         r.getReviewedAt()))
                 .toList();
+    }
+
+    private Pharmacy activePharmacy(Long userId) {
+        Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(userId)
+                .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
+        if (pharmacy.getStatus() != com.medidrop.common.ApprovalStatus.APPROVED || !pharmacy.isActive()) {
+            throw ApiException.forbidden("This pharmacy is not active. Contact support.");
+        }
+        return pharmacy;
     }
 
     private PrescriptionStatus parseStatus(String status) {

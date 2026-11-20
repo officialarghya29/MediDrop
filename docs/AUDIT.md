@@ -68,7 +68,7 @@ separates “fixed” from “still open”.
 | Customer handover OTP | **FIXED** | Current code is stored on the order only until verification and returned by customer detail; rider UI now says 4 digits. Browser-driven handover is still unverified. |
 | Pilot safety gate (`DEMO_MODE`, flags, signoff) | **MISSING** | Deliberately M2. Do not run a real RX/substitution pilot yet. |
 | Unfiltered audit logs `500` | **FIXED** | Derived queries replace nullable JPQL; live PostgreSQL `200`. |
-| Concurrency loser `500` | **PARTIAL** | Projection-before-lock and `409` mapping implemented; the 50-way stock-10 gate is still open. |
+| Concurrency loser `500` | **FIXED** | Projection-before-lock, `409` mapping and the measured 50-way stock gate close the known race. |
 | Price/MRP and stock DB constraints | **FIXED** | `V5__m1_safety_invariants.sql`; fresh PostgreSQL applied all five migrations. |
 
 ## 2B. Deep-scan remediation (2026-11-20)
@@ -92,6 +92,20 @@ and fixed with regressions; they do not make the repository launch-ready.
 | Per-account login lockout / distributed abuse controls. | **OPEN** | The limiter is still per instance and per IP+path; brute-force resistance is not certified. |
 | Separate `PHARMACIST` login role, secure admin bootstrap, `DEMO_MODE`, flags, `ComplianceSignoff`. | **OPEN (M2)** | Deliberately not started before the M2 gate. |
 
+### 0.1.5 provider-state authority (2026-11-20)
+
+This pass followed the 0.1.4 identity work and tested whether a suspended provider could keep acting
+on work assigned before suspension.
+
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| A suspended rider could accept, advance or complete an existing assignment. | **FIXED** | `DeliveryService` now requires `ApprovalStatus.APPROVED` in `accept`, `updateStatus` and `complete`; `SuspendedAuthorityTest.suspendedRiderCannotAcceptAnAssignedDelivery`. |
+| A suspended pharmacy could accept a forward order. | **FIXED** | `OrderService.pharmacyTransition` requires an approved, active pharmacy for every target except cancellation; `SuspendedAuthorityTest.suspendedPharmacyCannotAcceptAnExistingOrder`. |
+| A suspended pharmacy could review prescriptions, list the review queue or read prescription files. | **FIXED** | Review, queue, review history and file reads now require an approved, active pharmacy. |
+| Inventory and catalogue writes only checked approval status, not active state. | **FIXED** | `InventoryService.approvedPharmacy` now requires approval and `active=true`. |
+| The 50-way stock-10 gate had no reproducible evidence. | **PASS** | `infrastructure/scripts/stock-race-check.py` fired 50 simultaneous checkouts: 10 × `200`, 40 × `409`, 10 orders, stock 0, 10 SALE units, 0 errors on PostgreSQL 16. |
+| Branch protection, secret scanning and Dependabot controls. | **PARTIAL** | Dependabot configuration and `SECURITY.md` added. Secret scanning, push protection and Dependabot alerts/security updates enabled. `main` branch protection remains a deliberate open settings decision. |
+
 ### 0.1.4 model hardening (2026-11-20)
 
 The second stabilization pass targeted identity and lifecycle races rather than adding surface area.
@@ -103,7 +117,7 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | Concurrent order transitions had no stale-write guard. | **FIXED** | `Order` carries `@Version`, `V6__order_version.sql` adds the column, and `OrderVersionTest` proves a stale write fails. |
 | A rejected rider left the order assigned with no replacement path. | **FIXED** | `DeliveryService.autoAssign` now distinguishes initial assignment from reassignment and preserves `DELIVERY_ASSIGNED`; `DeliveryReassignTest`. |
 | Console sidebar displayed a stale `v1.0` label. | **FIXED** | `Shell.tsx` reports `v0.1.4`. |
-| 50-way stock race, live providers, full browser/a11y/performance gates. | **OPEN** | Unchanged. Do not infer them from unit tests or the 33-check smoke suite. |
+| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS** in 0.1.5. Live providers and full browser/a11y/performance gates remain open; do not infer them from unit or smoke tests. |
 
 ### GitHub controls (reviewed 2026-11-20)
 
@@ -111,15 +125,17 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | --- | --- |
 | Repository visibility | **Public** |
 | Open issues / pull requests | **0 / 0** |
-| Branch protection on `main` | **Disabled** (`404 Branch not protected`) |
-| Secret scanning / push protection | **Disabled** |
-| Dependabot alerts / security updates | **Disabled** (`403 alerts are disabled`) |
+| Branch protection on `main` | **Disabled** (`404 Branch not protected`) — open decision |
+| Secret scanning / push protection | **Enabled** (2026-11-20) |
+| Non-provider secret patterns / validity checks | **Disabled** |
+| Dependabot alerts / security updates | **Enabled** (2026-11-20) |
+| Dependabot version updates | **Configured** in `.github/dependabot.yml` |
 | Latest CI before the deep-scan commit | Run `44712057566` — **success** |
 
 The public visibility exposes the source and this audit, including the historical P0 descriptions. No
-token or `.env` file is tracked, but a public security audit is still a disclosure decision. Making
-the repository private, enabling secret scanning/push protection, enabling Dependabot and protecting
-`main` are GitHub settings changes; they are not silently performed by code commits.
+token or `.env` file is tracked, but a public security audit is still a disclosure decision. Branch
+protection changes how direct pushes and merges work, so it remains open rather than being silently
+enabled by a code commit.
 
 ## 3. Environment, build and dependency evidence
 
@@ -250,7 +266,7 @@ repository has no test or environment that can prove the claim; it is not a pass
 | --- | --- | --- | --- |
 | P8-1 | Negative authorization tests for every cross-account access; rider never sees Rx content; only verified pharmacists approve Rx/substitution | **PARTIAL** | 28 backend tests and live RBAC checks exist. Live audit found two cross-tenant reads (invoice, review history) and no separate pharmacist role. Rider Rx visibility was not exercised. |
 | P8-2 | Table-driven order state machine; every illegal transition rejected; history written | **BROKEN** | `OrderStateMachine` is an `EnumMap`, but explicitly allows `DELIVERED → REFUNDED`, `CANCELLED → REFUNDED` and `FAILED → REFUNDED`. Live admin PATCH produced `200 REFUNDED` with no refund row. History is written. |
-| P8-3 | 50 parallel checkouts on stock 10 = exactly 10 successes | **MISSING** | Only a two-customer, one-unit race was run: one `200`, one `500`. No 50-way harness or atomic-decrement test. |
+| P8-3 | 50 parallel checkouts on stock 10 = exactly 10 successes | **PASS (0.1.5)** | `stock-race-check.py`: 10 × `200`, 40 × `409`, 10 orders, stock 0, 10 SALE units, 0 errors on PostgreSQL 16. |
 | P8-4 | Payments: tampered signature rejected; duplicate webhook once; client success never trusted; amount equals server total | **PARTIAL** | `PaymentSignatureTest`; live invalid webhook → `401`; totals are server-calculated. Duplicate webhook replay, provider refunds and live Razorpay were not certified. |
 | P8-5 | Rx/UNKNOWN items can never reach `DELIVERY_ASSIGNED` without pharmacist approval | **MISSING** | `Medicine.prescriptionRequired` is a boolean and defaults false; no `rx_status=UNKNOWN` model, schedule enforcement or approval gate query. The existing review gate is order-level, not item-level. |
 | P8-6 | Security: gitleaks history clean; no high/critical dependencies; login/OTP/search/upload limits; upload sniffing; signed URLs ≤5 min; PII-redacted logs; no health details in push/SMS | **PARTIAL** | Gitleaks 11 commits clean; npm 0; Maven OSV 2 Spring WebMVC advisories; no high/critical gate is configured. Rate limit is per IP+path, not per account/device. Upload magic-byte check passed. Storage is local private, not signed URLs. Log redaction and notification redaction are not proven. CI does not run a dependency/audit gate. |
@@ -473,8 +489,8 @@ at com.medidrop.order.OrderService.place(OrderService.java:153)
 
 1. `admin/audit-logs` unfiltered query returns `500`; fix the nullable `:action` JPQL binding and add
    a regression test.
-2. Concurrency loser returns `500`; return `409`, add the 50-way stock-10 gate and use an atomic
-   conditional decrement.
+2. Concurrency loser returns `500` — **fixed**; the 50-way stock-10 gate and conditional decrement
+   path are now covered in 0.1.5.
 3. Prescription review-history IDOR — **fixed** by pharmacy scoping and a regression test.
 4. No DB `CHECK (price <= mrp)` or non-negative stock constraints.
 5. Batch/expiry is bookkeeping only; no batch allocation, expiry exclusion or FEFO.
@@ -538,7 +554,7 @@ requirements from M0 are complete; no milestone below has been started.
 - Legal/compliance sign-off.
 - Addendum v5 Node Selection, ETA, Rx Vault, Savings Engine, cold chain, rider dispatch, step events,
   DEMO_MODE, feature flags and ComplianceSignoff.
-- The 50-way inventory gate, 250K-product performance test, axe/Lighthouse run, 390/1440 screenshots,
+- The 250K-product performance test, sustained load, axe/Lighthouse run, 390/1440 screenshots,
   Testcontainers/Playwright journeys and coverage threshold.
 - Live node capacity, cold-chain capability, rider batching and ETA backtest data.
 

@@ -3,6 +3,37 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
+## [0.1.5] — 2026-11-20
+
+**Foundation hardening. Pre-pilot; not `1.0.0`.**
+
+### Fixed
+
+- Suspended delivery partners can no longer accept, advance or complete an existing assignment.
+  Every delivery write now requires an `APPROVED` partner, not just a valid session.
+- Suspended pharmacies can no longer accept, prepare or hand over medicine. They may still close an
+  existing order through cancellation, but cannot resume fulfilment.
+- Prescription review, queue access and file reads now require an approved, active pharmacy. A
+  suspended pharmacy immediately loses access to prescription data.
+- Inventory and catalogue maintenance require an active pharmacy, closing the suspension bypass.
+
+### Verification
+
+- Backend: **45 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**.
+- Production frontend build: **passed**.
+- Measured 50-way stock race on fresh PostgreSQL 16: **10 winners, 40 conflicts, 10 orders,
+  stock 0, 10 units sold, 0 server errors**.
+- Fresh PostgreSQL 16 migration: **V1–V6**.
+- Live API smoke: **33 passed, 0 failed**.
+- `npm audit --omit=dev`: **0 vulnerabilities**.
+
+### Repository
+
+- Added weekly Dependabot updates for Maven, npm and GitHub Actions.
+- Added `SECURITY.md` with a private disclosure route and explicit scope.
+- Added `infrastructure/scripts/stock-race-check.py` so the 50-way gate is repeatable.
+
 ## [0.1.4] — 2026-11-20
 
 **Foundation hardening. Pre-pilot; not `1.0.0`.**
@@ -125,8 +156,8 @@ after its gate passes.
 
 ## [0.2.0-m1] — unreleased
 
-The M1 code is present and tested in `0.1.1`; the milestone tag remains withheld until the 50-way
-stock gate, one-command developer entry point and design-token pass close.
+The M1 code is present and tested in `0.1.5`; the milestone tag remains withheld until the
+one-command developer entry point and design-token pass close. The 50-way stock gate is measured.
 
 ## [0.1.0-m0] — 2026-11-20
 

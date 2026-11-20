@@ -4,7 +4,7 @@ Last updated: 2026-11-20
 
 Current milestone: **M1 — foundation and current-flow safety**
 
-Status: **M1 safety slice complete; remaining M1 polish and the 50-way gate are open.**
+Status: **M1 safety slice complete; the 50-way stock gate is closed. One-command and design-token polish remain open.**
 
 ## Done
 
@@ -12,7 +12,7 @@ Status: **M1 safety slice complete; remaining M1 polish and the 50-way gate are 
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
 - M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan, substitute feature,
-  fallback fix and 0.1.4 hardening: **43 passed**.
+  fallback fix, 0.1.4 hardening and 0.1.5 provider-state checks: **45 passed**.
 - Ran frontend tests: **13 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
@@ -73,13 +73,13 @@ Deep scan (2026-11-20):
 
 Still open in M1:
 
-- 50-way stock-10 concurrency test and measured result.
 - One-command developer entry point and shared design-token pass.
 - Live gateway refund and browser-driven OTP handover.
 - Admin UI for pharmacist verification and medicine sale blocks (API exists; UI is M2/M12).
 - Per-account login lockout and distributed abuse controls are not implemented.
-- GitHub `main` protection, secret scanning/push protection and Dependabot are disabled; the
-  repository is public. These are settings decisions, not code changes.
+- GitHub `main` protection remains disabled; it changes the direct-push workflow and needs an
+  explicit decision. Secret scanning/push protection and Dependabot alerts/security updates are now
+  enabled, and Dependabot version updates are configured.
 
 ## Substitute comparison (0.1.2)
 
@@ -115,13 +115,32 @@ Still open in M1:
 - The console version label follows `0.1.4`; README, charts and release notes were rebuilt around the
   verified telemetry.
 
+## Provider state authority (0.1.5)
+
+- Delivery writes now require an `APPROVED` rider. A suspension that lands after assignment cannot
+  be bypassed by accepting, moving or completing the job.
+- Pharmacy transitions require an approved, active pharmacy. Cancellation remains available to close
+  an existing order, but acceptance, preparation and handover do not.
+- Prescription review, queue reads and file access require an active approved pharmacy, so suspension
+  removes PHI access immediately.
+- Inventory and catalogue maintenance require an active pharmacy, closing the stock-side bypass.
+- `SuspendedAuthorityTest` covers the suspended-rider and suspended-pharmacy paths.
+
+## 50-way stock gate (0.1.5)
+
+- Added `infrastructure/scripts/stock-race-check.py`, a black-box harness that seeds 50 customers and
+  carts, then fires 50 simultaneous checkouts at one inventory row with stock 10.
+- Live PostgreSQL 16 result: **10 × 200, 40 × 409, 10 orders, stock 0, 10 SALE ledger units, 0 errors**.
+- This closes the previously open 50-way M1 evidence gap. The 250K catalogue, sustained load and
+  browser/accessibility gates remain open.
+
 ## Release checkpoint
 
-`v0.1.3` was the fallback-reliability foundation release. `v0.1.4` is the current **foundation
-release**: it adds OTP identity guards, concurrent token consumption locking, order versioning and
-rider reassignment. It passes 43 backend tests, 13 frontend tests and the production build, and is
-backed by green CI. It is not the M1 milestone tag and is not launch-ready; the remaining M1 gate and
-M2–M15 remain open.
+`v0.1.4` added OTP identity guards, concurrent token locking, order versioning and rider
+reassignment. `v0.1.5` is the current **foundation release**: it enforces suspended-provider state,
+protects prescription data after suspension and records the measured 50-way stock result. It passes
+45 backend tests, 13 frontend tests and the production build. It is not the M1 milestone tag and is
+not launch-ready; one-command/design-token polish and M2–M15 remain open.
 
 ## In progress
 
@@ -139,14 +158,14 @@ The M1 safety slice is implemented and tested; remaining M1 items above are inte
    professional. No launch claim is allowed.
 4. **Original Section 10.** The exact order-state specification was not supplied; the audit uses
    `docs/order-lifecycle.md` and the implemented `OrderStateMachine`.
-5. **250K catalogue and performance environment.** No licensed dataset, PostGIS instance, 50-way
-   checkout harness or Lighthouse/axe run exists. The v5 performance and accessibility targets are
-   therefore NOT VERIFIED, not passed.
+5. **250K catalogue and performance environment.** No licensed dataset, sustained-load/PostGIS
+   environment or Lighthouse/axe run exists. The 50-way stock harness now exists, but the v5
+   performance and accessibility targets are still NOT VERIFIED, not passed.
 
 ## Next
 
-1. **M1 Foundation:** close the 50-way stock gate, one-command run and design-token pass, then tag
-   `v0.2.0-m1` after CI. The P0/P1 safety slice is already implemented and tested.
+1. **M1 Foundation:** close the one-command run and design-token pass, then tag `v0.2.0-m1` after
+   CI. The P0/P1 safety slice and 50-way stock gate are already implemented and tested.
 2. **M2 Auth + RBAC:** five roles including verified Pharmacist, JWT/refresh, OTP interface, audit
    log, secure admin bootstrap, DEMO_MODE, feature flags and ComplianceSignoff.
 3. Then follow the v5 order: M3 catalogue/data/search, M4 nodes/inventory, M5 orders, M6 Rx Vault,
@@ -155,8 +174,9 @@ The M1 safety slice is implemented and tested; remaining M1 items above are inte
 
 ## Current tree state
 
-M1 safety slice, 0.1.4 identity/lifecycle hardening and documentation. Application changes are the
-current-flow fixes listed above, order versioning in Flyway V6, and the OTP/rider hardening. The v5
+M1 safety slice, 0.1.5 provider-state hardening and documentation. Application changes are the
+current-flow fixes listed above, order versioning in Flyway V6, OTP/rider hardening and suspension
+checks. The v5
 engines, design system, i18n, PWA, DEMO_MODE, feature flags and ComplianceSignoff remain
 unimplemented. `.env.example` is unchanged because those flags are still not read or enforced.
 
