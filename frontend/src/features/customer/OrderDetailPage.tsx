@@ -5,7 +5,7 @@ import { Client } from '@stomp/stompjs';
 import { ArrowLeft, Download, MapPin, Phone, RefreshCcw, ShieldCheck, Star, Truck, XCircle } from 'lucide-react';
 import MapView from '../../components/MapView';
 import { Alert, Badge, EmptyState, FieldError, Modal, PageLoader, Spinner, useToast } from '../../components/ui';
-import { apiGet, apiPost, errorMessage } from '../../lib/api';
+import { apiGet, apiPost, errorMessage, tokenStore } from '../../lib/api';
 import { dateTime, inr, isActiveOrder, statusLabel, statusTone } from '../../lib/format';
 import type { Invoice, OrderDetail, OrderStatus } from '../../types';
 
@@ -56,6 +56,10 @@ export default function OrderDetailPage() {
     const client = new Client({
       brokerURL: WS_URL,
       reconnectDelay: 6000,
+      beforeConnect: () => {
+        const token = tokenStore.access();
+        if (token) client.connectHeaders = { Authorization: `Bearer ${token}` };
+      },
       onConnect: () => {
         client.subscribe(`/topic/tracking/${data.trackingKey}`, () => {
           queryClient.invalidateQueries({ queryKey: ['order', id] });

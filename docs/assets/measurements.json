@@ -1,43 +1,43 @@
 {
-  "measured_at": "2026-11-20T06:56:50+00:00",
-  "environment": "Local single node \u00b7 Spring Boot 3.3.5 \u00b7 PostgreSQL 16 container \u00b7 warm cache \u00b7 keep-alive",
+  "measured_at": "2026-11-20T07:50:40+00:00",
+  "environment": "Local single node \u00b7 Spring Boot 3.5.16 \u00b7 PostgreSQL 16 container \u00b7 warm cache \u00b7 keep-alive",
   "method": "150 sequential requests per endpoint after 20 warm-up requests",
   "endpoints": [
     {
       "label": "Catalogue search",
       "path": "/medicines/search",
       "requests": 150,
-      "min_ms": 6.2,
-      "mean_ms": 8.82,
-      "p50_ms": 8.43,
-      "p95_ms": 11.77,
-      "p99_ms": 13.19,
-      "max_ms": 14.56,
-      "throughput_rps": 113.4
+      "min_ms": 8.94,
+      "mean_ms": 13.19,
+      "p50_ms": 12.96,
+      "p95_ms": 17.39,
+      "p99_ms": 18.8,
+      "max_ms": 22.21,
+      "throughput_rps": 75.8
     },
     {
       "label": "Catalogue browse",
       "path": "/medicines",
       "requests": 150,
-      "min_ms": 4.73,
-      "mean_ms": 7.19,
-      "p50_ms": 7.16,
-      "p95_ms": 9.78,
-      "p99_ms": 11.08,
-      "max_ms": 12.11,
-      "throughput_rps": 139.0
+      "min_ms": 6.25,
+      "mean_ms": 8.57,
+      "p50_ms": 8.47,
+      "p95_ms": 10.48,
+      "p99_ms": 12.39,
+      "max_ms": 15.6,
+      "throughput_rps": 116.7
     },
     {
       "label": "Nearby pharmacies",
       "path": "/pharmacies/nearby",
       "requests": 150,
-      "min_ms": 1.82,
-      "mean_ms": 3.36,
-      "p50_ms": 3.27,
-      "p95_ms": 4.88,
-      "p99_ms": 5.87,
-      "max_ms": 7.32,
-      "throughput_rps": 297.9
+      "min_ms": 2.99,
+      "mean_ms": 4.58,
+      "p50_ms": 4.47,
+      "p95_ms": 5.82,
+      "p99_ms": 7.59,
+      "max_ms": 7.59,
+      "throughput_rps": 218.3
     }
   ]
 }

@@ -11,7 +11,7 @@
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
-`value` column is otherwise reserved by H2). The suite currently runs 24 tests. The smoke script exercises
+`value` column is otherwise reserved by H2). The suite currently runs 28 tests. The smoke script exercises
 the real PostgreSQL schema, Flyway migrations and HTTP security. CI runs the backend and frontend gates
 plus the same smoke script against a disposable PostgreSQL 16 service.
 

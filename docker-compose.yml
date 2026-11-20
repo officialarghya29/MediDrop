@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-medidrop}
       POSTGRES_USER: ${POSTGRES_USER:-medidrop}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medidrop}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD to a strong database password}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 10
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
   api:
     build:
@@ -30,10 +30,11 @@ services:
       PORT: 8080
       MEDIDROP_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-medidrop}
       MEDIDROP_DB_USERNAME: ${POSTGRES_USER:-medidrop}
-      MEDIDROP_DB_PASSWORD: ${POSTGRES_PASSWORD:-medidrop}
+      MEDIDROP_DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD to a strong database password}
       MEDIDROP_DB_POOL_SIZE: ${MEDIDROP_DB_POOL_SIZE:-20}
       MEDIDROP_JWT_SECRET: ${MEDIDROP_JWT_SECRET:?Set MEDIDROP_JWT_SECRET to a random string of at least 32 characters}
       MEDIDROP_CORS_ORIGINS: ${MEDIDROP_CORS_ORIGINS:-http://localhost:3000}
+      MEDIDROP_OPENAPI_ENABLED: ${MEDIDROP_OPENAPI_ENABLED:-false}
       MEDIDROP_PUBLIC_URL: ${MEDIDROP_PUBLIC_URL:-http://localhost:8080}
       MEDIDROP_FRONTEND_URL: ${MEDIDROP_FRONTEND_URL:-http://localhost:3000}
       MEDIDROP_STORAGE_PROVIDER: ${MEDIDROP_STORAGE_PROVIDER:-local}

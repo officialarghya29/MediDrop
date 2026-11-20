@@ -99,7 +99,7 @@ def measure() -> dict:
         )
     return {
         "measured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "environment": "Local single node · Spring Boot 3.3.5 · PostgreSQL 16 container · warm cache · keep-alive",
+        "environment": "Local single node · Spring Boot 3.5.16 · PostgreSQL 16 container · warm cache · keep-alive",
         "method": f"{N} sequential requests per endpoint after {WARMUP} warm-up requests",
         "endpoints": results,
     }
@@ -197,7 +197,7 @@ def main() -> None:
 
     suites = [
         {"label": "API smoke · live PostgreSQL", "tests": 33},
-        {"label": "Backend · JUnit", "tests": 24},
+        {"label": "Backend · JUnit", "tests": 28},
         {"label": "Frontend · Vitest", "tests": 13},
     ]
     latency_chart(data)

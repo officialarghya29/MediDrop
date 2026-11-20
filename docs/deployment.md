@@ -25,8 +25,8 @@ as demo and must not be used as production data.
    before each release.
 3. **Web** — `npm ci && npm run build`, serve `dist/` with nginx using `frontend/nginx.conf`, adjusting the
    `api:8080` upstream.
-4. **TLS** — terminate HTTPS at your load balancer or nginx, redirect 80 → 443, and enable HSTS once the
-   certificate is stable.
+4. **TLS** — terminate HTTPS at your load balancer or nginx and redirect 80 → 443. The shipped nginx
+   configuration sends HSTS once the site is served over HTTPS.
 
 ## Environment variables
 
@@ -37,6 +37,7 @@ as demo and must not be used as production data.
 | `MEDIDROP_DB_USERNAME` / `MEDIDROP_DB_PASSWORD` | yes | Database credentials |
 | `MEDIDROP_DB_POOL_SIZE` | no | Hikari pool size (default 20) |
 | `MEDIDROP_CORS_ORIGINS` | yes for split origin | Comma-separated browser origins |
+| `MEDIDROP_OPENAPI_ENABLED` | no | Expose Swagger/OpenAPI under the production profile (default false) |
 | `MEDIDROP_PUBLIC_URL` | yes | Public API URL used in links |
 | `MEDIDROP_FRONTEND_URL` | yes | Public web URL used in emails |
 | `MEDIDROP_STORAGE_PATH` | yes with local storage | Upload directory (must be a persistent volume) |
@@ -91,7 +92,7 @@ The console providers print messages to the API log in development. Before go-li
 
 ## Verified vs pending
 
-Verified locally: migrations on PostgreSQL 16, API boot with seed data, 24 backend tests, 33-check API
+Verified locally: migrations on PostgreSQL 16, API boot with seed data, 28 backend tests, 33-check API
 smoke test, frontend typecheck/build, 13 frontend tests.
 
 Not verified (no credentials in this environment): live Razorpay payments and refunds, Google Maps

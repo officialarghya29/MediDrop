@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml"><img src="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Java-21-0b8b68" alt="Java 21" />
-  <img src="https://img.shields.io/badge/Spring_Boot-3.3.5-0b8b68" alt="Spring Boot 3.3.5" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.5.16-0b8b68" alt="Spring Boot 3.5.16" />
   <img src="https://img.shields.io/badge/React-18-17313d" alt="React 18" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-17313d" alt="PostgreSQL 16" />
   <img src="https://img.shields.io/badge/Region-Kolkata,_India-34d3a0" alt="Kolkata, India" />
@@ -141,16 +141,16 @@ Full rules: [docs/order-lifecycle.md](docs/order-lifecycle.md).
   <img src="docs/assets/latency.png" alt="Measured API response time" width="100%" />
 </p>
 
-Measured on the running stack: Spring Boot 3.3.5 on Java 21, PostgreSQL 16 in Docker, warm cache, HTTP
+Measured on the running stack: Spring Boot 3.5.16 on Java 21, PostgreSQL 16 in Docker, warm cache, HTTP
 keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. Raw data is committed in
 [`docs/assets/measurements.json`](docs/assets/measurements.json) and reproducible with
 `infrastructure/scripts/generate-report-assets.py`.
 
 | Endpoint | p50 | p95 | p99 | Sequential throughput |
 | --- | ---: | ---: | ---: | ---: |
-| `GET /medicines/search` | 8.4 ms | 11.8 ms | 13.2 ms | ~113 req/s |
-| `GET /medicines` | 7.2 ms | 9.8 ms | 11.1 ms | ~139 req/s |
-| `GET /pharmacies/nearby` | 3.3 ms | 4.9 ms | 5.9 ms | ~298 req/s |
+| `GET /medicines/search` | 13.0 ms | 17.4 ms | 18.8 ms | ~76 req/s |
+| `GET /medicines` | 8.5 ms | 10.5 ms | 12.4 ms | ~117 req/s |
+| `GET /pharmacies/nearby` | 4.5 ms | 5.8 ms | 7.6 ms | ~218 req/s |
 
 > **Read this honestly:** these are local single-node numbers on a development machine with a demo dataset.
 > They prove the request path is lean, not that production will hit these figures. Capacity must be validated
@@ -159,13 +159,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 24 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 28 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 24 tests | **24 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 28 tests | **28 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -237,7 +237,9 @@ about what is simulated, and the UI says so where it matters.
 | Payments | Server-side signature verification, idempotent webhooks, refunds restricted to admins |
 | Abuse prevention | Rate limits on login, OTP and password reset; generic error messages |
 | Audit | Append-only rows for approvals, suspensions, refunds and status overrides |
-| Transport | TLS termination, nosniff, frame, referrer and permissions policies at nginx |
+| Transport | TLS termination, HSTS, nosniff, frame, referrer and permissions policies at nginx |
+| Realtime | STOMP CONNECT requires an access token; tracking subscriptions are owner-scoped and client publishing is rejected |
+| API schema | Swagger/OpenAPI disabled under the production profile unless `MEDIDROP_OPENAPI_ENABLED=true` |
 
 **Documented trade-off:** the SPA stores tokens in `localStorage` to keep the API stateless. Short access-token
 lifetimes and refresh rotation limit exposure; cookie-based sessions with CSRF protection are the stricter
@@ -249,10 +251,10 @@ alternative. Details: [docs/architecture.md](docs/architecture.md#security-model
 
 | Layer | Technology |
 | --- | --- |
-| API | Java 21, Spring Boot 3.3.5, Spring Security, Spring Data JPA, Bean Validation, Springdoc |
+| API | Java 21, Spring Boot 3.5.16, Spring Security, Spring Data JPA, Bean Validation, Springdoc |
 | Data | PostgreSQL 16, Flyway, trigram indexes, H2 for tests |
 | Auth | Argon2id, JJWT, rotating opaque refresh tokens |
-| Web | React 18, TypeScript 5.6, Vite 5, Tailwind CSS 3, TanStack Query 5, React Router 6, Zustand, React Hook Form + Zod |
+| Web | React 18, TypeScript 5.6, Vite 8, Tailwind CSS 3, TanStack Query 5, React Router 7, Zustand, React Hook Form + Zod |
 | Realtime | STOMP over native WebSocket |
 | Delivery | Multi-stage Docker images, nginx, GitHub Actions |
 
@@ -273,7 +275,7 @@ docker compose ps
 | --- | --- |
 | Web app | <http://localhost:3000> |
 | API | <http://localhost:8080> |
-| OpenAPI UI | <http://localhost:8080/swagger-ui.html> |
+| OpenAPI UI | <http://localhost:8080/swagger-ui.html> (local dev; disabled in prod by default) |
 | Health | <http://localhost:8080/actuator/health> |
 
 The compose profile is `prod`: demo seeding is disabled, sandbox payments are the default, and live
@@ -281,7 +283,7 @@ providers require explicit credentials.
 
 ### Local development
 
-**Prerequisites:** Java 21, Maven 3.9+, Node 20+, PostgreSQL 16.
+**Prerequisites:** Java 21, Maven 3.9+, Node 22.12+, PostgreSQL 16.
 
 ```bash
 createdb medidrop
@@ -337,11 +339,12 @@ MediDrop/
 ├── infrastructure/scripts/               smoke-test.sh · generate-report-assets.py
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml
+├── LICENSE
 └── .env.example
 ```
 
-**API shape:** `/api/v1`, envelope `{ success, message, data, timestamp }`, OpenAPI at `/swagger-ui.html`.
-Full endpoint catalogue: [docs/api.md](docs/api.md).
+**API shape:** `/api/v1`, envelope `{ success, message, data, timestamp }`, OpenAPI at `/swagger-ui.html`
+under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.md).
 
 ---
 
@@ -361,13 +364,21 @@ Full endpoint catalogue: [docs/api.md](docs/api.md).
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 24 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 28 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 
 **Roadmap:** provider sandbox certification · SMS OTP delivery · encrypted object storage for prescriptions ·
 Redis-backed rate limiting and WebSocket fan-out · city-by-city catalogue and delivery zones · accessibility
 audit and Bengali/Hindi localisation.
+
+---
+
+## License
+
+MediDrop is proprietary software. Copyright © 2026 MediDrop Team. All rights reserved.
+No part of the code, documentation, designs or brand assets may be copied, modified, distributed or used
+without prior written permission. The full terms are in [LICENSE](LICENSE).
 
 ---
 

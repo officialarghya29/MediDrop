@@ -12,7 +12,7 @@ Browser (React 18 + Vite)
 nginx  ── static SPA, reverse proxy, TLS termination
    │
    ▼
-Spring Boot 3.3 / Java 21
+Spring Boot 3.5 / Java 21
    ├── security      JWT, Argon2id, RBAC, rate limiter
    ├── catalogue     medicines, categories, search
    ├── pharmacy      onboarding, discovery, hours, documents
