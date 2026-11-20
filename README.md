@@ -159,13 +159,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 28 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 33 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 28 tests | **28 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 33 tests | **33 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -354,6 +354,7 @@ under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.m
 | --- | --- |
 | [Architecture](docs/architecture.md) | How the modules fit, what stays consistent, where providers plug in |
 | [Order lifecycle](docs/order-lifecycle.md) | Every state, transition, role, cancellation and refund rule |
+| [Versions](docs/VERSIONS.md) | Pre-pilot SemVer, milestone tags and checkpoint rules |
 | [API reference](docs/api.md) | Conventions and the complete endpoint catalogue |
 | [Deployment](docs/deployment.md) | Docker, environment matrix, operations, go-live checklist |
 | [Testing](docs/testing.md) | Test layers, commands, coverage and known gaps |

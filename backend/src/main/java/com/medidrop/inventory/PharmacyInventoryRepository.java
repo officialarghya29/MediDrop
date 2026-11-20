@@ -17,6 +17,21 @@ public interface PharmacyInventoryRepository extends JpaRepository<PharmacyInven
 
     Optional<PharmacyInventory> findByIdAndPharmacyId(Long id, Long pharmacyId);
 
+    Optional<InventorySnapshot> findSnapshotById(Long id);
+
+    interface InventorySnapshot {
+        Long getId();
+        Long getMedicineId();
+        java.math.BigDecimal getPrice();
+        Integer getStockQuantity();
+        Integer getReservedQuantity();
+        boolean isActive();
+
+        default int availableQuantity() {
+            return Math.max(0, getStockQuantity() - getReservedQuantity());
+        }
+    }
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from PharmacyInventory i where i.id = :id")
     Optional<PharmacyInventory> findForUpdate(@Param("id") Long id);

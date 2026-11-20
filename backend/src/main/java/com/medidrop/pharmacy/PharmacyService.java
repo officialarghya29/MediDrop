@@ -187,6 +187,23 @@ public class PharmacyService {
     }
 
     @Transactional
+    public void verifyPharmacist(Long pharmacyId, PharmacyDtos.PharmacistVerificationRequest request,
+                                 Long adminId) {
+        Pharmacy pharmacy = pharmacyRepository.findById(pharmacyId)
+                .orElseThrow(() -> ApiException.notFound("Pharmacy not found"));
+        pharmacy.setPharmacistName(request.name().trim());
+        pharmacy.setPharmacistRegistrationNumber(request.registrationNumber().trim().toUpperCase());
+        pharmacy.setPharmacistCouncil(request.council().trim());
+        pharmacy.setPharmacistVerified(Boolean.TRUE.equals(request.verified()));
+        pharmacy.setPharmacistVerifiedAt(Boolean.TRUE.equals(request.verified()) ? java.time.Instant.now() : null);
+        pharmacy.setPharmacistVerifiedBy(Boolean.TRUE.equals(request.verified()) ? adminId : null);
+        pharmacyRepository.save(pharmacy);
+        auditService.recordForUser(adminId, Role.ADMIN.name(),
+                Boolean.TRUE.equals(request.verified()) ? "PHARMACIST_VERIFIED" : "PHARMACIST_UNVERIFIED",
+                "Pharmacy", pharmacyId, request.registrationNumber());
+    }
+
+    @Transactional
     public void suspend(Long pharmacyId, Long adminId, String note) {
         Pharmacy pharmacy = pharmacyRepository.findById(pharmacyId)
                 .orElseThrow(() -> ApiException.notFound("Pharmacy not found"));

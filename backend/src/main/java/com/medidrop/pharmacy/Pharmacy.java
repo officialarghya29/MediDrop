@@ -78,4 +78,22 @@ public class Pharmacy extends BaseEntity {
 
     @Column(name = "review_note", length = 500)
     private String reviewNote;
+
+    @Column(name = "pharmacist_name", length = 160)
+    private String pharmacistName;
+
+    @Column(name = "pharmacist_registration_number", length = 80)
+    private String pharmacistRegistrationNumber;
+
+    @Column(name = "pharmacist_council", length = 160)
+    private String pharmacistCouncil;
+
+    @Column(name = "pharmacist_verified", nullable = false)
+    private boolean pharmacistVerified = false;
+
+    @Column(name = "pharmacist_verified_at")
+    private java.time.Instant pharmacistVerifiedAt;
+
+    @Column(name = "pharmacist_verified_by")
+    private Long pharmacistVerifiedBy;
 }

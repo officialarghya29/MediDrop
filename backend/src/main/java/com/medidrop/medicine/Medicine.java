@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Locale;
+import java.util.Set;
+
 @Entity
 @Table(name = "medicines", indexes = {
         @Index(name = "idx_medicine_name", columnList = "name"),
@@ -55,6 +58,10 @@ public class Medicine extends BaseEntity {
     @Column(name = "schedule_class", length = 20)
     private String scheduleClass = "OTC";
 
+    /** Legal/operational block independent of stock and prescription status. */
+    @Column(name = "sales_blocked", nullable = false)
+    private boolean salesBlocked = false;
+
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
@@ -63,4 +70,16 @@ public class Medicine extends BaseEntity {
 
     @Column(name = "is_demo", nullable = false)
     private boolean demo = false;
+
+    private static final Set<String> SCHEDULES = Set.of("OTC", "H", "H1", "X", "UNKNOWN");
+
+    @PrePersist
+    @PreUpdate
+    void normaliseSchedule() {
+        String value = scheduleClass == null ? "UNKNOWN" : scheduleClass.trim().toUpperCase(Locale.ROOT);
+        if (!SCHEDULES.contains(value)) value = "UNKNOWN";
+        if (prescriptionRequired && "OTC".equals(value)) value = "H";
+        if (!"OTC".equals(value)) prescriptionRequired = true;
+        scheduleClass = value;
+    }
 }

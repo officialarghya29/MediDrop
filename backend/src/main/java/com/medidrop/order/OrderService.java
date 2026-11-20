@@ -332,6 +332,9 @@ public class OrderService {
 
     @Transactional
     public OrderDtos.OrderDetail adminTransition(Long adminId, Long orderId, OrderStatus target, String reason) {
+        if (target == OrderStatus.REFUND_PENDING || target == OrderStatus.REFUNDED) {
+            throw ApiException.conflict("Use the refund endpoint; refund states require a payment/ledger record");
+        }
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
         transition(order, target, Role.ADMIN, adminId, reason);
@@ -439,10 +442,22 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderDtos.InvoiceResponse invoice(Long customerId, Long orderId, boolean staff) {
-        Order order = staff ? orderRepository.findById(orderId).orElseThrow(() -> ApiException.notFound("Order not found"))
-                : orderRepository.findByIdAndCustomerId(orderId, customerId)
+    public OrderDtos.InvoiceResponse customerInvoice(Long customerId, Long orderId) {
+        Order order = orderRepository.findByIdAndCustomerId(orderId, customerId)
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
+        return invoiceResponse(order);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDtos.InvoiceResponse pharmacyInvoice(Long userId, Long orderId) {
+        Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(userId)
+                .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
+        Order order = orderRepository.findByIdAndPharmacyId(orderId, pharmacy.getId())
+                .orElseThrow(() -> ApiException.notFound("Order not found"));
+        return invoiceResponse(order);
+    }
+
+    private OrderDtos.InvoiceResponse invoiceResponse(Order order) {
         Pharmacy pharmacy = pharmacyRepository.findById(order.getPharmacyId()).orElse(null);
         List<OrderDtos.Item> items = orderItemRepository.findByOrderId(order.getId()).stream()
                 .map(this::itemDto).toList();
@@ -606,7 +621,8 @@ public class OrderService {
                 order.getPrescriptionId(), rx == null ? null : rx.getStatus().name(), order.getCouponCode(),
                 order.getCustomerNote(), order.getCancellationReason(), order.getPlacedAt(), order.getDeliveredAt(),
                 order.getDistanceKm(), eta, items, history, partner, order.getTrackingKey(),
-                null, order.isDeliveryOtpVerified());
+                includeOtp && !order.isDeliveryOtpVerified() ? order.getDeliveryOtp() : null,
+                order.isDeliveryOtpVerified());
     }
 
     private OrderDtos.Item itemDto(OrderItem item) {

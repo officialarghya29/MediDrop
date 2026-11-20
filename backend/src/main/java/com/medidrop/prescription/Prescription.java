@@ -51,6 +51,9 @@ public class Prescription extends BaseEntity {
     @Column(name = "reviewed_by")
     private Long reviewedBy;
 
+    @Column(name = "reviewed_by_registration", length = 80)
+    private String reviewedByRegistration;
+
     @Column(name = "reviewed_at")
     private Instant reviewedAt;
 

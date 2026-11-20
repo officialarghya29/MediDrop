@@ -54,11 +54,30 @@ The repository must not be described as launch-ready, legally compliant, product
 v5 Verified-Fast implementation until these gaps, external provider certification and legal review
 are closed.
 
+## 2A. M1 remediation status (2026-11-20)
+
+The audit above remains the M0 baseline. This table records what changed during M1 and deliberately
+separates “fixed” from “still open”.
+
+| Finding | M1 status | Evidence |
+| --- | --- | --- |
+| Cross-tenant invoice | **FIXED** | `OrderService.pharmacyInvoice` resolves the pharmacy first and uses `findByIdAndPharmacyId`; `OrderSafetyTest` proves pharmacy 2 and customer B receive `NOT_FOUND`. |
+| Direct refund transition | **FIXED** | Direct terminal edges removed; `adminTransition` refuses refund states; `PaymentService` uses `REFUND_PENDING` only after the gateway/ledger record. `OrderStateMachineTest` and `OrderSafetyTest` cover it. Live provider refund remains uncertified. |
+| Pharmacist identity | **PARTIAL** | Verified pharmacist name, registration, council and admin verification endpoint are enforced by `PrescriptionService.review`; `PrescriptionAuthorityTest` proves an unverified owner is rejected. Separate `PHARMACIST` login role is M2. |
+| Controlled medicines | **PARTIAL** | `OTC/H/H1/X/UNKNOWN` constraint, `UNKNOWN → REQUIRED`, `H/H1/X → REQUIRED`, `sales_blocked` checkout refusal and DB checks are implemented. A legal CDSCO list and admin UI are not. |
+| Customer handover OTP | **FIXED** | Current code is stored on the order only until verification and returned by customer detail; rider UI now says 4 digits. Browser-driven handover is still unverified. |
+| Pilot safety gate (`DEMO_MODE`, flags, signoff) | **MISSING** | Deliberately M2. Do not run a real RX/substitution pilot yet. |
+| Unfiltered audit logs `500` | **FIXED** | Derived queries replace nullable JPQL; live PostgreSQL `200`. |
+| Concurrency loser `500` | **PARTIAL** | Projection-before-lock and `409` mapping implemented; the 50-way stock-10 gate is still open. |
+| Price/MRP and stock DB constraints | **FIXED** | `V5__m1_safety_invariants.sql`; fresh PostgreSQL applied all five migrations. |
+
 ## 3. Environment, build and dependency evidence
 
 | Check | Command | Result |
 | --- | --- | --- |
-| Backend tests | `cd backend && mvn -B -ntp test` | **28 passed, 0 failed** |
+| Backend tests (M0) | `cd backend && mvn -B -ntp test` | **28 passed, 0 failed** |
+| Backend tests (M1) | `cd backend && mvn -B -ntp test` | **33 passed, 0 failed** |
+| PostgreSQL migration | fresh PostgreSQL 16, Flyway V1–V5 | **5 migrations successful; app started; 15 seeded products** |
 | Frontend tests | `cd frontend && npm test` | **13 passed, 0 failed** |
 | Frontend production build | `cd frontend && npm run build` | **passed** (1819 modules, Vite 8.3.8) |
 | npm audit | `npm audit --json` | **0 vulnerabilities** at every severity |

@@ -37,7 +37,7 @@ public class CartService {
     private final MedidropProperties properties;
 
     public record SnapshotLine(Long inventoryId, Long medicineId, String medicineName, int quantity,
-                               BigDecimal unitPrice, boolean prescriptionRequired, PharmacyInventory inventory) {
+                               BigDecimal unitPrice, boolean prescriptionRequired) {
     }
 
     public record CheckoutSnapshot(Long pharmacyId, List<SnapshotLine> lines) {
@@ -155,16 +155,21 @@ public class CartService {
 
         List<SnapshotLine> lines = new ArrayList<>();
         for (CartItem item : items) {
-            PharmacyInventory inventory = inventoryRepository.findById(item.getInventoryId())
+            // Read a projection, not a managed entity. A managed inventory row here causes
+            // Hibernate to flush a stale @Version after the later pessimistic lock.
+            var inventory = inventoryRepository.findSnapshotById(item.getInventoryId())
                     .orElseThrow(() -> ApiException.conflict("A medicine in your cart is no longer listed"));
             Medicine medicine = medicineRepository.findById(inventory.getMedicineId())
                     .orElseThrow(() -> ApiException.conflict("A medicine in your cart is unavailable"));
+            if (medicine.isSalesBlocked()) {
+                throw ApiException.conflict(medicine.getName() + " cannot be sold online");
+            }
             if (!inventory.isActive() || inventory.availableQuantity() < item.getQuantity()) {
                 throw ApiException.conflict("Stock changed for " + medicine.getName() + ". Available: "
                         + Math.max(0, inventory.availableQuantity()));
             }
             lines.add(new SnapshotLine(inventory.getId(), medicine.getId(), medicine.getName(),
-                    item.getQuantity(), inventory.getPrice(), medicine.isPrescriptionRequired(), inventory));
+                    item.getQuantity(), inventory.getPrice(), medicine.isPrescriptionRequired()));
         }
         Long pharmacyId = items.get(0).getPharmacyId();
         if (items.stream().anyMatch(i -> !i.getPharmacyId().equals(pharmacyId))) {

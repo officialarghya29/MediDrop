@@ -2,16 +2,16 @@
 
 Last updated: 2026-11-20
 
-Current milestone: **M0 — repository audit (Addendum v5)**
+Current milestone: **M1 — foundation and current-flow safety**
 
-Status: **M0 complete, awaiting approval. No application code changed.**
+Status: **M1 safety slice complete; remaining M1 polish and the 50-way gate are open.**
 
 ## Done
 
 - Read the existing repository, docs, migrations, controllers, services, security configuration
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
-- Ran backend tests: **28 passed**.
+- M0 backend baseline: **28 passed**; after the M1 safety slice: **33 passed**.
 - Ran frontend tests: **13 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
@@ -34,9 +34,39 @@ Status: **M0 complete, awaiting approval. No application code changed.**
 - Wrote `docs/AUDIT.md`, `docs/PROGRESS.md`, `docs/DECISIONS.md`, `docs/RUNBOOK.md`,
   `docs/DATA_SOURCES.md`, `docs/COMPLIANCE.md`, `docs/PERF.md` and `docs/A11Y.md`.
 
+## M1 progress (2026-11-20)
+
+Completed and covered by tests:
+
+- Pharmacy invoice reads are now scoped through `findByIdAndPharmacyId`; pharmacy 2 cannot read
+  pharmacy 1's invoice. Customer invoices remain scoped by customer.
+- Direct `DELIVERED/CANCELLED/FAILED → REFUNDED` transitions are removed. The admin status endpoint
+  refuses refund states; `PaymentService` moves an order through `REFUND_PENDING` after the gateway
+  and ledger record exist.
+- Customer order detail reveals the current 4-digit handover OTP until verification; the rider copy
+  and input now match four digits.
+- Pharmacies need a verified pharmacist name, registration number and council before they can review
+  prescriptions. Admin verification endpoint and audit action added. A separate `PHARMACIST` login
+  role remains M2.
+- Medicine schedules are constrained to `OTC/H/H1/X/UNKNOWN`; `H/H1/X/UNKNOWN` force prescription
+  review, and `sales_blocked` is refused at checkout.
+- PostgreSQL now enforces `price <= mrp`, positive prices and non-negative/consistent stock.
+- Unfiltered `GET /admin/audit-logs` no longer binds a nullable action parameter; live PostgreSQL
+  returned `200`.
+- Checkout reads a projection before acquiring the inventory lock, so the stale managed entity cannot
+  surface as a 500. Optimistic conflicts map to `409`.
+- Fresh PostgreSQL 16 boot applied Flyway V1–V5, seeded 15 medicines, and served the catalogue.
+
+Still open in M1:
+
+- 50-way stock-10 concurrency test and measured result.
+- One-command developer entry point and shared design-token pass.
+- Live gateway refund and browser-driven OTP handover.
+- Admin UI for pharmacist verification and medicine sale blocks (API exists; UI is M2/M12).
+
 ## In progress
 
-None. M0 stops here per the addendum.
+The M1 safety slice is implemented and tested; remaining M1 items above are intentionally not marked complete.
 
 ## Blocked
 
@@ -56,11 +86,8 @@ None. M0 stops here per the addendum.
 
 ## Next
 
-After the user says **go**:
-
-1. **M1 Foundation:** fix current-flow P0 1–5 (invoice tenancy, refund bypass, handover OTP, controlled-medicine
-   enforcement, pharmacist identity) plus the audit-log 500 and concurrency 409 P1s, with regression tests,
-   one-command run, CI and shared design tokens/components.
+1. **M1 Foundation:** close the 50-way stock gate, one-command run and design-token pass, then tag
+   `v0.2.0-m1` after CI. The P0/P1 safety slice is already implemented and tested.
 2. **M2 Auth + RBAC:** five roles including verified Pharmacist, JWT/refresh, OTP interface, audit
    log, secure admin bootstrap, DEMO_MODE, feature flags and ComplianceSignoff.
 3. Then follow the v5 order: M3 catalogue/data/search, M4 nodes/inventory, M5 orders, M6 Rx Vault,
@@ -69,9 +96,10 @@ After the user says **go**:
 
 ## Current tree state
 
-M0 documentation only. No Java, TypeScript, SQL, Docker or nginx application change was made
-during the audit. The `.env.example` files are unchanged because the v5 feature flags and demo mode
-are not implemented yet; documenting non-existent variables would be fake capability.
+M1 safety slice plus documentation. The only application changes are the current-flow fixes listed
+above and Flyway V5; the v5 engines, design system, i18n, PWA, DEMO_MODE, feature flags and
+ComplianceSignoff remain unimplemented. `.env.example` is unchanged because those flags are still
+not read or enforced.
 
 ## Audit DB notes
 

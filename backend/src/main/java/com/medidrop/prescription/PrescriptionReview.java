@@ -24,6 +24,9 @@ public class PrescriptionReview extends BaseEntity {
     @Column(name = "pharmacist_user_id", nullable = false)
     private Long pharmacistUserId;
 
+    @Column(name = "pharmacist_registration_number", length = 80)
+    private String pharmacistRegistrationNumber;
+
     @Column(nullable = false, length = 20)
     private String decision;
 

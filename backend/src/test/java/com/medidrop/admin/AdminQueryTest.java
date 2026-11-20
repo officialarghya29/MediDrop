@@ -20,6 +20,13 @@ class AdminQueryTest {
     private AdminService adminService;
 
     @Test
+    void auditLogsAcceptNoActionFilter() {
+        adminService.auditLogs(null, null, 0, 20);
+        adminService.auditLogs("LOGIN_SUCCESS", null, 0, 20);
+        adminService.auditLogs(null, 1L, 0, 20);
+    }
+
+    @Test
     void invalidApprovalFiltersReturnBadRequest() {
         assertThatThrownBy(() -> adminService.pharmacies("NOT_A_STATUS", null, 0, 20))
                 .isInstanceOf(ApiException.class)

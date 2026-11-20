@@ -97,6 +97,10 @@ public class Order extends BaseEntity {
     @Column(name = "delivery_otp_hash", length = 128)
     private String deliveryOtpHash;
 
+    /** Current handover code for the customer's own order view; cleared after verification. */
+    @Column(name = "delivery_otp", length = 8)
+    private String deliveryOtp;
+
     @Column(name = "delivery_otp_verified", nullable = false)
     private boolean deliveryOtpVerified = false;
 

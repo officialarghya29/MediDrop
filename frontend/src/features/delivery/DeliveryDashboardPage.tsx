@@ -254,7 +254,7 @@ export default function DeliveryDashboardPage() {
         <div className="space-y-3">
           {otpError && <Alert tone="error">{otpError}</Alert>}
           <p className="text-sm text-slate-600">
-            Ask the customer for the 6-digit handover OTP shown in their app. Do not mark a delivery complete without it.
+            Ask the customer for the 4-digit handover OTP shown in their app. Do not mark a delivery complete without it.
           </p>
           <div>
             <label className="label" htmlFor="delivery-otp">Handover OTP</label>
@@ -262,7 +262,7 @@ export default function DeliveryDashboardPage() {
               id="delivery-otp"
               className="input tracking-[0.4em]"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={4}
               value={otp}
               onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))}
             />

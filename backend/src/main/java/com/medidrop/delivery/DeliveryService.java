@@ -229,6 +229,7 @@ public class DeliveryService {
             throw ApiException.badRequest("Incorrect delivery verification code");
         }
         order.setDeliveryOtpVerified(true);
+        order.setDeliveryOtp(null);
         orderRepository.save(order);
         orderService.systemTransition(order, OrderStatus.DELIVERED, "Delivery confirmed with OTP");
 
@@ -324,6 +325,7 @@ public class DeliveryService {
 
         String otp = Crypto.numericCode(4);
         order.setDeliveryOtpHash(Crypto.sha256Hex(otp));
+        order.setDeliveryOtp(otp);
         order.setDeliveryOtpVerified(false);
         orderRepository.save(order);
         orderService.systemTransition(order, OrderStatus.DELIVERY_ASSIGNED, "Delivery partner assigned");

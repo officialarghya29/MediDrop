@@ -10,11 +10,10 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     Page<AuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    @Query("""
-            select a from AuditLog a
-            where (:action is null or lower(a.action) = lower(coalesce(:action, '')))
-              and (:actorId is null or a.actorUserId = :actorId)
-            order by a.createdAt desc
-            """)
-    Page<AuditLog> search(@Param("action") String action, @Param("actorId") Long actorId, Pageable pageable);
+    Page<AuditLog> findByActorUserIdOrderByCreatedAtDesc(Long actorId, Pageable pageable);
+
+    Page<AuditLog> findByActionIgnoreCaseOrderByCreatedAtDesc(String action, Pageable pageable);
+
+    Page<AuditLog> findByActionIgnoreCaseAndActorUserIdOrderByCreatedAtDesc(String action, Long actorId,
+                                                                            Pageable pageable);
 }

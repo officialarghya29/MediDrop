@@ -89,7 +89,8 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline: **28** backend tests, **13** frontend tests, **33** smoke checks.
+Expected current baseline after M1: **33** backend tests, **13** frontend tests, **33** smoke checks.
+Flyway now runs **V1–V5**; V5 adds the M1 safety invariants.
 
 The current gate is **not** the v5 Part 8 gate. There is no Testcontainers/PostGIS, Playwright,
 axe, Lighthouse, coverage threshold, 50-way checkout harness or 250K-product performance run.
@@ -111,6 +112,12 @@ docker compose --env-file /tmp/medidrop.env config
 ```
 
 Both were verified in M0.
+
+## Version checkpoints
+
+Read `docs/VERSIONS.md`. A milestone tag is created only after its gate is green and the commit is
+pushed. Do not tag `v0.2.0-m1` until the remaining M1 items (50-way stock gate, one-command entry
+point, design tokens) close.
 
 ## Rebuilding the API safely
 

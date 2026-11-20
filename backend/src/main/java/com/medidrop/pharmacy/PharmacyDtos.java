@@ -70,6 +70,14 @@ public final class PharmacyDtos {
     public record AdminDecisionRequest(@NotNull Boolean approve, @Size(max = 400) String note) {
     }
 
+    public record PharmacistVerificationRequest(
+            @NotBlank @Size(max = 160) String name,
+            @NotBlank @Size(max = 80) String registrationNumber,
+            @NotBlank @Size(max = 160) String council,
+            @NotNull Boolean verified
+    ) {
+    }
+
     public record PharmacyAdminView(Long id, String name, String city, String phone, String email,
                                     String licenseNumber, ApprovalStatus status, Instant registeredAt,
                                     long orders, List<DocumentResponse> documents) {

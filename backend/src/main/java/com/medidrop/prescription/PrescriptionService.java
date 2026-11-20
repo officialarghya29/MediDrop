@@ -187,6 +187,11 @@ public class PrescriptionService {
         if (pharmacy.getStatus() != com.medidrop.common.ApprovalStatus.APPROVED) {
             throw ApiException.forbidden("Pharmacy must be verified before reviewing prescriptions");
         }
+        if (!pharmacy.isPharmacistVerified()
+                || pharmacy.getPharmacistRegistrationNumber() == null
+                || pharmacy.getPharmacistRegistrationNumber().isBlank()) {
+            throw ApiException.forbidden("A verified pharmacist must be linked to this pharmacy before review");
+        }
         Prescription prescription = prescriptionRepository.findById(prescriptionId)
                 .orElseThrow(() -> ApiException.notFound("Prescription not found"));
         if (!pharmacy.getId().equals(prescription.getPharmacyId())) {
@@ -199,6 +204,7 @@ public class PrescriptionService {
         PrescriptionReview review = new PrescriptionReview();
         review.setPrescriptionId(prescription.getId());
         review.setPharmacistUserId(pharmacistUserId);
+        review.setPharmacistRegistrationNumber(pharmacy.getPharmacistRegistrationNumber());
         review.setDecision(Boolean.TRUE.equals(request.approve()) ? "APPROVED" : "REJECTED");
         review.setComments(request.comments());
         review.setVerifiedItems(request.verifiedItems());
@@ -208,6 +214,7 @@ public class PrescriptionService {
         prescription.setStatus(Boolean.TRUE.equals(request.approve())
                 ? PrescriptionStatus.APPROVED : PrescriptionStatus.REJECTED);
         prescription.setReviewedBy(pharmacistUserId);
+        prescription.setReviewedByRegistration(pharmacy.getPharmacistRegistrationNumber());
         prescription.setReviewedAt(Instant.now());
         if (!Boolean.TRUE.equals(request.approve())) {
             prescription.setRejectionReason(request.comments());

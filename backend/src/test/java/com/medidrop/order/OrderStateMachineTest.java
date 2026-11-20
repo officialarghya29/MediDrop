@@ -61,6 +61,16 @@ class OrderStateMachineTest {
     }
 
     @Test
+    void refundTerminalStateRequiresRefundPending() {
+        assertThrows(ApiException.class, () -> OrderStateMachine.assertAllowed(
+                OrderStatus.DELIVERED, OrderStatus.REFUNDED, Role.ADMIN));
+        assertDoesNotThrow(() -> OrderStateMachine.assertAllowed(
+                OrderStatus.DELIVERED, OrderStatus.REFUND_PENDING, Role.ADMIN));
+        assertDoesNotThrow(() -> OrderStateMachine.assertAllowed(
+                OrderStatus.REFUND_PENDING, OrderStatus.REFUNDED, Role.ADMIN));
+    }
+
+    @Test
     void customerCancellationWindowIsEnforced() {
         assertTrue(OrderStateMachine.customerMayCancel(OrderStatus.PAYMENT_CONFIRMED));
         assertFalse(OrderStateMachine.customerMayCancel(OrderStatus.PICKED_UP));

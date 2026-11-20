@@ -35,6 +35,7 @@ public final class OrderStateMachine {
 
         allow(OrderStatus.PAYMENT_CONFIRMED, OrderStatus.PRESCRIPTION_REVIEW_PENDING, Role.ADMIN);
         allow(OrderStatus.PAYMENT_CONFIRMED, OrderStatus.PHARMACY_ACCEPTED, Role.PHARMACY);
+        allow(OrderStatus.PAYMENT_CONFIRMED, OrderStatus.REFUND_PENDING, Role.ADMIN);
         allow(OrderStatus.PAYMENT_CONFIRMED, OrderStatus.CANCELLED, Role.CUSTOMER, Role.ADMIN);
         allow(OrderStatus.PAYMENT_CONFIRMED, OrderStatus.CANCELLATION_REQUESTED, Role.CUSTOMER);
 
@@ -72,16 +73,16 @@ public final class OrderStateMachine {
         allow(OrderStatus.OUT_FOR_DELIVERY, OrderStatus.FAILED, Role.DELIVERY, Role.ADMIN);
 
         allow(OrderStatus.DELIVERED, OrderStatus.REFUND_PENDING, Role.ADMIN);
-        allow(OrderStatus.DELIVERED, OrderStatus.REFUNDED, Role.ADMIN);
 
         allow(OrderStatus.CANCELLATION_REQUESTED, OrderStatus.CANCELLED, Role.PHARMACY, Role.ADMIN);
         allow(OrderStatus.CANCELLED, OrderStatus.REFUND_PENDING, Role.ADMIN);
-        allow(OrderStatus.CANCELLED, OrderStatus.REFUNDED, Role.ADMIN);
 
+        // REFUNDED is reachable only through REFUND_PENDING after a gateway/ledger refund.
         allow(OrderStatus.REFUND_PENDING, OrderStatus.REFUNDED, Role.ADMIN);
-        allow(OrderStatus.REFUND_PENDING, OrderStatus.FAILED, Role.ADMIN);
 
-        allow(OrderStatus.FAILED, OrderStatus.REFUNDED, Role.ADMIN);
+        // A failed payment can still have captured funds in a provider edge case; route it
+        // through the refund ledger rather than allowing a direct terminal jump.
+        allow(OrderStatus.FAILED, OrderStatus.REFUND_PENDING, Role.ADMIN);
     }
 
     public static void assertAllowed(OrderStatus from, OrderStatus to, Role actor) {

@@ -78,6 +78,13 @@ public class AdminController {
         return ApiResponse.ok("Pharmacy decision recorded", null);
     }
 
+    @PostMapping("/pharmacies/{id}/pharmacist-verification")
+    public ApiResponse<Void> verifyPharmacist(@PathVariable Long id,
+                                              @Valid @RequestBody PharmacyDtos.PharmacistVerificationRequest request) {
+        pharmacyService.verifyPharmacist(id, request, CurrentUser.id());
+        return ApiResponse.ok("Pharmacist verification recorded", null);
+    }
+
     @PostMapping("/pharmacies/{id}/suspend")
     public ApiResponse<Void> suspendPharmacy(@PathVariable Long id,
                                              @RequestBody(required = false) AdminDtos.SuspendRequest request) {

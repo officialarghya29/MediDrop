@@ -151,6 +151,11 @@ public class DemoDataSeeder implements ApplicationRunner {
         pharmacy.setDeliveryRadiusKm(8.0);
         pharmacy.setMinOrderValue(new BigDecimal("99.00"));
         pharmacy.setRating(new BigDecimal("4.60"));
+        pharmacy.setPharmacistName(owner.getFullName());
+        pharmacy.setPharmacistRegistrationNumber("WB-DEMO-PH-" + licence.substring(Math.max(0, licence.length() - 4)));
+        pharmacy.setPharmacistCouncil("West Bengal State Pharmacy Council (demo)");
+        pharmacy.setPharmacistVerified(true);
+        pharmacy.setPharmacistVerifiedAt(java.time.Instant.now());
         pharmacyRepository.save(pharmacy);
         for (int day = 1; day <= 7; day++) {
             PharmacyOperatingHour hours = new PharmacyOperatingHour();

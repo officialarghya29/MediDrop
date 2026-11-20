@@ -54,6 +54,6 @@ public class OrderController {
 
     @GetMapping("/{id}/invoice")
     public ApiResponse<OrderDtos.InvoiceResponse> invoice(@PathVariable Long id) {
-        return ApiResponse.ok(orderService.invoice(CurrentUser.id(), id, false));
+        return ApiResponse.ok(orderService.customerInvoice(CurrentUser.id(), id));
     }
 }

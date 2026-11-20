@@ -107,6 +107,33 @@ unmeasured target is marked NOT VERIFIED or BLOCKED.
 serious/critical and Lighthouse ≥90. None can be proven in the current 15-product, H2, no-axe
 environment. A register that says so is more useful than an invented pass.
 
+## D-014 — Use pre-pilot SemVer and milestone checkpoints
+
+**Decision:** Use `0.x` versions before pilot, `1.0.0-rc.N` only after the Part 8 and original 36-item
+gates are verified, and tag a milestone only after its gate passes. The scheme is in
+`docs/VERSIONS.md`; `CHANGELOG.md` records gates, not just code.
+
+**Reason:** “Addendum v5” is a specification, not a product version. Checkpoints make regressions
+bisectable and stop a moving `main` from being mistaken for a pilot candidate.
+
+## D-015 — Use a verified pharmacist profile before a separate role
+
+**Decision:** M1 enforces a verified pharmacist profile on the pharmacy (name, registration number,
+state council, admin verification) before any prescription review. A separate `PHARMACIST` login role
+is deferred to M2.
+
+**Reason:** This closes the immediate unsafe-approval path without fabricating a half-built five-role
+auth flow. The M2 change can link the profile to a dedicated account and keep the same authority checks.
+
+## D-016 — Keep the raw handover OTP only until verification
+
+**Decision:** Store the current 4-digit handover code on the order for the customer’s own detail view,
+alongside the existing hash, and clear it immediately after successful handover.
+
+**Reason:** The audit proved the UI expected `deliveryOtp` but the API always returned `null`; a hash
+cannot be shown. The raw code is short-lived, returned only to the owning customer, and removed at
+verification. A future vault/KMS design can replace this without changing the API.
+
 ## D-013 — Do not advertise unimplemented v5 flags
 
 **Decision:** Do not add `DEMO_MODE`, `EXPRESS_ENABLED`, `RX_ENABLED`, `SUBSTITUTION_ENABLED`,

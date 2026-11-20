@@ -192,7 +192,11 @@ public class PaymentService {
                 ? PaymentStatus.REFUNDED : PaymentStatus.PARTIALLY_REFUNDED);
         paymentRepository.save(payment);
         if (payment.getStatus() == PaymentStatus.REFUNDED && order.getStatus() != OrderStatus.REFUNDED) {
-            orderService.adminTransition(adminId, order.getId(), OrderStatus.REFUNDED,
+            if (order.getStatus() != OrderStatus.REFUND_PENDING) {
+                orderService.systemTransition(order, OrderStatus.REFUND_PENDING,
+                        "Refund " + reference + " initiated");
+            }
+            orderService.systemTransition(order, OrderStatus.REFUNDED,
                     "Refund " + reference + " processed");
         }
         notificationService.notifyUser(order.getCustomerId(), "PAYMENT", "Refund processed",

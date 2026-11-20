@@ -161,8 +161,15 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public PageResponse<AdminDtos.AuditRow> auditLogs(String action, Long actorId, int page, int size) {
-        var logs = auditLogRepository.search(action == null || action.isBlank() ? null : action, actorId,
-                PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100)));
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        String normalizedAction = action == null || action.isBlank() ? null : action.trim();
+        var logs = normalizedAction == null
+                ? (actorId == null ? auditLogRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : auditLogRepository.findByActorUserIdOrderByCreatedAtDesc(actorId, pageable))
+                : (actorId == null
+                ? auditLogRepository.findByActionIgnoreCaseOrderByCreatedAtDesc(normalizedAction, pageable)
+                : auditLogRepository.findByActionIgnoreCaseAndActorUserIdOrderByCreatedAtDesc(normalizedAction,
+                actorId, pageable));
         return PageResponse.of(logs, a -> new AdminDtos.AuditRow(a.getId(), a.getActorRole(), a.getActorUserId(),
                 a.getAction(), a.getEntityType(), a.getEntityId(), a.getDetails(), a.getCreatedAt()));
     }
