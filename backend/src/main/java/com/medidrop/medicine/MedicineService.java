@@ -112,6 +112,114 @@ public class MedicineService {
     }
 
     @Transactional(readOnly = true)
+    public MedicineDtos.SubstituteResponse substitutes(Long medicineId, Long pharmacyId, int limit) {
+        Medicine original = medicineRepository.findByIdAndActiveTrue(medicineId)
+                .orElseThrow(() -> ApiException.notFound("Medicine not found"));
+
+        String generic = normalised(original.getGenericName());
+        String strength = normalised(original.getStrength());
+        String form = normalised(original.getDosageForm());
+        String pack = normalised(original.getPackSize());
+        if (generic == null || strength == null || form == null || pack == null) {
+            return emptySubstitutes(original, pharmacyId, null, null);
+        }
+
+        Long comparePharmacyId = pharmacyId;
+        Pharmacy pharmacy = null;
+        BigDecimal referencePrice = null;
+        if (comparePharmacyId != null) {
+            pharmacy = pharmacyRepository.findById(comparePharmacyId).orElse(null);
+            if (!usablePharmacy(pharmacy)) return emptySubstitutes(original, comparePharmacyId, null, null);
+            PharmacyInventory reference = inventoryRepository
+                    .findByPharmacyIdAndMedicineId(comparePharmacyId, medicineId)
+                    .filter(i -> i.isActive() && i.availableQuantity() > 0)
+                    .orElse(null);
+            if (reference != null) referencePrice = reference.getPrice();
+        } else {
+            List<PharmacyInventory> available = inventoryRepository.findAvailableByMedicine(medicineId);
+            if (!available.isEmpty()) {
+                PharmacyInventory cheapest = available.get(0);
+                comparePharmacyId = cheapest.getPharmacyId();
+                referencePrice = cheapest.getPrice();
+                pharmacy = pharmacyRepository.findById(comparePharmacyId).orElse(null);
+                if (!usablePharmacy(pharmacy)) {
+                    comparePharmacyId = null;
+                    pharmacy = null;
+                    referencePrice = null;
+                }
+            }
+        }
+        if (comparePharmacyId == null || pharmacy == null || referencePrice == null) {
+            return emptySubstitutes(original, pharmacyId, null, null);
+        }
+
+        final Long selectedPharmacyId = comparePharmacyId;
+        final Pharmacy selectedPharmacy = pharmacy;
+        final BigDecimal selectedReferencePrice = referencePrice;
+        List<Medicine> candidates = medicineRepository.findSubstituteCandidates(original.getId(),
+                original.getGenericName(), original.getStrength(), original.getDosageForm(),
+                original.getPackSize(), original.isPrescriptionRequired(), original.getScheduleClass());
+        if (candidates.isEmpty()) {
+            return emptySubstitutes(original, selectedPharmacyId, selectedPharmacy.getName(), selectedReferencePrice);
+        }
+        Map<Long, Medicine> byId = candidates.stream()
+                .collect(Collectors.toMap(Medicine::getId, Function.identity()));
+        Map<Long, PharmacyInventory> stock = inventoryRepository
+                .findByPharmacyIdAndMedicineIdInAndActiveTrue(selectedPharmacyId, new ArrayList<>(byId.keySet()))
+                .stream()
+                .filter(i -> i.availableQuantity() > 0)
+                .filter(i -> i.getPrice().compareTo(selectedReferencePrice) < 0)
+                .collect(Collectors.toMap(PharmacyInventory::getMedicineId, Function.identity()));
+
+        int safeLimit = Math.min(Math.max(limit, 1), 5);
+        List<MedicineDtos.SubstituteOption> options = stock.values().stream()
+                .map(inventory -> {
+                    Medicine candidate = byId.get(inventory.getMedicineId());
+                    BigDecimal savings = selectedReferencePrice.subtract(inventory.getPrice());
+                    int percent = savings.multiply(BigDecimal.valueOf(100))
+                            .divide(selectedReferencePrice, 0, java.math.RoundingMode.HALF_UP).intValue();
+                    return new MedicineDtos.SubstituteOption(candidate.getId(), inventory.getId(),
+                            candidate.getName(), candidate.getBrand(), candidate.getGenericName(),
+                            candidate.getStrength(), candidate.getDosageForm(), candidate.getPackSize(),
+                            candidate.isPrescriptionRequired(), candidate.getScheduleClass(),
+                            selectedPharmacy.getId(), selectedPharmacy.getName(), inventory.getPrice(), inventory.getMrp(),
+                            savings, percent, inventory.availableQuantity());
+                })
+                .sorted(Comparator.comparing(MedicineDtos.SubstituteOption::price)
+                        .thenComparing(MedicineDtos.SubstituteOption::name))
+                .limit(safeLimit)
+                .toList();
+
+        String notice = original.isPrescriptionRequired()
+                ? "Only identical composition, strength, form and pack size are compared. A pharmacist must review any prescription substitution; nothing is changed automatically."
+                : "Only identical composition, strength, form and pack size are compared. Confirm suitability with a pharmacist; nothing is changed automatically.";
+        return new MedicineDtos.SubstituteResponse(original.getId(), original.getName(),
+                original.getGenericName(), original.getStrength(), original.getDosageForm(),
+                original.getPackSize(), selectedPharmacy.getId(), selectedPharmacy.getName(), selectedReferencePrice,
+                original.isPrescriptionRequired(), notice, options);
+    }
+
+    private MedicineDtos.SubstituteResponse emptySubstitutes(Medicine medicine, Long pharmacyId,
+                                                             String pharmacyName, BigDecimal referencePrice) {
+        return new MedicineDtos.SubstituteResponse(medicine.getId(), medicine.getName(),
+                medicine.getGenericName(), medicine.getStrength(), medicine.getDosageForm(),
+                medicine.getPackSize(), pharmacyId, pharmacyName, referencePrice,
+                medicine.isPrescriptionRequired(),
+                "Only identical composition, strength, form and pack size are compared. Nothing is changed automatically.",
+                List.of());
+    }
+
+    private boolean usablePharmacy(Pharmacy pharmacy) {
+        return pharmacy != null && pharmacy.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED
+                && pharmacy.isActive() && pharmacy.isAcceptingOrders();
+    }
+
+    private String normalised(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
+    }
+
+    @Transactional(readOnly = true)
     public List<MedicineDtos.CategoryResponse> categories() {
         return categoryRepository.findByActiveTrueOrderByDisplayOrderAsc().stream()
                 .map(c -> new MedicineDtos.CategoryResponse(c.getId(), c.getName(), c.getSlug(),

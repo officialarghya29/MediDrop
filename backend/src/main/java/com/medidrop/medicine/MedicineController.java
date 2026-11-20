@@ -55,6 +55,14 @@ public class MedicineController {
         return ApiResponse.ok(medicineService.manufacturers());
     }
 
+    @GetMapping("/{id}/substitutes")
+    public ApiResponse<MedicineDtos.SubstituteResponse> substitutes(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long pharmacyId,
+            @RequestParam(defaultValue = "3") @Min(1) @Max(5) int limit) {
+        return ApiResponse.ok(medicineService.substitutes(id, pharmacyId, limit));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<MedicineDtos.MedicineDetail> detail(@PathVariable Long id,
                                                            @RequestParam(required = false) Double lat,

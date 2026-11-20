@@ -11,7 +11,7 @@ Status: **M1 safety slice complete; remaining M1 polish and the 50-way gate are 
 - Read the existing repository, docs, migrations, controllers, services, security configuration
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
-- M0 backend baseline: **28 passed**; after the M1 safety slice and deep scan: **37 passed**.
+- M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan and substitute feature: **39 passed**.
 - Ran frontend tests: **13 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
@@ -55,7 +55,7 @@ Completed and covered by tests:
   returned `200`.
 - Checkout reads a projection before acquiring the inventory lock, so the stale managed entity cannot
   surface as a 500. Optimistic conflicts map to `409`.
-- Fresh PostgreSQL 16 boot applied Flyway V1–V5, seeded 15 medicines, and served the catalogue.
+- Fresh PostgreSQL 16 boot applied Flyway V1–V5, seeded 18 medicines, and served the catalogue.
 
 Deep scan (2026-11-20):
 
@@ -80,10 +80,22 @@ Still open in M1:
 - GitHub `main` protection, secret scanning/push protection and Dependabot are disabled; the
   repository is public. These are settings decisions, not code changes.
 
+## Substitute comparison (0.1.2)
+
+- Added `GET /medicines/{id}/substitutes`: lower-cost equivalents at a selected pharmacy.
+- Safety filters require identical generic composition, strength, dosage form, pack size, prescription
+  flag and schedule class; candidates must be in stock and strictly cheaper.
+- Prescription candidates are shown with a mandatory pharmacist-review warning and are never added to
+  the cart automatically.
+- `MedicineSubstituteTest` covers the positive case, different-pack exclusion, Rx exclusion, blocked
+  product exclusion, out-of-stock exclusion, savings calculation and the Rx warning.
+- Live PostgreSQL check: Paracetamol 500 mg at ₹343 returned the 500 mg value pack at ₹249, a ₹94
+  (27%) saving, at the same approved pharmacy. These are demo records, not production prices.
+
 ## Release checkpoint
 
-`v0.1.1` is published as a **pre-release**: it contains the M1 safety slice and deep-scan fixes,
-passes 37 backend tests, 13 frontend tests and the production build, and is backed by green CI.
+`v0.1.2` is published as a **pre-release**: it contains the M1 safety slice and deep-scan fixes,
+passes 39 backend tests, 13 frontend tests and the production build, and is backed by green CI.
 It is not the M1 milestone tag and is not launch-ready; the remaining M1 gate and M2–M15 remain open.
 
 ## In progress

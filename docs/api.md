@@ -39,6 +39,7 @@ an illegal status transition return `409`. Errors never include stack traces in 
 | GET | `/medicines/categories` | Categories |
 | GET | `/medicines/manufacturers` | Manufacturers |
 | GET | `/medicines/{id}` | Detail with nearby availability (`lat`, `lng`) |
+| GET | `/medicines/{id}/substitutes` | Lower-cost equivalents at a pharmacy (`pharmacyId`, `limit`) |
 | GET | `/pharmacies/nearby` | Pharmacies within radius |
 | GET | `/pharmacies/{id}` | Pharmacy profile |
 | POST | `/pharmacies/register` | Pharmacy application |

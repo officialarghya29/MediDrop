@@ -33,7 +33,7 @@
 
 ## The 30-second version
 
-**Current release:** [v0.1.1 — foundation hardening (pre-release)](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1).
+**Current release:** [v0.1.2 — lower-cost substitutes (pre-release)](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2).
 It is verified by CI but is **not** a pilot or `1.0.0` release; the launch gates are listed in
 [Versions](docs/VERSIONS.md) and [Progress](docs/PROGRESS.md).
 
@@ -50,6 +50,7 @@ order through a tracked rider. Pharmacies fulfil, riders deliver, administrators
 | **One order truth** | A single state machine authorises every transition, for every role, and appends it to history. |
 | **Provable delivery** | Handover requires the customer's OTP; the public tracking page exposes status, never personal data. |
 | **Governed money** | Gateway signatures are verified server-side, refunds are admin-only, and test payments are permanently flagged. |
+| **Safe savings** | Lower-cost equivalents are compared only when composition, strength, form, pack size and schedule match; prescription replacements still need pharmacist review. |
 
 > MediDrop does not provide medical advice or substitute prescribed medicines. Prescription-only medicines
 > are dispensed only after review by a registered pharmacist.
@@ -164,13 +165,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 37 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 39 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 37 tests | **37 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 39 tests | **39 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -371,7 +372,7 @@ under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.m
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 37 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 39 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 

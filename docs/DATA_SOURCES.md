@@ -124,4 +124,4 @@ legal review are complete.
 
 The v5 demo target is 12 Kolkata nodes, 3 riders, 6 customers, 1 pharmacist, 1 admin, 500 products
 and 40 orders, all `is_demo=true`. The performance target requires a separate 250K-product seed.
-Neither exists today; the current seed is 15 medicines and 2 pharmacies.
+Neither exists today; the current seed is 18 medicines and 2 pharmacies.

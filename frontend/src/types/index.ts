@@ -81,6 +81,41 @@ export interface MedicineDetail extends MedicineSummary {
   cheapest?: Availability;
 }
 
+export interface SubstituteOption {
+  medicineId: number;
+  inventoryId: number;
+  name: string;
+  brand?: string;
+  genericName?: string;
+  strength?: string;
+  dosageForm?: string;
+  packSize?: string;
+  prescriptionRequired: boolean;
+  scheduleClass?: string;
+  pharmacyId: number;
+  pharmacyName: string;
+  price: number;
+  mrp: number;
+  savingsAmount: number;
+  savingsPercent: number;
+  availableQuantity: number;
+}
+
+export interface SubstituteResponse {
+  medicineId: number;
+  medicineName: string;
+  genericName?: string;
+  strength?: string;
+  dosageForm?: string;
+  packSize?: string;
+  pharmacyId?: number;
+  pharmacyName?: string;
+  referencePrice?: number;
+  requiresPharmacistReview: boolean;
+  notice: string;
+  options: SubstituteOption[];
+}
+
 export interface SearchResponse {
   items: MedicineSummary[];
   page: number;

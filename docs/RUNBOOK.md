@@ -149,9 +149,9 @@ java -jar target/medidrop-api-*.jar --server.port=8081
    carry the same version.
 2. Run `mvn -B -ntp verify` and `npm test && npm run build`; wait for CI on the exact commit.
 3. Create an annotated tag and push it:
-   `git tag -a v0.1.1 -m "MediDrop 0.1.1" && git push origin v0.1.1`.
+   `git tag -a v0.1.2 -m "MediDrop 0.1.2" && git push origin v0.1.2`.
 4. Publish a **pre-release** while the project is pre-pilot:
-   `gh release create v0.1.1 --verify-tag --prerelease --notes-file docs/releases/v0.1.1.md`.
+   `gh release create v0.1.2 --verify-tag --prerelease --notes-file docs/releases/v0.1.2.md`.
 5. Never label a build `1.0.0` or “launch-ready” until the Part 8/original-36 gate, provider
    certification and legal/ops sign-off are complete.
 

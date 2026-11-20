@@ -3,6 +3,28 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
+## [0.1.2] — 2026-11-20
+
+**Pre-release feature addition. Not pilot-ready and not `1.0.0`.**
+
+### Added
+
+- **Lower-cost substitute comparison** on medicine detail pages. The API returns only products with the
+  same generic composition, strength, dosage form, pack size, prescription flag and schedule class.
+- Candidates must be in stock at the selected pharmacy and strictly cheaper than the original.
+- The response includes price, savings amount, savings percentage and a pharmacist-review flag.
+- Prescription substitutes are never automatic; the UI links to the alternative and keeps the current
+  cart/prescription unchanged.
+- Three demo-only equivalents demonstrate the feature on a fresh seed.
+
+### Verification
+
+- Backend: **39 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**.
+- Production frontend build: **passed**.
+- Live PostgreSQL seed check: ₹343 reference returned a ₹249 same-composition value pack, saving ₹94
+  (27%) at the same approved pharmacy. Demo prices only.
+
 ## [0.1.1] — 2026-11-20
 
 **Pre-release foundation hardening. Not pilot-ready and not `1.0.0`.**

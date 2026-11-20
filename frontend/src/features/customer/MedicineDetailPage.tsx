@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, MapPin, Pill, ShieldAlert, ShieldCheck, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, MapPin, Pill, ShieldAlert, ShieldCheck, ShoppingCart, TrendingDown } from 'lucide-react';
 import { Alert, Badge, EmptyState, PageLoader, useToast } from '../../components/ui';
 import { apiGet, apiPost, errorMessage } from '../../lib/api';
 import { inr } from '../../lib/format';
 import { useAuth } from '../../store/auth';
 import { useGeolocation } from '../../hooks/useGeolocation';
-import type { Address, CartView, MedicineDetail } from '../../types';
+import type { Address, CartView, MedicineDetail, SubstituteResponse } from '../../types';
 
 const DEMO_KOLKATA = { latitude: 22.5726, longitude: 88.3639 };
 
@@ -20,6 +20,7 @@ export default function MedicineDetailPage() {
   const geo = useGeolocation();
   const [selected, setSelected] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [comparePharmacyId, setComparePharmacyId] = useState<number | null>(null);
 
   const { data: address } = useQuery({
     queryKey: ['addresses', 'default'],
@@ -33,6 +34,18 @@ export default function MedicineDetailPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['medicine', id, position.latitude, position.longitude],
     queryFn: () => apiGet<MedicineDetail>(`/medicines/${id}`, { lat: position.latitude, lng: position.longitude }),
+  });
+
+  const comparePharmacy = data?.availability.find((option) => option.pharmacyId === comparePharmacyId)
+    ?? data?.cheapest;
+
+  const { data: substitutes } = useQuery({
+    queryKey: ['medicine-substitutes', id, comparePharmacy?.pharmacyId],
+    queryFn: () => apiGet<SubstituteResponse>(`/medicines/${id}/substitutes`, {
+      pharmacyId: comparePharmacy?.pharmacyId,
+      limit: 3,
+    }),
+    enabled: !!data?.genericName && !!data?.strength && !!data?.dosageForm && !!comparePharmacy,
   });
 
   const addToCart = useMutation({
@@ -132,6 +145,75 @@ export default function MedicineDetailPage() {
             <Alert tone="warning" title="Important safety information">
               {data.warnings}
             </Alert>
+          )}
+
+          {comparePharmacy && substitutes?.referencePrice != null && (
+            <section className="card-pad">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="section-title flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4 text-brand-700" /> Lower-cost substitutes
+                  </h2>
+                  <p className="muted mt-1 text-xs">
+                    Same composition, strength, form and pack size. Not an automatic or clinical recommendation.
+                  </p>
+                </div>
+                {data.availability.length > 1 && (
+                  <label className="text-xs text-slate-600">
+                    Compare at
+                    <select
+                      className="input mt-1 py-1.5 text-xs"
+                      value={comparePharmacy?.pharmacyId ?? ''}
+                      onChange={(event) => setComparePharmacyId(Number(event.target.value))}
+                      aria-label="Pharmacy to compare substitutes at"
+                    >
+                      {data.availability.map((option) => (
+                        <option key={option.pharmacyId} value={option.pharmacyId}>{option.pharmacyName}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+
+              {substitutes.options.length === 0 ? (
+                <p className="mt-3 text-sm text-slate-600">
+                  No lower-cost match with identical composition and pack size at {comparePharmacy.pharmacyName}.
+                </p>
+              ) : (
+                <ul className="mt-3 divide-y divide-slate-100">
+                  {substitutes.options.map((option) => (
+                    <li key={option.medicineId} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{option.name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {[option.brand, option.genericName, option.strength, option.packSize].filter(Boolean).join(' · ')}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">{option.availableQuantity} in stock</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-bold">{inr(option.price)}</p>
+                          <Badge tone="bg-emerald-50 text-emerald-700">
+                            Save {inr(option.savingsAmount)} ({option.savingsPercent}%)
+                          </Badge>
+                        </div>
+                        <Link to={`/medicines/${option.medicineId}`} className="btn-secondary py-2 text-xs">
+                          View
+                        </Link>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="mt-3 text-[11px] leading-relaxed text-slate-500">{substitutes.notice}</p>
+              {substitutes.requiresPharmacistReview && (
+                <Alert tone="warning" title="Pharmacist review required">
+                  This is a prescription medicine. A pharmacist must review any substitution; the cart and prescription
+                  are never changed automatically.
+                </Alert>
+              )}
+            </section>
           )}
 
           <section className="card-pad">

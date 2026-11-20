@@ -38,6 +38,20 @@ public final class MedicineDtos {
                                  int totalPages, String suggestion, List<String> suggestions) {
     }
 
+    public record SubstituteOption(Long medicineId, Long inventoryId, String name, String brand,
+                                   String genericName, String strength, String dosageForm, String packSize,
+                                   boolean prescriptionRequired, String scheduleClass, Long pharmacyId,
+                                   String pharmacyName, BigDecimal price, BigDecimal mrp,
+                                   BigDecimal savingsAmount, int savingsPercent, int availableQuantity) {
+    }
+
+    public record SubstituteResponse(Long medicineId, String medicineName, String genericName,
+                                     String strength, String dosageForm, String packSize, Long pharmacyId,
+                                     String pharmacyName, BigDecimal referencePrice,
+                                     boolean requiresPharmacistReview, String notice,
+                                     List<SubstituteOption> options) {
+    }
+
     public record AdminMedicineRequest(String name, String brand, String genericName, String strength,
                                        String dosageForm, String packSize, Long manufacturerId, Long categoryId,
                                        boolean prescriptionRequired, String description, String warnings,

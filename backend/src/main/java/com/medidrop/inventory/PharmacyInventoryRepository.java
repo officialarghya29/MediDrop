@@ -67,5 +67,7 @@ public interface PharmacyInventoryRepository extends JpaRepository<PharmacyInven
 
     List<PharmacyInventory> findByMedicineIdInAndActiveTrue(List<Long> medicineIds);
 
+    List<PharmacyInventory> findByPharmacyIdAndMedicineIdInAndActiveTrue(Long pharmacyId, List<Long> medicineIds);
+
     long countByPharmacyIdAndActiveTrue(Long pharmacyId);
 }

@@ -29,6 +29,7 @@ claim `1.0.0` yet.
 | --- | --- | --- |
 | [`v0.1.0-m0`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.0-m0) | Repository audit only; no application code | **Released pre-release** |
 | [`v0.1.1`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1) | M1 safety slice and deep-scan hardening; pre-pilot | **Released pre-release** |
+| [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison with safety filters | **Released pre-release** |
 | `v0.2.0-m1` | Remaining M1 gate: 50-way stock, one-command run, design tokens | In progress |
 | `v0.3.0-m2` | Five roles, pilot gates, DEMO_MODE and ComplianceSignoff | Not started |
 

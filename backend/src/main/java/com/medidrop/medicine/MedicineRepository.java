@@ -40,6 +40,27 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
                           @Param("prescriptionRequired") Boolean prescriptionRequired,
                           Pageable pageable);
 
+    @Query("""
+            select m from Medicine m
+            where m.active = true
+              and m.salesBlocked = false
+              and m.id <> :medicineId
+              and lower(trim(m.genericName)) = lower(trim(:genericName))
+              and lower(trim(m.strength)) = lower(trim(:strength))
+              and lower(trim(m.dosageForm)) = lower(trim(:dosageForm))
+              and lower(trim(m.packSize)) = lower(trim(:packSize))
+              and m.prescriptionRequired = :prescriptionRequired
+              and m.scheduleClass = :scheduleClass
+            order by m.name
+            """)
+    List<Medicine> findSubstituteCandidates(@Param("medicineId") Long medicineId,
+                                            @Param("genericName") String genericName,
+                                            @Param("strength") String strength,
+                                            @Param("dosageForm") String dosageForm,
+                                            @Param("packSize") String packSize,
+                                            @Param("prescriptionRequired") boolean prescriptionRequired,
+                                            @Param("scheduleClass") String scheduleClass);
+
     @Query("select distinct m.name from Medicine m where m.active = true and lower(m.name) like lower(concat(coalesce(:q, ''), '%'))")
     List<String> suggest(@Param("q") String q, Pageable pageable);
 }

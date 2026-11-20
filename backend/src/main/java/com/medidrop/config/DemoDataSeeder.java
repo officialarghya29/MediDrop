@@ -51,6 +51,11 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     public static final String DEMO_PASSWORD = "Demo@12345";
 
+    private static final Map<String, BigDecimal> DEMO_PRICE_OVERRIDES = Map.of(
+            "Paracetamol 500 mg Value Pack", new BigDecimal("249.00"),
+            "Cetirizine 10 mg Value Pack", new BigDecimal("16.00"),
+            "Metformin 500 mg Generic", new BigDecimal("299.00"));
+
     private final MedidropProperties properties;
     private final UserRepository userRepository;
     private final PharmacyRepository pharmacyRepository;
@@ -284,6 +289,16 @@ public class DemoDataSeeder implements ApplicationRunner {
                 "70% v/v", "Gel", "Bottle of 500 ml", categories.get("PERSONAL"),
                 manufacturers.get("Demo Health Sciences"), false, new BigDecimal("149.00"),
                 "Demonstration personal care catalogue record.", null));
+        list.add(medicine("Paracetamol 500 mg Value Pack", "Demo Generics", "Paracetamol", "500 mg",
+                "Tablet", "Strip of 15", categories.get("OTC"), manufacturers.get("Demo Pharma Ltd"),
+                false, new BigDecimal("249.00"), "Demonstration lower-cost equivalent. Same composition, strength, form and pack size.", null));
+        list.add(medicine("Cetirizine 10 mg Value Pack", "Demo Generics", "Cetirizine", "10 mg",
+                "Tablet", "Strip of 10", categories.get("OTC"), manufacturers.get("Demo Health Sciences"),
+                false, new BigDecimal("16.00"), "Demonstration lower-cost equivalent. Same composition, strength, form and pack size.", null));
+        list.add(medicine("Metformin 500 mg Generic", "Demo Generics", "Metformin", "500 mg",
+                "Tablet", "Strip of 15", categories.get("RX"), manufacturers.get("Demo Health Sciences"),
+                true, new BigDecimal("299.00"), "Demonstration lower-cost prescription equivalent. Pharmacist review remains mandatory.",
+                "Prescription required. A pharmacist must review any substitution."));
         return list;
     }
 
@@ -312,14 +327,19 @@ public class DemoDataSeeder implements ApplicationRunner {
     private void seedInventory(Pharmacy pharmacy, List<Medicine> medicines, int priceOffset) {
         for (int i = 0; i < medicines.size(); i++) {
             Medicine medicine = medicines.get(i);
-            BigDecimal base = new BigDecimal(String.valueOf(30 + i * 17 + priceOffset));
-            String[] parts = medicine.getName().replaceAll("[^0-9]", " ").trim().split("\\s+");
-            if (parts.length > 0 && !parts[0].isBlank()) {
-                try {
-                    base = new BigDecimal(parts[0]).multiply(new BigDecimal("0.65"))
-                            .add(new BigDecimal("18")).setScale(2, java.math.RoundingMode.HALF_UP);
-                } catch (NumberFormatException ignored) {
-                    // keep the fallback price
+            BigDecimal base = DEMO_PRICE_OVERRIDES.get(medicine.getName());
+            if (base != null) {
+                base = base.add(BigDecimal.valueOf(priceOffset));
+            } else {
+                base = new BigDecimal(String.valueOf(30 + i * 17 + priceOffset));
+                String[] parts = medicine.getName().replaceAll("[^0-9]", " ").trim().split("\\s+");
+                if (parts.length > 0 && !parts[0].isBlank()) {
+                    try {
+                        base = new BigDecimal(parts[0]).multiply(new BigDecimal("0.65"))
+                                .add(new BigDecimal("18")).setScale(2, java.math.RoundingMode.HALF_UP);
+                    } catch (NumberFormatException ignored) {
+                        // keep the fallback price
+                    }
                 }
             }
             PharmacyInventory inventory = new PharmacyInventory();
