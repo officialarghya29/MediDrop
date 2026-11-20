@@ -1,0 +1,188 @@
+# Runbook
+
+## Prerequisites
+
+- Java 21
+- Maven 3.9+
+- Node.js 22.12+
+- PostgreSQL 16
+- Docker + Compose (for the full stack)
+- `curl`; Python 3 for the audit harness (optional)
+
+## Full stack with Docker
+
+```bash
+cp .env.example .env
+# Required:
+#   MEDIDROP_JWT_SECRET=$(openssl rand -base64 48)
+#   POSTGRES_PASSWORD=<strong password>
+docker compose up -d --build
+docker compose ps
+curl -fsS http://localhost:8080/actuator/health
+```
+
+Surfaces:
+
+- Web: <http://localhost:3000>
+- API: <http://localhost:8080>
+- Health: <http://localhost:8080/actuator/health>
+- OpenAPI (dev only): <http://localhost:8080/swagger-ui.html>
+
+The Compose profile is `prod`; seeding is disabled and OpenAPI is disabled by default.
+
+## Manual development
+
+```bash
+createdb medidrop
+
+cd backend
+MEDIDROP_JWT_SECRET=dev-only-medidrop-secret-change-before-deploy-9f3c1a \
+MEDIDROP_SEED_ENABLED=true \
+mvn spring-boot:run
+```
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite dev server proxies `/api` and `/ws` to `:8080`; open <http://localhost:5173>.
+
+### Demo accounts
+
+Only when `MEDIDROP_SEED_ENABLED=true`:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@medidrop.local` | `Admin@12345` |
+| Customer | `customer@medidrop.local` | `Demo@12345` |
+| Pharmacy | `pharmacy@medidrop.local` | `Demo@12345` |
+| Pharmacy 2 | `pharmacy2@medidrop.local` | `Demo@12345` |
+| Delivery | `delivery@medidrop.local` | `Demo@12345` |
+| Delivery 2 | `delivery2@medidrop.local` | `Demo@12345` |
+
+These credentials are demo-only. Never seed a production database with them.
+
+## Test gates
+
+```bash
+cd backend
+mvn -B -ntp test
+```
+
+```bash
+cd frontend
+npm test
+npm run build
+npm audit
+```
+
+Live smoke (API must be running with seed data):
+
+```bash
+infrastructure/scripts/smoke-test.sh
+```
+
+Expected current baseline: **28** backend tests, **13** frontend tests, **33** smoke checks.
+
+## Compose validation
+
+```bash
+MEDIDROP_JWT_SECRET=compose-test-secret-with-at-least-32-characters \
+POSTGRES_PASSWORD=compose-test-db-password \
+docker compose config
+
+cp .env.example /tmp/medidrop.env
+# Add the two required values to /tmp/medidrop.env.
+docker compose --env-file /tmp/medidrop.env config
+```
+
+Both were verified in M0.
+
+## Rebuilding the API safely
+
+**Stop the running JVM before replacing the jar.** Replacing a jar under a running JVM causes
+lazy class-loading failures such as:
+
+```text
+NoClassDefFoundError: ch/qos/logback/classic/spi/ThrowableProxy
+```
+
+Then requests can hang or return misleading 5xx errors. Use:
+
+```bash
+# Stop the API process first.
+cd backend
+mvn -B -ntp -DskipTests package
+java -jar target/medidrop-api-1.0.0.jar
+```
+
+For parallel audit work, run the fresh build on another port:
+
+```bash
+java -jar target/medidrop-api-1.0.0.jar --server.port=8081
+```
+
+## Environment variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `MEDIDROP_JWT_SECRET` | yes | HMAC key ≥32 bytes |
+| `MEDIDROP_DB_URL` | yes | JDBC URL |
+| `MEDIDROP_DB_USERNAME` / `MEDIDROP_DB_PASSWORD` | yes | Database credentials |
+| `MEDIDROP_DB_POOL_SIZE` | no | Hikari pool size |
+| `MEDIDROP_CORS_ORIGINS` | split origin | Browser origins |
+| `MEDIDROP_OPENAPI_ENABLED` | no | Dev/test only; false in prod |
+| `MEDIDROP_PUBLIC_URL` / `MEDIDROP_FRONTEND_URL` | yes | Links in notifications |
+| `MEDIDROP_STORAGE_PATH` | local storage | Private prescription volume |
+| `MEDIDROP_PAYMENTS_PROVIDER` | no | `sandbox` or `razorpay` |
+| `RAZORPAY_*` | live payments | Gateway and webhook secrets |
+| `MEDIDROP_MAPS_PROVIDER` / `MEDIDROP_MAPS_API_KEY` | no | Haversine or Google |
+| `MEDIDROP_MAIL_PROVIDER` / `MEDIDROP_SMS_PROVIDER` | no | Console or real provider |
+| `MEDIDROP_SEED_ENABLED` | no | Demo data; false in prod |
+| `MEDIDROP_ADMIN_PASSWORD` | dev seed | Seeded admin only |
+| `PORT` | no | API port |
+
+## Audit reproduction
+
+The M0 harness lives outside the repository at `/tmp/medidrop-audit/` during the session.
+Key checks:
+
+```bash
+# idempotency
+# sequential same X-Idempotency-Key -> same order id
+
+# cross-tenant invoice
+curl -H "Authorization: Bearer <pharmacy2-token>" \
+  http://localhost:8081/api/v1/pharmacy/orders/14/invoice
+
+# unfiltered audit logs
+curl -H "Authorization: Bearer <admin-token>" \
+  http://localhost:8081/api/v1/admin/audit-logs
+
+# filtered audit logs
+curl -H "Authorization: Bearer <admin-token>" \
+  "http://localhost:8081/api/v1/admin/audit-logs?action=LOGIN_SUCCESS"
+```
+
+Do not commit tokens or real `.env` files. The audit used ephemeral local tokens only.
+
+## Operations
+
+- Health: `GET /actuator/health`; Compose healthchecks use it.
+- Logs: API stdout. Never log tokens, OTPs or prescription contents.
+- Migrations: Flyway on boot; run one instance during migration.
+- Backups: nightly `pg_dump` + storage volume snapshot; restore quarterly.
+- Scale: API is stateless apart from in-memory rate limits and WebSocket sessions; use sticky
+  sessions for `/ws` and Redis for distributed limits.
+- Time: UTC in storage; reports use `Asia/Kolkata`.
+
+## Known environment traps
+
+1. The manual dev default DB port is `5432`; the audit local DB was on `5433`. Use the JDBC URL
+   that matches your container.
+2. `MEDIDROP_SEED_ENABLED=true` skips seeding if any users already exist.
+3. `SPRING_PROFILES_ACTIVE=prod` disables seeding, OpenAPI and the sandbox payment provider.
+4. Prescriptions are stored outside the database. Back up both the DB and the storage volume.
+5. The current audit process on `:8081` is not the production port; use `:8080` for the normal app.
