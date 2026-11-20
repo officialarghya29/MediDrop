@@ -33,7 +33,7 @@
 
 ## The 30-second version
 
-**Current release:** [v0.1.2 — lower-cost substitutes (pre-release)](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2).
+**Current release:** [v0.1.3 — substitute reliability (foundation release, pre-pilot)](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3).
 It is verified by CI but is **not** a pilot or `1.0.0` release; the launch gates are listed in
 [Versions](docs/VERSIONS.md) and [Progress](docs/PROGRESS.md).
 
@@ -165,13 +165,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 39 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 40 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 39 tests | **39 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 40 tests | **40 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -372,7 +372,7 @@ under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.m
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 39 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 40 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 

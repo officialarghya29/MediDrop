@@ -11,7 +11,7 @@ Status: **M1 safety slice complete; remaining M1 polish and the 50-way gate are 
 - Read the existing repository, docs, migrations, controllers, services, security configuration
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
-- M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan and substitute feature: **39 passed**.
+- M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan, substitute feature and fallback fix: **40 passed**.
 - Ran frontend tests: **13 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
@@ -92,10 +92,19 @@ Still open in M1:
 - Live PostgreSQL check: Paracetamol 500 mg at ₹343 returned the 500 mg value pack at ₹249, a ₹94
   (27%) saving, at the same approved pharmacy. These are demo records, not production prices.
 
+## Substitute reliability (0.1.3)
+
+- When no pharmacy is supplied, the API now walks price-ordered stock and selects the cheapest
+  pharmacy that is approved, active and accepting orders. A paused cheapest pharmacy can no longer
+  hide a valid lower-cost match.
+- `MedicineSubstituteTest.skipsAnUnavailableCheapestPharmacyWhenNoPharmacyIsRequested` covers it.
+- Live PostgreSQL check: with Salt Lake paused, the API selected Bhowanipore and returned the ₹255
+  value pack against ₹343 (₹88, 26%). Demo prices only.
+
 ## Release checkpoint
 
-`v0.1.2` is published as a **pre-release**: it contains the M1 safety slice and deep-scan fixes,
-passes 39 backend tests, 13 frontend tests and the production build, and is backed by green CI.
+`v0.1.3` is published as a **foundation release**: it contains the M1 safety slice and deep-scan fixes,
+passes 40 backend tests, 13 frontend tests and the production build, and is backed by green CI.
 It is not the M1 milestone tag and is not launch-ready; the remaining M1 gate and M2–M15 remain open.
 
 ## In progress

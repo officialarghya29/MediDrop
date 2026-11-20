@@ -3,6 +3,25 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
+## [0.1.3] — 2026-11-20
+
+**Foundation release. Pre-pilot; not `1.0.0`.**
+
+### Fixed
+
+- When no pharmacy is supplied to the substitute endpoint, the service now selects the cheapest
+  pharmacy that is approved, active and accepting orders, instead of stopping at a paused cheapest
+  pharmacy and returning no alternatives.
+- Added a regression for this fallback.
+
+### Verification
+
+- Backend: **40 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**.
+- Production frontend build: **passed**.
+- Live PostgreSQL fallback: paused Salt Lake pharmacy; Bhowanipore selected with a ₹255 vs ₹343
+  candidate (₹88, 26%). Demo prices only.
+
 ## [0.1.2] — 2026-11-20
 
 **Pre-release feature addition. Not pilot-ready and not `1.0.0`.**

@@ -136,16 +136,15 @@ public class MedicineService {
                     .orElse(null);
             if (reference != null) referencePrice = reference.getPrice();
         } else {
-            List<PharmacyInventory> available = inventoryRepository.findAvailableByMedicine(medicineId);
-            if (!available.isEmpty()) {
-                PharmacyInventory cheapest = available.get(0);
-                comparePharmacyId = cheapest.getPharmacyId();
-                referencePrice = cheapest.getPrice();
-                pharmacy = pharmacyRepository.findById(comparePharmacyId).orElse(null);
-                if (!usablePharmacy(pharmacy)) {
-                    comparePharmacyId = null;
-                    pharmacy = null;
-                    referencePrice = null;
+            // The repository is price-ordered. Walk it until the first pharmacy that can
+            // actually accept an order; a paused cheapest pharmacy must not hide a valid match.
+            for (PharmacyInventory candidateStock : inventoryRepository.findAvailableByMedicine(medicineId)) {
+                Pharmacy candidatePharmacy = pharmacyRepository.findById(candidateStock.getPharmacyId()).orElse(null);
+                if (usablePharmacy(candidatePharmacy)) {
+                    comparePharmacyId = candidateStock.getPharmacyId();
+                    referencePrice = candidateStock.getPrice();
+                    pharmacy = candidatePharmacy;
+                    break;
                 }
             }
         }

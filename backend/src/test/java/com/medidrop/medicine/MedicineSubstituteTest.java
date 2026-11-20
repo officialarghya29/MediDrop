@@ -94,6 +94,34 @@ class MedicineSubstituteTest {
         assertThat(result.notice()).contains("pharmacist");
     }
 
+    @Test
+    void skipsAnUnavailableCheapestPharmacyWhenNoPharmacyIsRequested() {
+        MedicineCategory category = new MedicineCategory();
+        category.setName("Fallback Substitute Test");
+        category.setSlug("fallback-substitute-test-" + UUID.randomUUID());
+        category.setPrescriptionOnly(false);
+        category = categoryRepository.save(category);
+
+        Medicine original = medicine(category, "Fallback Original", "Paracetamol", "500 mg",
+                "Tablet", "Strip of 15", false, "OTC");
+        Medicine lowerCost = medicine(category, "Fallback Value", "Paracetamol", "500 mg",
+                "Tablet", "Strip of 15", false, "OTC");
+
+        Pharmacy paused = pharmacy(false);
+        Pharmacy usable = pharmacy(true);
+        stock(paused.getId(), original.getId(), "20.00", 10);
+        stock(paused.getId(), lowerCost.getId(), "10.00", 10);
+        stock(usable.getId(), original.getId(), "50.00", 10);
+        stock(usable.getId(), lowerCost.getId(), "30.00", 10);
+
+        var result = medicineService.substitutes(original.getId(), null, 3);
+
+        assertThat(result.pharmacyId()).isEqualTo(usable.getId());
+        assertThat(result.referencePrice()).isEqualByComparingTo("50.00");
+        assertThat(result.options()).extracting(MedicineDtos.SubstituteOption::name)
+                .containsExactly("Fallback Value");
+    }
+
     private Medicine medicine(MedicineCategory category, String name, String generic, String strength,
                               String form, String pack, boolean rx, String schedule) {
         Medicine medicine = new Medicine();
@@ -110,6 +138,10 @@ class MedicineSubstituteTest {
     }
 
     private Pharmacy pharmacy() {
+        return pharmacy(true);
+    }
+
+    private Pharmacy pharmacy(boolean acceptingOrders) {
         Pharmacy pharmacy = new Pharmacy();
         pharmacy.setOwnerUserId(740_000L + (System.nanoTime() % 10_000));
         pharmacy.setName("Substitute Test Pharmacy");
@@ -124,7 +156,7 @@ class MedicineSubstituteTest {
         pharmacy.setEmail("substitute-" + UUID.randomUUID() + "@example.test");
         pharmacy.setStatus(ApprovalStatus.APPROVED);
         pharmacy.setActive(true);
-        pharmacy.setAcceptingOrders(true);
+        pharmacy.setAcceptingOrders(acceptingOrders);
         return pharmacyRepository.save(pharmacy);
     }
 
