@@ -69,7 +69,7 @@ separates “fixed” from “still open”.
 | Pilot safety gate (`DEMO_MODE`, flags, signoff) | **MISSING** | Deliberately M2. Do not run a real RX/substitution pilot yet. |
 | Unfiltered audit logs `500` | **FIXED** | Derived queries replace nullable JPQL; live PostgreSQL `200`. |
 | Concurrency loser `500` | **FIXED** | Projection-before-lock, `409` mapping and the measured 50-way stock gate close the known race. |
-| Price/MRP and stock DB constraints | **FIXED** | `V5__m1_safety_invariants.sql`; fresh PostgreSQL applied all five migrations. |
+| Price/MRP and stock DB constraints | **FIXED** | `V5__m1_safety_invariants.sql`; fresh PostgreSQL applied all six migrations (V1–V6). |
 
 ## 2B. Deep-scan remediation (2026-11-20)
 
@@ -104,7 +104,25 @@ on work assigned before suspension.
 | A suspended pharmacy could review prescriptions, list the review queue or read prescription files. | **FIXED** | Review, queue, review history and file reads now require an approved, active pharmacy. |
 | Inventory and catalogue writes only checked approval status, not active state. | **FIXED** | `InventoryService.approvedPharmacy` now requires approval and `active=true`. |
 | The 50-way stock-10 gate had no reproducible evidence. | **PASS** | `infrastructure/scripts/stock-race-check.py` fired 50 simultaneous checkouts: 10 × `200`, 40 × `409`, 10 orders, stock 0, 10 SALE units, 0 errors on PostgreSQL 16. |
-| Branch protection, secret scanning and Dependabot controls. | **PARTIAL** | Dependabot configuration and `SECURITY.md` added. Secret scanning, push protection and Dependabot alerts/security updates enabled. `main` branch protection remains a deliberate open settings decision. |
+| Branch protection, secret scanning and Dependabot controls. | **FIXED (0.1.6)** | `main` now blocks force-pushes/deletion and requires all three CI contexts for pull requests; admin direct pushes remain available. Secret scanning, push protection and Dependabot alerts/security updates are enabled. |
+
+### 0.1.6 hardened edge (2026-11-20)
+
+This pass tested the state that remains after suspension: realtime channels, prescription assignment
+and production lifecycle controls.
+
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| A suspended pharmacy or rider could still subscribe to realtime tracking/delivery channels. | **FIXED** | `WebSocketAuthInterceptor` now requires an approved, active pharmacy for tracking and an approved rider for delivery/tracking; `WebSocketAuthInterceptorTest` covers both. |
+| An approved-but-inactive pharmacy could be selected for a new prescription upload. | **FIXED** | `PrescriptionService.upload` requires approval **and** active state; `SuspendedAuthorityTest.suspendedPharmacyCannotBeSelectedForPrescriptionUpload`. |
+| Checkout accepted one verified contact channel. | **FIXED** | `OrderService.place` requires both email and mobile verification; `OrderSafetyTest.orderRequiresBothEmailAndPhoneVerification`. |
+| No graceful drain, orchestration probes, leak detection or JDBC batching. | **FIXED** | `server.shutdown=graceful`, 30 s lifecycle timeout, `/actuator/health/liveness` + `/readiness` UP, Hikari leak detection, `hibernate.jdbc.batch_size=30`. |
+| CI had no production dependency audit gate. | **FIXED** | Frontend job runs `npm audit --omit=dev --audit-level=high`; current tree reports 0. |
+| Dependabot opened eight major runtime upgrades with partial compatibility coverage. | **FIXED** | All eight closed with migration rationale; `.github/dependabot.yml` ignores semver-major and groups minor/patch. |
+| `main` had no branch protection. | **FIXED** | Force-push/deletion blocked, three CI contexts required, conversation resolution enabled, admin bypass retained for direct pushes. |
+
+Verification: **52 backend**, **13 frontend**, **33 live smoke**, 50-way stock gate (10 winners / 40
+conflicts), health/liveness/readiness `UP`, `npm audit --omit=dev` 0.
 
 ### 0.1.4 model hardening (2026-11-20)
 
@@ -117,7 +135,7 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | Concurrent order transitions had no stale-write guard. | **FIXED** | `Order` carries `@Version`, `V6__order_version.sql` adds the column, and `OrderVersionTest` proves a stale write fails. |
 | A rejected rider left the order assigned with no replacement path. | **FIXED** | `DeliveryService.autoAssign` now distinguishes initial assignment from reassignment and preserves `DELIVERY_ASSIGNED`; `DeliveryReassignTest`. |
 | Console sidebar displayed a stale `v1.0` label. | **FIXED** | `Shell.tsx` reports `v0.1.4`. |
-| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS** in 0.1.5. Live providers and full browser/a11y/performance gates remain open; do not infer them from unit or smoke tests. |
+| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS** in 0.1.6. Live providers and full browser/a11y/performance gates remain open; do not infer them from unit or smoke tests. |
 
 ### GitHub controls (reviewed 2026-11-20)
 
@@ -125,17 +143,18 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | --- | --- |
 | Repository visibility | **Public** |
 | Open issues / pull requests | **0 / 0** |
-| Branch protection on `main` | **Disabled** (`404 Branch not protected`) — open decision |
+| Branch protection on `main` | **Enabled** — no force-push/deletion; three CI contexts required for PRs; admin direct push retained |
 | Secret scanning / push protection | **Enabled** (2026-11-20) |
-| Non-provider secret patterns / validity checks | **Disabled** |
+| Non-provider secret patterns / validity checks | **Disabled** (unavailable on this plan) |
 | Dependabot alerts / security updates | **Enabled** (2026-11-20) |
-| Dependabot version updates | **Configured** in `.github/dependabot.yml` |
-| Latest CI before the deep-scan commit | Run `44712057566` — **success** |
+| Dependabot version updates | **Minor/patch only**; semver-major ignored in `.github/dependabot.yml` |
+| Latest CI on `main` | Green for the 0.1.6 release commit |
 
 The public visibility exposes the source and this audit, including the historical P0 descriptions. No
 token or `.env` file is tracked, but a public security audit is still a disclosure decision. Branch
-protection changes how direct pushes and merges work, so it remains open rather than being silently
-enabled by a code commit.
+protection was enabled after an explicit review of the direct-push workflow. Force-push and deletion
+are blocked, all three CI contexts are required for pull requests, and admin bypass remains available
+for this single-maintainer release rail.
 
 ## 3. Environment, build and dependency evidence
 
@@ -266,14 +285,14 @@ repository has no test or environment that can prove the claim; it is not a pass
 | --- | --- | --- | --- |
 | P8-1 | Negative authorization tests for every cross-account access; rider never sees Rx content; only verified pharmacists approve Rx/substitution | **PARTIAL** | 28 backend tests and live RBAC checks exist. Live audit found two cross-tenant reads (invoice, review history) and no separate pharmacist role. Rider Rx visibility was not exercised. |
 | P8-2 | Table-driven order state machine; every illegal transition rejected; history written | **BROKEN** | `OrderStateMachine` is an `EnumMap`, but explicitly allows `DELIVERED → REFUNDED`, `CANCELLED → REFUNDED` and `FAILED → REFUNDED`. Live admin PATCH produced `200 REFUNDED` with no refund row. History is written. |
-| P8-3 | 50 parallel checkouts on stock 10 = exactly 10 successes | **PASS (0.1.5)** | `stock-race-check.py`: 10 × `200`, 40 × `409`, 10 orders, stock 0, 10 SALE units, 0 errors on PostgreSQL 16. |
+| P8-3 | 50 parallel checkouts on stock 10 = exactly 10 successes | **PASS (0.1.6)** | `stock-race-check.py`: 10 × `200`, 40 × `409`, 10 orders, stock 0, 10 SALE units, 0 errors on PostgreSQL 16. |
 | P8-4 | Payments: tampered signature rejected; duplicate webhook once; client success never trusted; amount equals server total | **PARTIAL** | `PaymentSignatureTest`; live invalid webhook → `401`; totals are server-calculated. Duplicate webhook replay, provider refunds and live Razorpay were not certified. |
 | P8-5 | Rx/UNKNOWN items can never reach `DELIVERY_ASSIGNED` without pharmacist approval | **MISSING** | `Medicine.prescriptionRequired` is a boolean and defaults false; no `rx_status=UNKNOWN` model, schedule enforcement or approval gate query. The existing review gate is order-level, not item-level. |
-| P8-6 | Security: gitleaks history clean; no high/critical dependencies; login/OTP/search/upload limits; upload sniffing; signed URLs ≤5 min; PII-redacted logs; no health details in push/SMS | **PARTIAL** | Gitleaks 11 commits clean; npm 0; Maven OSV 2 Spring WebMVC advisories; no high/critical gate is configured. Rate limit is per IP+path, not per account/device. Upload magic-byte check passed. Storage is local private, not signed URLs. Log redaction and notification redaction are not proven. CI does not run a dependency/audit gate. |
+| P8-6 | Security: gitleaks history clean; no high/critical dependencies; login/OTP/search/upload limits; upload sniffing; signed URLs ≤5 min; PII-redacted logs; no health details in push/SMS | **PARTIAL** | Gitleaks 11 commits clean; npm 0 and now gated by `npm audit --omit=dev --audit-level=high` in CI; Maven OSV still reports 2 Spring WebMVC advisories. Rate limit is per IP+path, not per account/device. Upload magic-byte check passed. Storage is local private, not signed URLs. Log redaction and notification redaction are not proven. |
 | P8-7 | Performance targets on a 250K-product seed; no N+1 | **NOT VERIFIED** | See `docs/PERF.md`. 15 products only; no PostGIS, load harness, percentiles or query-count assertions. |
 | P8-8 | UX: loading/empty/error/success on every screen; inline validation; 44px targets; axe zero serious/critical; 390/1440 screenshots | **PARTIAL** | Shared `PageLoader`, `EmptyState`, `Alert`, `FieldError` exist. No axe, Lighthouse, keyboard or screenshot gate; touch targets and i18n are unverified. See `docs/A11Y.md`. |
 | P8-9 | Reliability: Maps down → manual address + distance ETA; payments down → retry + cart kept; WebSocket reconnect; idempotency; backups with tested restore | **PARTIAL** | Haversine fallback returns distance and refuses geocoding; cart/order idempotency is sequential only; WebSocket auth tests exist but reconnect was not tested; no backup restore drill or payment retry test. |
-| P8-10 | Testing: Testcontainers (Postgres/PostGIS/Redis); Playwright journeys + failures + Express + substitution; CI blocks on lint/types/tests/E2E/audit/axe; 80% coverage target | **PARTIAL** | Backend tests use H2, not Testcontainers. No Playwright, axe, audit gate or coverage threshold. CI has backend, frontend and PostgreSQL smoke jobs only. |
+| P8-10 | Testing: Testcontainers (Postgres/PostGIS/Redis); Playwright journeys + failures + Express + substitution; CI blocks on lint/types/tests/E2E/audit/axe; 80% coverage target | **PARTIAL** | Backend tests use H2, not Testcontainers. No Playwright, axe or coverage threshold. CI now gates production npm audits and has backend, frontend and PostgreSQL smoke jobs. |
 | P8-11 | Rider safety: no punitive timers; batching limits; cold-chain exclusion; safety pause | **MISSING** | No rider batch, dispatch engine, cold-chain flag or safety pause. Admin assigns manually; rider UI shows route only. |
 | P8-12 | Demo/pilot gates: permanent DEMO banner; prod refuses `DEMO_MODE=true`; RX/substitution require ComplianceSignoff; kill switches per node/global | **MISSING** | No `DEMO_MODE`, feature flags, signoff table or node/global kill switch. |
 

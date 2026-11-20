@@ -102,8 +102,8 @@ public class OrderService {
         }
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> ApiException.unauthorized("Account not found"));
-        if (!customer.isEmailVerified() && !customer.isPhoneVerified()) {
-            throw ApiException.forbidden("Verify your email or mobile number before placing an order");
+        if (!customer.isEmailVerified() || !customer.isPhoneVerified()) {
+            throw ApiException.forbidden("Verify both your email and mobile number before placing an order");
         }
         Address address = addressRepository.findByIdAndUserId(request.addressId(), customerId)
                 .orElseThrow(() -> ApiException.badRequest("Select a valid delivery address"));

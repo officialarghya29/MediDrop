@@ -12,7 +12,7 @@ Status: **M1 safety slice complete; the 50-way stock gate is closed. One-command
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
 - M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan, substitute feature,
-  fallback fix, 0.1.4 hardening and 0.1.5 provider-state checks: **45 passed**.
+  fallback fix, 0.1.4 hardening, 0.1.5 provider-state checks and 0.1.6 edge hardening: **52 passed**.
 - Ran frontend tests: **13 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
@@ -77,9 +77,9 @@ Still open in M1:
 - Live gateway refund and browser-driven OTP handover.
 - Admin UI for pharmacist verification and medicine sale blocks (API exists; UI is M2/M12).
 - Per-account login lockout and distributed abuse controls are not implemented.
-- GitHub `main` protection remains disabled; it changes the direct-push workflow and needs an
-  explicit decision. Secret scanning/push protection and Dependabot alerts/security updates are now
-  enabled, and Dependabot version updates are configured.
+- `main` is now protected against force-push/deletion and requires the three CI jobs for pull
+  requests; admin direct pushes remain available. Secret scanning/push protection and Dependabot
+  alerts/security updates are enabled. Dependabot now ignores major-version jumps.
 
 ## Substitute comparison (0.1.2)
 
@@ -134,13 +134,26 @@ Still open in M1:
 - This closes the previously open 50-way M1 evidence gap. The 250K catalogue, sustained load and
   browser/accessibility gates remain open.
 
+## Edge hardening (0.1.6)
+
+- Suspended pharmacies and riders lose realtime tracking/delivery subscriptions, not only REST write
+  access.
+- Prescription upload requires an approved, active pharmacy; an approved-but-inactive pharmacy can
+  no longer receive new prescription data.
+- Checkout requires both email and mobile verification.
+- Graceful shutdown, liveness/readiness probes, Hikari leak detection and JDBC batching are active.
+- CI audits the production npm tree. Dependabot majors are deferred, and `main` branch protection
+  requires the three CI jobs for pull requests while preserving admin direct pushes.
+- `SuspendedAuthorityTest`, `WebSocketAuthInterceptorTest` and `OrderSafetyTest` cover the new edges.
+
 ## Release checkpoint
 
 `v0.1.4` added OTP identity guards, concurrent token locking, order versioning and rider
-reassignment. `v0.1.5` is the current **foundation release**: it enforces suspended-provider state,
-protects prescription data after suspension and records the measured 50-way stock result. It passes
-45 backend tests, 13 frontend tests and the production build. It is not the M1 milestone tag and is
-not launch-ready; one-command/design-token polish and M2–M15 remain open.
+reassignment. `v0.1.5` enforced suspended-provider state and recorded the measured 50-way stock
+result. `v0.1.6` is the current **foundation release**: it closes realtime and inactive-pharmacy
+edges, requires two-channel verification and adds production runtime/CI controls. It passes 52
+backend tests, 13 frontend tests, 33 live smoke checks and the 50-way stock gate. It is not the M1
+milestone tag and is not launch-ready; one-command/design-token polish and M2–M15 remain open.
 
 ## In progress
 

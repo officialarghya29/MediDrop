@@ -101,6 +101,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             try {
                 Long partnerId = Long.valueOf(destination.substring("/topic/delivery/".length()));
                 return deliveryPartnerRepository.findByUserId(principal.getUserId())
+                        .filter(partner -> partner.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED)
                         .map(partner -> partner.getId().equals(partnerId))
                         .orElse(false);
             } catch (NumberFormatException exception) {
@@ -116,10 +117,13 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             case ADMIN -> true;
             case CUSTOMER -> principal.getUserId().equals(order.getCustomerId());
             case PHARMACY -> pharmacyRepository.findByOwnerUserId(principal.getUserId())
+                    .filter(pharmacy -> pharmacy.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED
+                            && pharmacy.isActive())
                     .map(pharmacy -> pharmacy.getId().equals(order.getPharmacyId()))
                     .orElse(false);
             case DELIVERY -> deliveryAssignmentRepository.findByOrderId(order.getId())
                     .flatMap(assignment -> deliveryPartnerRepository.findById(assignment.getPartnerId()))
+                    .filter(partner -> partner.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED)
                     .map(partner -> partner.getUserId().equals(principal.getUserId()))
                     .orElse(false);
         };

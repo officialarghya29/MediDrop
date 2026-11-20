@@ -18,13 +18,13 @@ until it is measured on the stated dataset and profile.
 | Lighthouse performance | >= 90 on mid-range mobile | **NOT MEASURED** | Lighthouse is not installed or run in CI. |
 | N+1 query proof | No N+1 on critical paths | **NOT PROVEN** | No query-count assertions or Hibernate statistics gate. |
 | ETA error | Report MAE and p90 | **NOT MEASURED** | No ETA prediction records, actual-vs-predicted log or backtest dataset. |
-| 50 parallel checkouts on stock 10 | Exactly 10 successes | **PASS** | 0.1.5 live gate: 10 × `200`, 40 × `409`, stock 0, 10 ledger units, 0 errors. |
+| 50 parallel checkouts on stock 10 | Exactly 10 successes | **PASS** | 0.1.6 live gate: 10 × `200`, 40 × `409`, stock 0, 10 ledger units, 0 errors. |
 
 ## 2. What was actually measured in M0
 
 These are build/test facts, not performance results:
 
-- Backend: **45 tests passed** at the 0.1.5 baseline.
+- Backend: **52 tests passed** at the 0.1.6 baseline.
 - Frontend: **13 tests passed**; production build passed.
 - OpenAPI document: **200**, 96,425 bytes, approximately **1.5 s** on the clean local API. This is a
   single documentation-endpoint observation, not a p95.

@@ -26,6 +26,7 @@ Surfaces:
 - Web: <http://localhost:3000>
 - API: <http://localhost:8080>
 - Health: <http://localhost:8080/actuator/health>
+- Liveness / readiness: `/actuator/health/liveness`, `/actuator/health/readiness`
 - OpenAPI (dev only): <http://localhost:8080/swagger-ui.html>
 
 The Compose profile is `prod`; seeding is disabled and OpenAPI is disabled by default.
@@ -89,7 +90,7 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline: **45** backend tests, **13** frontend tests, **33** smoke checks and a
+Expected current baseline: **52** backend tests, **13** frontend tests, **33** smoke checks and a
 passing 50-way stock race.
 Flyway now runs **V1–V6**; V6 adds the order optimistic-version column.
 
@@ -151,9 +152,9 @@ java -jar target/medidrop-api-*.jar --server.port=8081
    carry the same version.
 2. Run `mvn -B -ntp verify` and `npm test && npm run build`; wait for CI on the exact commit.
 3. Create an annotated tag and push it:
-   `git tag -a v0.1.5 -m "MediDrop 0.1.5" && git push origin v0.1.5`.
+   `git tag -a v0.1.6 -m "MediDrop 0.1.6" && git push origin v0.1.6`.
 4. Publish a **normal latest release** with attached artifacts:
-   `gh release create v0.1.5 --verify-tag --latest --notes-file docs/releases/v0.1.5.md`.
+   `gh release create v0.1.6 --verify-tag --latest --notes-file docs/releases/v0.1.6.md`.
    Use `--prerelease` only when the build is deliberately not the latest runnable foundation.
 5. Never label a build `1.0.0` or “launch-ready” until the Part 8/original-36 gate, provider
    certification and legal/ops sign-off are complete.

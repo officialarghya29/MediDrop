@@ -3,6 +3,37 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
+## [0.1.6] — 2026-11-20
+
+**Production-hardening patch. Pre-pilot; not `1.0.0`.**
+
+### Fixed
+
+- Suspended pharmacies and riders now lose realtime tracking/delivery subscriptions. The STOMP
+  interceptor re-checks provider approval and active state before authorising a channel.
+- Prescription upload only accepts an approved **and active** pharmacy, closing the
+  approved-but-inactive assignment path.
+- Checkout now requires both email and mobile verification; either-channel verification was not
+  enough for a healthcare transaction.
+- Production runtime now drains in-flight requests for 30 seconds on shutdown, exposes
+  liveness/readiness probes, enables Hikari leak detection and batches JDBC writes.
+
+### Repository
+
+- Added a CI gate for production npm vulnerabilities.
+- Enabled `main` branch protection: no force-push/deletion, required CI contexts and conversation
+  resolution for pull requests. Admin direct pushes remain available for this release rail.
+- Dependabot now ignores major-version jumps and only auto-opens minor/patch updates. Eight unsafe
+  major PRs were closed with migration rationale.
+
+### Verification
+
+- Backend: **52 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**; production build passed.
+- Live PostgreSQL 16: **33 smoke checks passed, 0 failed**; health, liveness and readiness `UP`.
+- 50-way stock gate: **10 winners, 40 conflicts, 10 orders, stock 0, 10 SALE units, 0 errors**.
+- `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**.
+
 ## [0.1.5] — 2026-11-20
 
 **Foundation hardening. Pre-pilot; not `1.0.0`.**
@@ -156,7 +187,7 @@ after its gate passes.
 
 ## [0.2.0-m1] — unreleased
 
-The M1 code is present and tested in `0.1.5`; the milestone tag remains withheld until the
+The M1 code is present and tested in `0.1.6`; the milestone tag remains withheld until the
 one-command developer entry point and design-token pass close. The 50-way stock gate is measured.
 
 ## [0.1.0-m0] — 2026-11-20

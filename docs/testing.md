@@ -12,7 +12,7 @@
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
-`value` column is otherwise reserved by H2). The suite currently runs **45 tests**. The smoke script
+`value` column is otherwise reserved by H2). The suite currently runs **52 tests**. The smoke script
 exercises the real PostgreSQL schema, Flyway V1–V6, HTTP security and the seeded order flow. CI runs the
 backend and frontend gates plus the same smoke script against a disposable PostgreSQL 16 service.
 
@@ -30,7 +30,11 @@ backend and frontend gates plus the same smoke script against a disposable Postg
   savings and the paused-cheapest-pharmacy fallback.
 - `OrderVersionTest` — a stale order write cannot overwrite a newer lifecycle transition.
 - `DeliveryReassignTest` — a rejected rider is replaced without moving the order backwards.
-- `SuspendedAuthorityTest` — suspended riders and pharmacies cannot advance existing work.
+- `SuspendedAuthorityTest` — suspended riders and pharmacies cannot advance existing work, review
+  prescriptions, open the queue, read history/files or receive a new upload.
+- `WebSocketAuthInterceptorTest` — suspended providers cannot subscribe to tracking/delivery
+  channels, and clients cannot publish to the broker.
+- `OrderSafetyTest` — tenant-scoped invoices, refund bypass refusal and two-channel verification.
 - `AuthFlowTest` — includes locked-account OTP rejection and one-time code consumption.
 
 Run a single class:
@@ -65,7 +69,7 @@ python3 infrastructure/scripts/stock-race-check.py \
 
 It requires PyJWT and `psql`, or `--psql-container` for a Docker-only host. A pass is exactly ten
 `200` responses, forty `409` responses, ten orders, stock 0, ten sold ledger units and no other status.
-The 0.1.5 run passed all of those conditions on fresh PostgreSQL 16.
+The 0.1.6 run passed all of those conditions on fresh PostgreSQL 16.
 
 ## Frontend tests
 

@@ -2,8 +2,12 @@ package com.medidrop.order;
 
 import com.medidrop.common.ApprovalStatus;
 import com.medidrop.common.exception.ApiException;
+import com.medidrop.payment.PaymentMethod;
 import com.medidrop.pharmacy.Pharmacy;
 import com.medidrop.pharmacy.PharmacyRepository;
+import com.medidrop.security.Role;
+import com.medidrop.user.User;
+import com.medidrop.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +28,7 @@ class OrderSafetyTest {
     @Autowired private OrderService orderService;
     @Autowired private OrderRepository orderRepository;
     @Autowired private PharmacyRepository pharmacyRepository;
+    @Autowired private UserRepository userRepository;
 
     private Pharmacy pharmacy(long ownerId) {
         Pharmacy p = new Pharmacy();
@@ -77,6 +82,25 @@ class OrderSafetyTest {
                 .isInstanceOf(ApiException.class).hasMessageContaining("Order not found");
         assertThatThrownBy(() -> orderService.customerInvoice(700_002L, order.getId()))
                 .isInstanceOf(ApiException.class).hasMessageContaining("Order not found");
+    }
+
+    @Test
+    void orderRequiresBothEmailAndPhoneVerification() {
+        User customer = new User();
+        customer.setFullName("Partially Verified Customer");
+        customer.setEmail("partial-" + UUID.randomUUID() + "@example.test");
+        customer.setPhone("9" + String.format("%09d", Math.abs(UUID.randomUUID().hashCode()) % 1_000_000_000L));
+        customer.setPasswordHash("unused-test-hash");
+        customer.setRole(Role.CUSTOMER);
+        customer.setEmailVerified(true);
+        customer.setPhoneVerified(false);
+        User saved = userRepository.save(customer);
+
+        assertThatThrownBy(() -> orderService.place(saved.getId(),
+                new OrderDtos.PlaceOrderRequest(1L, null, null, PaymentMethod.COD, null),
+                "partially-verified-" + saved.getId()))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("Verify both");
     }
 
     @Test

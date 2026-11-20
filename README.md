@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="docs/assets/hero-v015.png" alt="MediDrop 0.1.5 — care at local velocity" width="100%" />
+  <img src="docs/assets/hero-v016.png" alt="MediDrop 0.1.6 — care at local velocity" width="100%" />
 </p>
 
 <p align="center">
   <a href="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml"><img src="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/officialarghya29/MediDrop/releases"><img src="https://img.shields.io/github/v/release/officialarghya29/MediDrop?label=release&color=0b8b68" alt="Latest release" /></a>
   <img src="https://img.shields.io/badge/status-pre--pilot-f59e0b" alt="Pre-pilot" />
-  <img src="https://img.shields.io/badge/tests-43_backend_%2F_13_frontend-0b8b68" alt="Tests" />
+  <img src="https://img.shields.io/badge/tests-52_backend_%2F_13_frontend-0b8b68" alt="Tests" />
   <img src="https://img.shields.io/badge/Java-21-0b8b68" alt="Java 21" />
   <img src="https://img.shields.io/badge/Spring_Boot-3.5.16-0b8b68" alt="Spring Boot 3.5.16" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-17313d" alt="PostgreSQL 16" />
@@ -31,7 +31,7 @@
 
 ---
 
-> **STATUS / 0.1.5 — pre-pilot foundation.** This is a working, CI-verified system, not a
+> **STATUS / 0.1.6 — pre-pilot foundation.** This is a working, CI-verified system, not a
 > `1.0.0` claim and not a licensed pharmacy service. Live provider certification, the 250K and
 > accessibility gates, legal review and operations sign-off remain open. The honest
 > boundary is documented in [Versions](docs/VERSIONS.md), [Progress](docs/PROGRESS.md) and
@@ -41,9 +41,9 @@
 
 | Signal | Reading |
 | --- | --- |
-| **Release** | `v0.1.5` — provider state authority |
-| **Continuity** | `v0.1.4` identity/lifecycle guards → `v0.1.5` suspension enforcement and stock proof |
-| **Backend** | **45 passed, 0 failed** |
+| **Release** | `v0.1.6` — hardened edge |
+| **Continuity** | `v0.1.5` provider authority → `v0.1.6` realtime, tenancy and runtime hardening |
+| **Backend** | **52 passed, 0 failed** |
 | **Frontend** | **13 passed, 0 failed** |
 | **Live API** | **33 checks, 0 failed** against PostgreSQL 16 |
 | **Stock race** | **50 concurrent checkouts on stock 10 → 10 orders, 0 oversold** |
@@ -52,9 +52,25 @@
 | **Surface** | React SPA → nginx → Spring Boot → PostgreSQL |
 | **Region** | Kolkata, West Bengal · `22.5726° N, 88.3639° E` |
 
-### The 0.1.5 state-authority pass
+### The 0.1.6 hardened-edge pass
 
-This release closes provider-state and stock-race gaps left after 0.1.4:
+This release closes the remaining session, tenancy and runtime edges found after the 0.1.5
+state-authority pass:
+
+- **Suspended providers lose realtime access immediately.** Pharmacy tracking subscriptions require
+  an approved, active pharmacy, and rider delivery/tracking subscriptions require an approved rider.
+- **Inactive pharmacies cannot receive new prescriptions.** Prescription upload now requires both
+  approval and active state, not approval alone.
+- **Orders require both contact channels verified.** A customer must verify email **and** mobile
+  before checkout; one verified channel is no longer enough.
+- **Shutdown is graceful.** In-flight requests get a 30-second drain, Hikari leak detection is on,
+  JDBC writes batch at 30, and liveness/readiness probes are exposed for orchestration.
+- **Dependency and branch controls are enforced.** Major dependency jumps are deferred to a
+  migration, CI audits the production npm tree, and `main` rejects force-pushes/deletion while
+  requiring all three CI jobs for pull requests. Admin direct pushes remain available for this
+  single-maintainer release rail.
+
+The 0.1.5 state-authority work remains:
 
 - **Suspended riders lose write authority immediately.** Accepting, advancing or completing an
   existing delivery now requires an `APPROVED` partner, not merely a valid login.
@@ -129,7 +145,7 @@ When no pharmacy is supplied, MediDrop walks price-ordered stock until it finds 
 
 ### Concurrency, explicitly
 
-The 0.1.5 model does not claim that every race is solved. It makes the important races **safe to
+The current model does not claim that every race is solved. It makes the important races **safe to
 retry**:
 
 ```text
@@ -216,12 +232,12 @@ These are live screenshots of this repository against its own API and seeded Pos
 ## / 05 · VERIFICATION DECK
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 45 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 52 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
-| Backend | `cd backend && mvn test` | 45 tests | **45 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 52 tests | **52 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
@@ -235,7 +251,10 @@ These are live screenshots of this repository against its own API and seeded Pos
 - A successful OTP is consumed once; replay is rejected.
 - OTP and password-reset rows are loaded for update, not read-then-write.
 - A suspended rider cannot accept a delivery that was assigned before suspension.
-- A suspended pharmacy cannot accept an order or open the prescription queue.
+- Suspended pharmacies and riders lose realtime tracking/delivery subscriptions.
+- A suspended or inactive pharmacy cannot review, open the queue, read history, read files or
+  receive a new prescription upload.
+- An order cannot be placed until both email and mobile are verified.
 - A stale order write cannot overwrite a newer order version.
 - A rejected rider is replaced without moving the order backwards.
 - Fifty simultaneous checkouts against ten units produce exactly ten orders and no negative stock.
@@ -320,12 +339,12 @@ production data.
 | Prescriptions | Private storage; owner, active linked pharmacy or admin only |
 | Payments | Server-side HMAC verification, idempotent webhooks, admin-only refunds |
 | Account state | Locked, disabled and deletion-pending accounts are blocked at login, refresh and OTP |
-| Provider suspension | Suspended riders and pharmacies cannot advance work or read prescription data |
+| Provider suspension | Suspended riders and pharmacies cannot advance work, read prescription data or subscribe to realtime channels |
 | Disclosure | Private reporting path in [SECURITY.md](SECURITY.md) |
 | Abuse prevention | Per-instance rate limit on auth and webhook paths; generic auth errors |
 | Audit | Append-only rows for approvals, suspensions, refunds, settings and order actions |
 | Transport | TLS, HSTS, nosniff, frame, referrer and permissions policies at nginx |
-| Realtime | STOMP CONNECT requires an access token; public tracking is keyed and PII-minimal |
+| Realtime | STOMP CONNECT requires an access token; tracking/delivery subscriptions re-check active provider state; public tracking is keyed and PII-minimal |
 | API schema | Swagger/OpenAPI disabled in the production profile unless explicitly enabled |
 
 **Documented trade-off:** the SPA stores tokens in `localStorage` to keep the API stateless. Short
@@ -351,7 +370,8 @@ Nothing in the core flow depends on a credential that is absent. That is deliber
 
 | Version | Scope | State |
 | --- | --- | --- |
-| [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate, Dependabot and security policy | **Latest foundation release** |
+| [`v0.1.6`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.6) | Realtime suspension enforcement, inactive-pharmacy RX guard, two-channel verification, graceful runtime, branch protection | **Latest foundation release** |
+| [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate, Dependabot and security policy | Previous release |
 | [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, concurrent token consumption, order version, rider reassignment, README command deck | Previous release |
 | [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Paused-pharmacy substitute fallback | Previous release |
 | `v0.2.0-m1` | Remaining M1 gate: one-command run and design tokens (50-way stock closed) | In progress |
@@ -366,10 +386,11 @@ The honest blockers are unchanged:
 - The 250K catalogue, sustained load, axe, Lighthouse and browser-driven journey gates.
 - Legal, regulatory and operations sign-off for online pharmacy, Schedule H/H1/X handling,
   prescription retention, DPDP, GST and substitution.
-- GitHub `main` branch protection remains a deliberate open decision. Secret scanning, push
-  protection and Dependabot alerts/security updates are enabled; the repository is public.
 
-No release on this rail is a launch-readiness claim.
+No release on this rail is a launch-readiness claim. Repository controls are now stricter: `main`
+blocks force-pushes/deletion and requires the three CI jobs for pull requests; secret scanning,
+push protection and Dependabot alerts/security updates are enabled. Non-provider secret patterns and
+validity checks remain unavailable on this plan.
 
 ---
 

@@ -11,6 +11,11 @@ updates:
         patterns:
           - "org.springframework*"
           - "io.spring*"
+        update-types: ["minor", "patch"]
+    # Majors change runtime contracts and need an explicit migration and rollout.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /frontend
@@ -24,10 +29,16 @@ updates:
           - "react"
           - "react-dom"
           - "@types/react*"
+        update-types: ["minor", "patch"]
       vite:
         patterns:
           - "vite"
           - "@vitejs/*"
+        update-types: ["minor", "patch"]
+    # Do not auto-open React 19, Tailwind 4, Zustand 5 or similar breaking jumps.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

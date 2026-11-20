@@ -1,9 +1,13 @@
 package com.medidrop.security;
 
+import com.medidrop.common.ApprovalStatus;
+import com.medidrop.delivery.DeliveryAssignment;
 import com.medidrop.delivery.DeliveryAssignmentRepository;
+import com.medidrop.delivery.DeliveryPartner;
 import com.medidrop.delivery.DeliveryPartnerRepository;
 import com.medidrop.order.Order;
 import com.medidrop.order.OrderRepository;
+import com.medidrop.pharmacy.Pharmacy;
 import com.medidrop.pharmacy.PharmacyRepository;
 import com.medidrop.user.User;
 import com.medidrop.user.UserRepository;
@@ -87,6 +91,47 @@ class WebSocketAuthInterceptorTest {
         subscribe.setUser(authentication(7L, Role.CUSTOMER));
 
         assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message(subscribe), channel));
+    }
+
+    @Test
+    void rejectsTrackingSubscriptionForSuspendedPharmacy() {
+        Order order = mock(Order.class);
+        when(orderRepository.findByTrackingKey("tracking-key")).thenReturn(Optional.of(order));
+
+        Pharmacy pharmacy = mock(Pharmacy.class);
+        when(pharmacy.getStatus()).thenReturn(ApprovalStatus.SUSPENDED);
+        when(pharmacyRepository.findByOwnerUserId(7L)).thenReturn(Optional.of(pharmacy));
+
+        StompHeaderAccessor subscribe = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+        subscribe.setDestination("/topic/tracking/tracking-key");
+        subscribe.setUser(authentication(7L, Role.PHARMACY));
+
+        assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message(subscribe), channel));
+    }
+
+    @Test
+    void rejectsDeliveryAndTrackingChannelsForSuspendedRider() {
+        DeliveryPartner partner = mock(DeliveryPartner.class);
+        when(partner.getStatus()).thenReturn(ApprovalStatus.SUSPENDED);
+        when(deliveryPartnerRepository.findByUserId(7L)).thenReturn(Optional.of(partner));
+
+        StompHeaderAccessor delivery = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+        delivery.setDestination("/topic/delivery/4");
+        delivery.setUser(authentication(7L, Role.DELIVERY));
+        assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message(delivery), channel));
+
+        Order order = mock(Order.class);
+        when(order.getId()).thenReturn(42L);
+        when(orderRepository.findByTrackingKey("tracking-key")).thenReturn(Optional.of(order));
+        DeliveryAssignment assignment = mock(DeliveryAssignment.class);
+        when(assignment.getPartnerId()).thenReturn(4L);
+        when(deliveryAssignmentRepository.findByOrderId(42L)).thenReturn(Optional.of(assignment));
+        when(deliveryPartnerRepository.findById(4L)).thenReturn(Optional.of(partner));
+
+        StompHeaderAccessor tracking = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+        tracking.setDestination("/topic/tracking/tracking-key");
+        tracking.setUser(authentication(7L, Role.DELIVERY));
+        assertThrows(AccessDeniedException.class, () -> interceptor.preSend(message(tracking), channel));
     }
 
     @Test

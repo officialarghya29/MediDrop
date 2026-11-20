@@ -72,7 +72,7 @@ public class PrescriptionService {
         FileValidation.assertMagicBytes(content, contentType);
         if (pharmacyId != null) {
             pharmacyRepository.findById(pharmacyId)
-                    .filter(p -> p.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED)
+                    .filter(p -> p.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED && p.isActive())
                     .orElseThrow(() -> ApiException.badRequest("Selected pharmacy is not available"));
         }
 

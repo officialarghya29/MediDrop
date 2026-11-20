@@ -14,9 +14,15 @@ import com.medidrop.order.OrderService;
 import com.medidrop.order.OrderStatus;
 import com.medidrop.pharmacy.Pharmacy;
 import com.medidrop.pharmacy.PharmacyRepository;
+import com.medidrop.prescription.Prescription;
+import com.medidrop.prescription.PrescriptionDtos;
+import com.medidrop.prescription.PrescriptionRepository;
+import com.medidrop.prescription.PrescriptionService;
+import com.medidrop.prescription.PrescriptionStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +46,8 @@ class SuspendedAuthorityTest {
     @Autowired private PharmacyRepository pharmacyRepository;
     @Autowired private OrderRepository orderRepository;
     @Autowired private OrderService orderService;
+    @Autowired private PrescriptionService prescriptionService;
+    @Autowired private PrescriptionRepository prescriptionRepository;
 
     @Test
     void suspendedRiderCannotAcceptAnAssignedDelivery() {
@@ -70,6 +78,53 @@ class SuspendedAuthorityTest {
                 .hasMessageContaining("not active");
     }
 
+    @Test
+    void suspendedPharmacyCannotReviewAQueuedPrescription() {
+        Pharmacy pharmacy = pharmacy(ApprovalStatus.SUSPENDED, false);
+        Prescription prescription = prescription(pharmacy);
+
+        assertThatThrownBy(() -> prescriptionService.review(pharmacy.getOwnerUserId(), prescription.getId(),
+                new PrescriptionDtos.ReviewDecisionRequest(true, "Approved after suspension", null)))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("must be active");
+    }
+
+    @Test
+    void suspendedPharmacyCannotOpenOrReadItsPrescriptionQueue() {
+        Pharmacy pharmacy = pharmacy(ApprovalStatus.SUSPENDED, false);
+        Prescription prescription = prescription(pharmacy);
+
+        assertThatThrownBy(() -> prescriptionService.pharmacyQueue(pharmacy.getOwnerUserId(), "UPLOADED", 0, 20))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("not active");
+        assertThatThrownBy(() -> prescriptionService.reviews(pharmacy.getOwnerUserId(), prescription.getId()))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("not active");
+    }
+
+    @Test
+    void suspendedPharmacyCannotReadPrescriptionFile() {
+        Pharmacy pharmacy = pharmacy(ApprovalStatus.SUSPENDED, false);
+        Prescription prescription = prescription(pharmacy);
+
+        assertThatThrownBy(() -> prescriptionService.loadFile(pharmacy.getOwnerUserId(), Role.PHARMACY,
+                prescription.getId()))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("cannot access");
+    }
+
+    @Test
+    void suspendedPharmacyCannotBeSelectedForPrescriptionUpload() {
+        Pharmacy pharmacy = pharmacy(ApprovalStatus.SUSPENDED, false);
+        MockMultipartFile file = new MockMultipartFile("file", "rx.jpg", "image/jpeg",
+                new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00});
+
+        assertThatThrownBy(() -> prescriptionService.upload(IDS.incrementAndGet(), file, "queued after suspension",
+                pharmacy.getId()))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("not available");
+    }
+
     private Pharmacy pharmacy(ApprovalStatus status, boolean active) {
         Pharmacy pharmacy = new Pharmacy();
         pharmacy.setOwnerUserId(IDS.incrementAndGet());
@@ -87,6 +142,18 @@ class SuspendedAuthorityTest {
         pharmacy.setActive(active);
         pharmacy.setAcceptingOrders(active);
         return pharmacyRepository.save(pharmacy);
+    }
+
+    private Prescription prescription(Pharmacy pharmacy) {
+        Prescription prescription = new Prescription();
+        prescription.setCustomerId(IDS.incrementAndGet());
+        prescription.setFileName("rx.png");
+        prescription.setStorageKey("test/" + UUID.randomUUID());
+        prescription.setContentType("image/png");
+        prescription.setSizeBytes(12L);
+        prescription.setPharmacyId(pharmacy.getId());
+        prescription.setStatus(PrescriptionStatus.UPLOADED);
+        return prescriptionRepository.save(prescription);
     }
 
     private Order order(Long pharmacyId, OrderStatus status) {
