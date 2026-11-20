@@ -18,8 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
@@ -142,8 +140,7 @@ public class PharmacyService {
     @Transactional(readOnly = true)
     public PharmacyDtos.DashboardResponse dashboard(Long userId) {
         Pharmacy pharmacy = requirePharmacy(userId);
-        Instant from = Instant.now().minus(30, ChronoUnit.DAYS);
-        long totalOrders = orderRepository.findPharmacyOrdersSince(pharmacy.getId(), Instant.EPOCH).size();
+        long totalOrders = orderRepository.countByPharmacyId(pharmacy.getId());
         long pending = orderRepository.countByPharmacyIdAndStatusIn(pharmacy.getId(),
                 List.of(OrderStatus.PAYMENT_CONFIRMED, OrderStatus.PRESCRIPTION_APPROVED));
         long ready = orderRepository.countByPharmacyIdAndStatusIn(pharmacy.getId(),
@@ -154,7 +151,7 @@ public class PharmacyService {
                 List.of(OrderStatus.CANCELLED, OrderStatus.PRESCRIPTION_REJECTED));
         BigDecimal revenue = orderRepository.sumRevenueForPharmacy(pharmacy.getId(),
                 List.of(OrderStatus.DELIVERED));
-        long lowStock = inventoryRepository.findLowStock(pharmacy.getId()).size();
+        long lowStock = inventoryRepository.countLowStock(pharmacy.getId());
         long awaitingRx = prescriptionRepository.findByPharmacyIdAndStatus(pharmacy.getId(),
                 PrescriptionStatus.UPLOADED, org.springframework.data.domain.PageRequest.of(0, 1)).getTotalElements()
                 + prescriptionRepository.findByPharmacyIdAndStatus(pharmacy.getId(),

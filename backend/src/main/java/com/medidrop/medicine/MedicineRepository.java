@@ -27,11 +27,16 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
                    or lower(coalesce(m.strength,'')) like lower(concat('%', coalesce(:q, ''), '%')))
               and (:categoryId is null or m.categoryId = :categoryId)
               and (:manufacturerId is null or m.manufacturerId = :manufacturerId)
+              and (:pharmacyId is null or exists (
+                   select i.id from PharmacyInventory i
+                   where i.medicineId = m.id and i.pharmacyId = :pharmacyId
+                     and i.active = true and i.stockQuantity > i.reservedQuantity))
               and (:prescriptionRequired is null or m.prescriptionRequired = :prescriptionRequired)
             """)
     Page<Medicine> search(@Param("q") String q,
                           @Param("categoryId") Long categoryId,
                           @Param("manufacturerId") Long manufacturerId,
+                          @Param("pharmacyId") Long pharmacyId,
                           @Param("prescriptionRequired") Boolean prescriptionRequired,
                           Pageable pageable);
 

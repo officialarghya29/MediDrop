@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, CheckCircle2, KeyRound, MailCheck, ShieldCheck } from 'lucide-react';
-import Logo from '../../components/Logo';
+import { ArrowLeft, CheckCircle2, KeyRound, MailCheck, ShieldCheck, Sparkles } from 'lucide-react';
+import Logo, { LogoMark } from '../../components/Logo';
 import { Alert, FieldError, Spinner, useToast } from '../../components/ui';
 import { apiPost, errorMessage } from '../../lib/api';
 import { dashboardPathFor, useAuth } from '../../store/auth';
@@ -28,20 +28,57 @@ function AuthShell({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="container-page grid min-h-[calc(100vh-4rem)] place-items-center py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex justify-center">
-          <Logo />
+    <div className="container-page py-8 lg:py-12">
+      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 shadow-soft backdrop-blur-xl lg:grid-cols-[1.02fr_0.98fr]">
+        <aside className="mesh-hero relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex">
+          <div className="grid-lines pointer-events-none absolute inset-0" />
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-grape-500/35 blur-3xl" />
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <LogoMark size={42} />
+              <div>
+                <p className="font-display text-lg font-bold leading-none">MediDrop</p>
+                <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-brand-200">Local care network</p>
+              </div>
+            </div>
+            <h2 className="mt-12 font-display text-4xl font-bold leading-[1.02] tracking-tight">
+              Health, but make it <span className="gradient-text">make sense</span>.
+            </h2>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-300">
+              One account for live pharmacy stock, pharmacist-reviewed prescriptions and tracked handover.
+            </p>
+          </div>
+          <div className="relative mt-12 space-y-3">
+            {[
+              'Licensed pharmacies only',
+              'Prescription checked before dispensing',
+              'OTP-verified delivery handover',
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3 rounded-2xl bg-white/5 px-3.5 py-3 ring-1 ring-white/10">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-300" />
+                <span className="text-xs font-semibold text-slate-200">{item}</span>
+              </div>
+            ))}
+            <p className="flex items-center gap-2 pt-2 text-[10px] text-slate-400">
+              <Sparkles className="h-3.5 w-3.5 text-grape-300" /> Built for Kolkata&apos;s neighbourhood pharmacies.
+            </p>
+          </div>
+        </aside>
+
+        <div className="p-6 sm:p-10">
+          <div className="mb-6 flex lg:hidden">
+            <Logo />
+          </div>
+          <span className="eyebrow">Secure account</span>
+          <h1 className="mt-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+          <p className="muted mt-2">{subtitle}</p>
+          <div className="mt-6">{children}</div>
+          {footer && <div className="mt-5 text-center text-sm text-slate-600">{footer}</div>}
+          <p className="mt-7 flex items-start gap-2 border-t border-slate-100 pt-4 text-[11px] leading-relaxed text-slate-500">
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-700" />
+            Prescription medicines are dispensed only after a registered pharmacist reviews and approves them.
+          </p>
         </div>
-        <div className="card-pad">
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
-          <p className="muted mt-1">{subtitle}</p>
-          <div className="mt-5">{children}</div>
-        </div>
-        {footer && <div className="mt-4 text-center text-sm text-slate-600">{footer}</div>}
-        <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-500">
-          <ShieldCheck className="h-3.5 w-3.5" /> Prescription medicines are dispensed only after pharmacist review.
-        </p>
       </div>
     </div>
   );

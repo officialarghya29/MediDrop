@@ -309,9 +309,6 @@ public class OrderService {
                 throw ApiException.forbidden("A pharmacist must approve the prescription before dispensing");
             }
         }
-        if (target == OrderStatus.CANCELLED) {
-            restoreStock(order, userId, "Order rejected by pharmacy: " + (reason == null ? "" : reason));
-        }
         transition(order, target, Role.PHARMACY, userId, reason);
         notifyCustomer(order, target);
         return detail(order, false);
@@ -322,7 +319,6 @@ public class OrderService {
         Order order = orderRepository.findByIdAndCustomerId(orderId, customerId)
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
         if (customerMayCancelNow(order)) {
-            restoreStock(order, customerId, "Customer cancelled: " + (reason == null ? "" : reason));
             transition(order, OrderStatus.CANCELLED, Role.CUSTOMER, customerId, reason);
             notifyPharmacy(order, "Order " + order.getOrderNumber() + " was cancelled by the customer");
         } else if (OrderStateMachine.customerMayRequestCancellation(order.getStatus())) {
@@ -338,9 +334,6 @@ public class OrderService {
     public OrderDtos.OrderDetail adminTransition(Long adminId, Long orderId, OrderStatus target, String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
-        if (target == OrderStatus.CANCELLED && !order.isTerminal()) {
-            restoreStock(order, adminId, "Cancelled by administrator: " + (reason == null ? "" : reason));
-        }
         transition(order, target, Role.ADMIN, adminId, reason);
         notifyCustomer(order, target);
         return detail(order, false);
@@ -480,6 +473,10 @@ public class OrderService {
 
     private void applyTransition(Order order, OrderStatus target, Role actor, Long actorId, String reason) {
         OrderStatus from = order.getStatus();
+        if (target == OrderStatus.CANCELLED || target == OrderStatus.PRESCRIPTION_REJECTED
+                || target == OrderStatus.FAILED) {
+            releaseOrderResources(order, actorId, reason);
+        }
         order.setStatus(target);
         if (target == OrderStatus.DELIVERED) {
             order.setDeliveredAt(Instant.now());
@@ -506,7 +503,22 @@ public class OrderService {
         historyRepository.save(history);
     }
 
+    private void releaseOrderResources(Order order, Long actorId, String reason) {
+        if (!order.isCouponReleased() && order.getCouponCode() != null) {
+            couponRepository.findForUpdateByCode(order.getCouponCode()).ifPresent(coupon -> {
+                int used = coupon.getUsedCount() == null ? 0 : coupon.getUsedCount();
+                coupon.setUsedCount(Math.max(0, used - 1));
+                couponRepository.save(coupon);
+            });
+            order.setCouponReleased(true);
+        }
+        restoreStock(order, actorId, reason == null || reason.isBlank()
+                ? "Order " + order.getOrderNumber() + " closed without delivery"
+                : reason);
+    }
+
     private void restoreStock(Order order, Long actorId, String reason) {
+        if (order.isStockRestored()) return;
         List<OrderItem> items = orderItemRepository.findByOrderId(order.getId()).stream()
                 .sorted(Comparator.comparing(OrderItem::getInventoryId)).toList();
         for (OrderItem item : items) {
@@ -525,6 +537,7 @@ public class OrderService {
                 transactionRepository.save(tx);
             });
         }
+        order.setStockRestored(true);
     }
 
     private void notifyCustomer(Order order, OrderStatus status) {

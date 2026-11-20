@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
           {trend.map((point) => (
             <div key={point.date} className="group relative flex-1">
               <div
-                className="w-full rounded-t bg-navy-700/80 transition group-hover:bg-brand-700"
+                className="w-full rounded-t bg-gradient-to-t from-brand-700 via-brand-500 to-cyan-400 transition group-hover:from-grape-600 group-hover:to-coral-400"
                 style={{ height: `${Math.max(2, (point.orders / maxOrders) * 150)}px` }}
                 title={`${dateOnly(point.date)}: ${point.orders} orders · ${inr(point.revenue)}`}
               />

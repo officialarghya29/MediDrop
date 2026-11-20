@@ -34,7 +34,7 @@ an illegal status transition return `409`. Errors never include stack traces in 
 | POST | `/auth/forgot-password` | Request password reset |
 | POST | `/auth/reset-password` | Consume reset token |
 | GET | `/medicines` | Browse catalogue |
-| GET | `/medicines/search` | Search with category/sort/Rx filters |
+| GET | `/medicines/search` | Search with category, pharmacy, sort and Rx filters |
 | GET | `/medicines/suggestions` | Autocomplete suggestions |
 | GET | `/medicines/categories` | Categories |
 | GET | `/medicines/manufacturers` | Manufacturers |

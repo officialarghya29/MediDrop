@@ -32,6 +32,9 @@ public interface PharmacyInventoryRepository extends JpaRepository<PharmacyInven
     @Query("select i from PharmacyInventory i where i.pharmacyId = :pharmacyId and i.stockQuantity <= i.lowStockThreshold and i.active = true")
     List<PharmacyInventory> findLowStock(@Param("pharmacyId") Long pharmacyId);
 
+    @Query("select count(i) from PharmacyInventory i where i.pharmacyId = :pharmacyId and i.stockQuantity <= i.lowStockThreshold and i.active = true")
+    long countLowStock(@Param("pharmacyId") Long pharmacyId);
+
     @Query("""
             select i.medicineId, min(i.price), max(i.mrp), sum(i.stockQuantity), count(i)
             from PharmacyInventory i

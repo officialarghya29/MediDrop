@@ -32,7 +32,8 @@ public class MedicineService {
 
     @Transactional(readOnly = true)
     public MedicineDtos.SearchResponse search(String query, Long categoryId, Long manufacturerId,
-                                              Boolean prescriptionRequired, String sortBy, int page, int size) {
+                                              Long pharmacyId, Boolean prescriptionRequired,
+                                              String sortBy, int page, int size) {
         int safeSize = Math.min(Math.max(size, 1), 50);
         int safePage = Math.max(page, 0);
         Sort sort = switch (sortBy == null ? "relevance" : sortBy) {
@@ -42,7 +43,8 @@ public class MedicineService {
         };
         Pageable pageable = PageRequest.of(safePage, safeSize, sort);
         String q = (query == null || query.isBlank()) ? null : query.trim();
-        Page<Medicine> result = medicineRepository.search(q, categoryId, manufacturerId, prescriptionRequired, pageable);
+        Page<Medicine> result = medicineRepository.search(q, categoryId, manufacturerId, pharmacyId,
+                prescriptionRequired, pageable);
 
         List<MedicineDtos.MedicineSummary> items = enrich(result.getContent());
         if ("price".equals(sortBy)) {
@@ -64,7 +66,7 @@ public class MedicineService {
     @Transactional(readOnly = true)
     public PageResponse<MedicineDtos.MedicineSummary> browse(int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50), Sort.by("name"));
-        Page<Medicine> pageResult = medicineRepository.search(null, null, null, null, pageable);
+        Page<Medicine> pageResult = medicineRepository.search(null, null, null, null, null, pageable);
         List<MedicineDtos.MedicineSummary> all = enrich(pageResult.getContent());
         return new PageResponse<>(all, pageResult.getNumber(), pageResult.getSize(),
                 pageResult.getTotalElements(), pageResult.getTotalPages(), pageResult.isFirst(), pageResult.isLast());

@@ -11,7 +11,7 @@
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
-`value` column is otherwise reserved by H2). The suite currently runs 21 tests. The smoke script exercises
+`value` column is otherwise reserved by H2). The suite currently runs 24 tests. The smoke script exercises
 the real PostgreSQL schema, Flyway migrations and HTTP security. CI runs the backend and frontend gates
 plus the same smoke script against a disposable PostgreSQL 16 service.
 
@@ -21,8 +21,9 @@ plus the same smoke script against a disposable PostgreSQL 16 service.
 - `PricingServiceTest` — subtotal, delivery fee thresholds, coupon caps, tax rounding.
 - `AuthFlowTest` — registration, login, refresh rotation, OTP verification, RBAC rejection.
 - `PaymentSignatureTest` — HMAC verification, tampered payload rejection, sandbox guard.
-- `MedicineSearchTest` — unfiltered browse and term-less search, the PostgreSQL null-parameter regression.
+- `MedicineSearchTest` — unfiltered browse, term-less search, the PostgreSQL null-parameter regression and pharmacy-scoped stock filtering.
 - `OrderQueryTest` — Active/Delivered/Cancelled filtering, status counts, pagination, keyed tracking lookup and public tracking privacy.
+- `OrderReleaseTest` — cancellation and prescription rejection restore stock and coupon capacity exactly once, including the ledger entry and idempotency markers.
 - `AdminQueryTest` — invalid admin approval filters return a client error instead of an unhandled 500.
 
 Run a single class:

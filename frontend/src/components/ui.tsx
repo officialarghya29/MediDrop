@@ -48,8 +48,8 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
-      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-mint text-brand-700">
+    <div className="flex flex-col items-center justify-center rounded-[1.75rem] border border-white/80 bg-white/70 px-6 py-12 text-center shadow-card backdrop-blur-sm">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 via-mint to-grape-100 text-brand-800">
         {icon ?? <Info className="h-5 w-5" />}
       </div>
       <h3 className="text-base font-semibold text-navy-900">{title}</h3>
@@ -182,12 +182,12 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-navy-900/50 p-4 sm:items-center">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-navy-950/55 p-4 backdrop-blur-sm sm:items-center">
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-lg rounded-2xl bg-white shadow-soft"
+        className="w-full max-w-lg overflow-hidden rounded-[1.75rem] bg-white shadow-soft"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold">{title}</h2>
@@ -216,14 +216,15 @@ export function StatCard({
   tone?: string;
 }) {
   return (
-    <div className="card-pad">
-      <div className="flex items-start justify-between gap-3">
+    <div className="card-pad group relative overflow-hidden">
+      <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-brand-200/40 to-grape-200/20 blur-2xl transition group-hover:scale-125" />
+      <div className="relative flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-navy-900">{value}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-500">{label}</p>
+          <p className="mt-2 font-display text-3xl font-bold tracking-tight text-navy-900">{value}</p>
           {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
         </div>
-        {icon && <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}>{icon}</div>}
+        {icon && <div className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-sm ${tone}`}>{icon}</div>}
       </div>
     </div>
   );
@@ -246,8 +247,10 @@ export function Tabs<T extends string>({
           role="tab"
           aria-selected={value === tab.id}
           onClick={() => onChange(tab.id)}
-          className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-            value === tab.id ? 'bg-navy-900 text-white' : 'bg-white text-navy-700 hover:bg-slate-100'
+          className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+            value === tab.id
+              ? 'bg-gradient-to-r from-navy-900 to-brand-900 text-white shadow-md'
+              : 'bg-white/75 text-navy-700 ring-1 ring-white hover:bg-white'
           }`}
         >
           {tab.label}

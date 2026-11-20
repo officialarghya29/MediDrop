@@ -53,8 +53,6 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<Review> forPharmacy(Long pharmacyId) {
-        return reviewRepository.findAll().stream()
-                .filter(r -> r.getPharmacyId().equals(pharmacyId))
-                .toList();
+        return reviewRepository.findByPharmacyIdOrderByCreatedAtDesc(pharmacyId);
     }
 }

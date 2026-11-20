@@ -144,9 +144,9 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 
 | Endpoint | p50 | p95 | p99 | Sequential throughput |
 | --- | ---: | ---: | ---: | ---: |
-| `GET /medicines/search` | 6.3 ms | 9.7 ms | 11.5 ms | ~150 req/s |
-| `GET /medicines` | 5.0 ms | 7.5 ms | 8.3 ms | ~195 req/s |
-| `GET /pharmacies/nearby` | 2.4 ms | 3.6 ms | 5.1 ms | ~400 req/s |
+| `GET /medicines/search` | 8.4 ms | 11.8 ms | 13.2 ms | ~113 req/s |
+| `GET /medicines` | 7.2 ms | 9.8 ms | 11.1 ms | ~139 req/s |
+| `GET /pharmacies/nearby` | 3.3 ms | 4.9 ms | 5.9 ms | ~298 req/s |
 
 > **Read this honestly:** these are local single-node numbers on a development machine with a demo dataset.
 > They prove the request path is lean, not that production will hit these figures. Capacity must be validated
@@ -155,13 +155,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 21 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 24 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 21 tests | **21 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 24 tests | **24 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -184,8 +184,12 @@ lose updates; and the H2 test schema now initialises every table instead of sile
 `OrderQueryTest` covers the filters, counts and tracking lookup. A follow-up audit found and fixed the last
 unhandled enum filters (admin approvals and prescription queues now return `400`), stopped platform reports
 from loading every order and assignment in memory, and made the public tracking projection reveal only the
-city and a neighbourhood-level coordinate — never the street address. `AdminQueryTest` guards the admin
-filter path. CI now compiles from a clean checkout and runs the live smoke suite on PostgreSQL.
+city and a neighbourhood-level coordinate — never the street address. A cancellation audit then found that
+stock and coupon capacity were only released on one cancellation path; `V4` adds idempotent release markers
+and `OrderReleaseTest` proves that cancellation and prescription rejection put both back exactly once. The
+storefront also gained a real pharmacy filter — the link previously carried a query parameter the API ignored.
+`AdminQueryTest` guards the admin filter path. CI now compiles from a clean checkout and runs the live smoke
+suite on PostgreSQL.
 
 ---
 
@@ -353,7 +357,7 @@ Full endpoint catalogue: [docs/api.md](docs/api.md).
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 21 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 24 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 

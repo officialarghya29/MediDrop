@@ -44,6 +44,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByCustomerId(Long customerId);
 
+    long countByPharmacyId(Long pharmacyId);
+
     long countByPharmacyIdAndStatusIn(Long pharmacyId, Collection<OrderStatus> statuses);
 
     @Query("select coalesce(sum(o.totalAmount), 0) from Order o where o.status in :statuses and o.pharmacyId = :pharmacyId")

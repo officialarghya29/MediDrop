@@ -91,7 +91,7 @@ The console providers print messages to the API log in development. Before go-li
 
 ## Verified vs pending
 
-Verified locally: migrations on PostgreSQL 16, API boot with seed data, 21 backend tests, 33-check API
+Verified locally: migrations on PostgreSQL 16, API boot with seed data, 24 backend tests, 33-check API
 smoke test, frontend typecheck/build, 13 frontend tests.
 
 Not verified (no credentials in this environment): live Razorpay payments and refunds, Google Maps

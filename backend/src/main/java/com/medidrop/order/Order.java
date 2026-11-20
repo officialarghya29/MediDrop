@@ -124,6 +124,12 @@ public class Order extends BaseEntity {
     @Column(name = "cancel_eligible_until")
     private Instant cancelEligibleUntil;
 
+    @Column(name = "stock_restored", nullable = false)
+    private boolean stockRestored = false;
+
+    @Column(name = "coupon_released", nullable = false)
+    private boolean couponReleased = false;
+
     public boolean isTerminal() {
         return status == OrderStatus.DELIVERED || status == OrderStatus.CANCELLED
                 || status == OrderStatus.REFUNDED || status == OrderStatus.FAILED;

@@ -126,7 +126,7 @@ public class ReportingService {
                 .toList();
         long delivered = orders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).count();
         long cancelled = orders.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED).count();
-        long lowStock = inventoryRepository.findLowStock(pharmacyId).size();
+        long lowStock = inventoryRepository.countLowStock(pharmacyId);
         return new PharmacyAnalytics(window, series, revenue,
                 delivered == 0 ? BigDecimal.ZERO
                         : revenue.divide(BigDecimal.valueOf(delivered), 2, RoundingMode.HALF_UP),

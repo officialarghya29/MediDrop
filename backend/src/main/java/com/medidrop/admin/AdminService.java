@@ -209,7 +209,8 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<AdminDtos.CouponRow> coupons() {
-        return couponRepository.findAll().stream().map(this::couponRow).toList();
+        return couponRepository.findAll(PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .getContent().stream().map(this::couponRow).toList();
     }
 
     @Transactional(readOnly = true)

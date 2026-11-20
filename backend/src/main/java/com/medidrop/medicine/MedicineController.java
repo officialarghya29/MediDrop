@@ -30,12 +30,13 @@ public class MedicineController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long manufacturerId,
+            @RequestParam(required = false) Long pharmacyId,
             @RequestParam(required = false) Boolean prescriptionRequired,
             @RequestParam(defaultValue = "relevance") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size) {
-        return ApiResponse.ok(medicineService.search(q, categoryId, manufacturerId, prescriptionRequired,
-                sort, page, size));
+        return ApiResponse.ok(medicineService.search(q, categoryId, manufacturerId, pharmacyId,
+                prescriptionRequired, sort, page, size));
     }
 
     @GetMapping("/suggestions")

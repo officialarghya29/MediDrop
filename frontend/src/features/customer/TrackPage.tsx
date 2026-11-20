@@ -51,7 +51,7 @@ export default function TrackPage() {
 
   const center = { lat: data.destinationLatitude, lng: data.destinationLongitude };
   const markers = [
-    { lat: data.destinationLatitude, lng: data.destinationLongitude, label: 'Delivery address', tone: 'brand' as const },
+    { lat: data.destinationLatitude, lng: data.destinationLongitude, label: 'Delivery area', tone: 'brand' as const },
     ...(data.pharmacyLatitude && data.pharmacyLongitude
       ? [{ lat: data.pharmacyLatitude, lng: data.pharmacyLongitude, label: 'Pharmacy', tone: 'navy' as const }]
       : []),
@@ -75,7 +75,7 @@ export default function TrackPage() {
           <p className="flex items-center gap-2 text-slate-600">
             <MapPin className="h-4 w-4 text-brand-700" /> {data.destinationLabel}
           </p>
-          {data.etaMinutes !== undefined && (
+          {data.etaMinutes !== undefined && data.etaMinutes > 0 && (
             <p className="flex items-center gap-2 text-slate-600">
               <Clock className="h-4 w-4 text-brand-700" /> ETA ~{data.etaMinutes} min
             </p>
