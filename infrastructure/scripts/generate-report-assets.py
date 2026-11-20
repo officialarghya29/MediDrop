@@ -199,7 +199,7 @@ def main() -> None:
         {"label": "API smoke · live PostgreSQL", "tests": 33},
         {"label": "Backend · JUnit", "tests": 52},
         {"label": "Frontend · Vitest", "tests": 13},
-        {"label": "Browser + axe · Chrome", "tests": 5},
+        {"label": "Browser + axe · Chrome", "tests": 9},
     ]
     latency_chart(data)
     quality_chart(data, suites)

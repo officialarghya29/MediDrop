@@ -266,7 +266,7 @@ export default function Shell() {
               <Sparkles className="h-5 w-5 text-brand-300" />
               <p className="mt-3 font-display text-sm font-bold">MediDrop OS</p>
               <p className="mt-1 text-[11px] leading-relaxed text-white/70">Live healthcare operations, all in one calm console.</p>
-              <Badge tone="bg-white/10 text-white mt-3" className="ring-1 ring-white/15">v0.1.7</Badge>
+              <Badge tone="bg-white/10 text-white mt-3" className="ring-1 ring-white/15">v0.1.8</Badge>
             </div>
           </aside>
         )}

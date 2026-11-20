@@ -31,6 +31,7 @@ claim `1.0.0` yet.
 | [`v0.1.1`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1) | M1 safety slice and deep-scan hardening; pre-pilot | **Released pre-release** |
 | [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison with safety filters | **Released pre-release** |
 | [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Substitute fallback reliability | Published foundation release |
+| `0.1.8` | Sustained search/order soak, authenticated axe coverage, measured Lighthouse report, search heading fix | **Mainline patch; not tagged** |
 | [`v0.1.7`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.7) | Measured 250K search, Playwright + axe public gate, lowercased search indexes, dependency refresh | **Current foundation release** |
 | [`v0.1.6`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.6) | Realtime suspension enforcement, inactive-pharmacy RX guard, two-channel verification, production runtime controls | Previous release |
 | [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate | Previous release |
@@ -39,7 +40,8 @@ claim `1.0.0` yet.
 | `v0.3.0-m2` | Five roles, pilot gates, DEMO_MODE and ComplianceSignoff | Not started |
 
 `v0.1.1` and `v0.1.2` remain historical pre-releases. `v0.1.7` is the current downloadable
-foundation build and the latest normal release; this is still not a pilot-readiness claim.
+foundation build and the latest normal release. `0.1.8` is the mainline follow-up patch and is not a
+release or pilot-readiness claim until it is tagged.
 
 ## Why this helps
 

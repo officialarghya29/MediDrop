@@ -90,14 +90,15 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline: **52** backend tests, **13** frontend tests, **5** Playwright/axe checks,
-**33** smoke checks, a passing 50-way stock race and 250K search p95 below 300 ms.
-Flyway now runs **V1–V7**; V7 adds lowercased search expression indexes.
+Expected current baseline: **52** backend tests, **13** frontend tests, **9** Playwright/axe checks,
+**33** smoke checks, a passing 60-second search/order soak, a passing 50-way stock race and 250K
+search p95 below 300 ms. Flyway now runs **V1–V7**; V7 adds lowercased search expression indexes.
 
-The current gate is **still not** the v5 Part 8 gate. Public Playwright/axe and a 250K search harness
-now exist, but Testcontainers/PostGIS, Lighthouse, a coverage threshold, sustained load and
-role-dashboard accessibility are missing. The 50-way stock harness does not replace those gates.
-Do not claim Part 8 from a green CI run. See `docs/PERF.md` and `docs/A11Y.md`.
+The current gate is **still not** the v5 Part 8 gate. Public/authenticated Playwright/axe, a 250K
+search harness, a single-node soak and a recorded Lighthouse median now exist, but
+Testcontainers/PostGIS, a Lighthouse CI threshold, a coverage threshold, multi-instance load and full
+page/keyboard/screen-reader coverage are missing. The 50-way stock harness does not replace those
+gates. Do not claim Part 8 from a green CI run. See `docs/PERF.md` and `docs/A11Y.md`.
 
 Browser/axe gate:
 
@@ -114,6 +115,23 @@ python3 infrastructure/scripts/catalogue-load-check.py \
   --base-url http://127.0.0.1:8080 \
   --rows 250000 --samples 100 --p95-ms 300 \
   --psql-container medidrop-gate
+```
+
+Sustained search/order soak (API with demo seed; also runs in CI):
+
+```bash
+python3 infrastructure/scripts/soak-check.py \
+  --base-url http://127.0.0.1:8080 \
+  --duration-seconds 60 --search-workers 3 --order-interval-seconds 2
+```
+
+Lighthouse (built preview with API proxied):
+
+```bash
+cd frontend
+VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run preview -- --port 4174
+# second terminal, from the repository root
+python3 infrastructure/scripts/lighthouse-check.py --base-url http://127.0.0.1:4174
 ```
 
 `DEMO_MODE`, the v5 feature flags and `ComplianceSignoff` are not implemented. Do not set

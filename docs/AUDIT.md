@@ -135,7 +135,7 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | Concurrent order transitions had no stale-write guard. | **FIXED** | `Order` carries `@Version`, `V6__order_version.sql` adds the column, and `OrderVersionTest` proves a stale write fails. |
 | A rejected rider left the order assigned with no replacement path. | **FIXED** | `DeliveryService.autoAssign` now distinguishes initial assignment from reassignment and preserves `DELIVERY_ASSIGNED`; `DeliveryReassignTest`. |
 | Console sidebar displayed a stale `v1.0` label. | **FIXED** | `Shell.tsx` reports `v0.1.4`. |
-| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS (0.1.6)**. Public Playwright/axe and 250K search gates added in 0.1.7. Live providers, sustained load, Lighthouse and role-dashboard accessibility remain open. |
+| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS (0.1.6)**; public/role Playwright-axe, 250K search, 60-second soak and Lighthouse added by 0.1.8. Live providers, multi-instance load and full keyboard/screen-reader coverage remain open. |
 
 ### 0.1.7 measured edge (2026-11-20)
 
@@ -153,6 +153,19 @@ deferred dependency batch.
 Limits: one local 250K run, no soak, no Lighthouse, no role-dashboard axe coverage, no recorded
 keyboard/screen-reader pass. This is still not a launch-readiness claim.
 
+### 0.1.8 sustained and authenticated gates (2026-11-20)
+
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| Order placement had no sustained-load or percentile evidence. | **FIXED** | `soak-check.py` ran three search workers plus real COD order placement for 60 seconds: **5,001 searches, p95 7.9 ms; 31 orders, p95 28.7 ms; 0 errors**. Targets are 300 ms and 800 ms. The gate now runs in the required CI smoke job. |
+| Role dashboards and checkout had no automated axe coverage. | **FIXED** | Playwright/axe now checks checkout, pharmacy, delivery and admin with role-scoped fixtures. Browser suite is **9 passed**, zero WCAG A/AA violations. |
+| Lighthouse performance and accessibility were unmeasured. | **MEASURED** | Lighthouse 12.8.2 mobile, three-run median: home **92 performance / 100 accessibility**, search **93 / 100**. One home sample scored 82, so this is a median with recorded variance, not a CI floor. |
+| Search results skipped a heading level. | **FIXED** | Lighthouse `heading-order` found h1 → h3. A hidden h2 now labels the results; no rule was disabled. |
+
+Limits: the soak uses the 18-row demo catalogue and a single API/database node. Lighthouse covers the
+public home and search only, not checkout or consoles. Keyboard, screen-reader, touch-target, Ops Night,
+i18n and 1440 px audits remain open.
+
 ### GitHub controls (reviewed 2026-11-20)
 
 | Control | State |
@@ -164,7 +177,7 @@ keyboard/screen-reader pass. This is still not a launch-readiness claim.
 | Non-provider secret patterns / validity checks | **Disabled** (unavailable on this plan) |
 | Dependabot alerts / security updates | **Enabled** (2026-11-20) |
 | Dependabot version updates | **Minor/patch only**; semver-major ignored in `.github/dependabot.yml` |
-| Latest CI on `main` | Green for the 0.1.7 release commit |
+| Latest CI on `main` | Green for the 0.1.7 release commit; 0.1.8 adds the soak step |
 
 The public visibility exposes the source and this audit, including the historical P0 descriptions. No
 token or `.env` file is tracked, but a public security audit is still a disclosure decision. Branch
@@ -188,7 +201,7 @@ for this single-maintainer release rail.
 | Compose from example | `docker compose --env-file .env.example config` with required secrets added | **exit 0** |
 | nginx syntax | previous M0 infrastructure run (`nginx -t` in Docker) | **passed** |
 | OpenAPI after clean boot | `GET /v3/api-docs` | **200**, 96,425 bytes, ~1.5 s |
-| Part 8 harness | repository search + `frontend/package.json` + `.github/workflows/ci.yml` | **PARTIAL**: 0.1.7 adds public Playwright/axe and a 250K search harness; still no Testcontainers, Lighthouse or coverage gate |
+| Part 8 harness | repository search + `frontend/package.json` + `.github/workflows/ci.yml` | **PARTIAL**: 0.1.8 has public/authenticated Playwright/axe, 250K search and a 60-second soak; still no Testcontainers, Lighthouse CI threshold or coverage gate |
 | v5 engines/schema | search for `FulfilmentNode`, `EtaPrediction`, `RxVault`, `Substitution`, `FeatureFlag`, `ComplianceSignoff`, `requiresColdChain`, `OrderStepEvent` | **NO IMPLEMENTATION** found outside docs and generic settings |
 | CI at audited commit | GitHub Actions run `44698246524` | **3/3 jobs successful** |
 | CI at docs baseline | GitHub Actions run `44703376130` on `4a37d33` | **3/3 jobs successful** |
@@ -582,14 +595,14 @@ requirements from M0 are complete; no milestone below has been started.
 - Google geocoding.
 - S3/object storage.
 - OCR extraction.
-- Browser-driven role flows, cross-browser visual regression, full-surface axe and Lighthouse.
-- Load/soak testing.
+- Cross-browser visual regression, remaining page-level axe coverage and full keyboard/screen-reader audits.
+- Multi-instance load, 250K-with-soak combination and PostGIS/nearby-node performance.
 - Production backup/restore, monitoring and alerting.
 - Original Section 24 exact wording.
 - Legal/compliance sign-off.
 - Addendum v5 Node Selection, ETA, Rx Vault, Savings Engine, cold chain, rider dispatch, step events,
   DEMO_MODE, feature flags and ComplianceSignoff.
-- Sustained load/soak, Lighthouse, full role-dashboard axe, keyboard/screen-reader audits,
+- Multi-instance load, Lighthouse CI thresholds, full page/keyboard/screen-reader audits,
   390/1440 screenshots, Testcontainers and a coverage threshold.
 - Live node capacity, cold-chain capability, rider batching and ETA backtest data.
 

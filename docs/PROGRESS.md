@@ -14,7 +14,7 @@ Status: **M1 safety slice complete; the 50-way stock gate is closed. One-command
 - M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan, substitute feature,
   fallback fix, 0.1.4 hardening, 0.1.5 provider-state checks, 0.1.6 edge hardening and 0.1.7
   measured-edge work: **52 passed**.
-- Ran frontend tests: **13 passed**; Playwright + axe public gate: **5 passed**.
+- Ran frontend tests: **13 passed**; Playwright + axe public and authenticated gate: **9 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
 - Ran an OSV batch scan of 101 Maven runtime packages: **2 residual Spring WebMVC advisories**.
@@ -132,9 +132,28 @@ Still open in M1:
 - Added `infrastructure/scripts/stock-race-check.py`, a black-box harness that seeds 50 customers and
   carts, then fires 50 simultaneous checkouts at one inventory row with stock 10.
 - Live PostgreSQL 16 result: **10 × 200, 40 × 409, 10 orders, stock 0, 10 SALE ledger units, 0 errors**.
-- This closed the 50-way M1 evidence gap. At 0.1.6 the 250K catalogue, sustained load and
-  browser/accessibility gates were still open; 0.1.7 now covers 250K search and the public
-  browser/axe gate, while sustained load and full role accessibility remain open.
+- This closed the 50-way M1 evidence gap. 0.1.7 added the 250K search and public browser/axe gates;
+  0.1.8 adds the 60-second search/order soak and authenticated role axe coverage. Multi-instance
+  load and full keyboard/screen-reader coverage remain open.
+
+## Sustained and authenticated gates (0.1.8)
+
+- Added `infrastructure/scripts/soak-check.py`, a 60-second external gate with three concurrent
+  search workers and real COD order placement through the public HTTP flow.
+- The required CI smoke job now runs the soak after the 33-check smoke suite. It fails on any error,
+  empty search, non-confirmed order or p95 above target.
+- Local run: **5,001 searches at p95 7.9 ms** and **31 orders at p95 28.7 ms**, zero errors, against
+  search 300 ms and order 800 ms targets.
+- Extended Playwright + axe to checkout and the pharmacy, delivery and admin dashboards using
+  role-scoped DTO fixtures and seeded browser sessions. Result: **9 passed**, zero WCAG A/AA
+  violations.
+- Added a pinned Lighthouse runner and mobile report. Median of three runs: home performance **92**,
+  search performance **93**, accessibility **100** on both. One home sample scored 82, so variance is
+  recorded rather than hidden.
+- Fixed a real heading-order defect on search results (h1 → h3) with a hidden h2; no axe or Lighthouse
+  rule was suppressed.
+- Limits: the soak runs against the 18-row demo catalogue, not 250K; Lighthouse covers only home and
+  search; keyboard, screen-reader, touch-target, Ops Night and i18n remain open.
 
 ## Measured edge (0.1.7)
 
@@ -166,11 +185,12 @@ Still open in M1:
 `v0.1.4` added OTP identity guards, concurrent token locking, order versioning and rider
 reassignment. `v0.1.5` enforced suspended-provider state and recorded the measured 50-way stock
 result. `v0.1.6` closed realtime and inactive-pharmacy edges and added runtime/CI controls. `v0.1.7`
-is the current **foundation release**: it measures 250K search, adds a Playwright/axe CI gate and
-refreshes the deferred dependencies. It passes 52 backend tests, 13 frontend tests, 5 browser/axe
-checks, 33 live smoke checks, the 50-way stock gate and the 250K search gate. It is not the M1
-milestone tag and is not launch-ready; sustained load, Lighthouse, full role accessibility and
-M2–M15 remain open.
+is the latest tagged **foundation release**: it measures 250K search, adds a Playwright/axe CI gate and
+refreshes the deferred dependencies. The `0.1.8` mainline patch adds a sustained search/order soak,
+authenticated axe coverage and a measured Lighthouse report. It passes 52 backend tests, 13 frontend
+tests, 9 browser/axe checks, 33 live smoke checks, the 60-second soak, the 50-way stock gate and the
+250K search gate. It is not the M1 milestone tag and is not launch-ready; keyboard/screen-reader,
+touch-target, multi-instance load and M2–M15 remain open.
 
 ## In progress
 
@@ -188,9 +208,10 @@ The M1 safety slice is implemented and tested; remaining M1 items above are inte
    professional. No launch claim is allowed.
 4. **Original Section 10.** The exact order-state specification was not supplied; the audit uses
    `docs/order-lifecycle.md` and the implemented `OrderStateMachine`.
-5. **250K catalogue and performance environment.** No licensed dataset, sustained-load/PostGIS
-   environment or Lighthouse/axe run exists. The 50-way stock harness now exists, but the v5
-   performance and accessibility targets are still NOT VERIFIED, not passed.
+5. **Production-scale and full accessibility environment.** The 250K synthetic search, 60-second
+   single-node soak, 50-way stock race and mobile Lighthouse median now exist. Licensed data,
+   multi-instance load, PostGIS/nearby-node queries, N+1 proof, keyboard/screen-reader passes and
+   full role/page axe coverage are still NOT VERIFIED.
 
 ## Next
 
@@ -204,11 +225,11 @@ The M1 safety slice is implemented and tested; remaining M1 items above are inte
 
 ## Current tree state
 
-M1 safety slice, 0.1.5 provider-state hardening and documentation. Application changes are the
-current-flow fixes listed above, order versioning in Flyway V6, OTP/rider hardening and suspension
-checks. The v5
-engines, design system, i18n, PWA, DEMO_MODE, feature flags and ComplianceSignoff remain
-unimplemented. `.env.example` is unchanged because those flags are still not read or enforced.
+M1 safety slice, provider-state hardening, the 0.1.7 measured-edge work and the 0.1.8 sustained /
+authenticated gates. Application changes are the current-flow fixes listed above, order versioning in
+Flyway V6, OTP/rider hardening, suspension checks and the search heading fix. The v5 engines, design
+system, i18n, PWA, DEMO_MODE, feature flags and ComplianceSignoff remain unimplemented.
+`.env.example` is unchanged because those flags are still not read or enforced.
 
 ## Audit DB notes
 

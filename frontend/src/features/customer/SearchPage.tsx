@@ -164,6 +164,7 @@ export default function SearchPage() {
 
       {data && (
         <>
+          <h2 className="sr-only">Search results</h2>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-navy-900">

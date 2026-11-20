@@ -13,7 +13,7 @@
 
     <groupId>com.medidrop</groupId>
     <artifactId>medidrop-api</artifactId>
-    <version>0.1.7</version>
+    <version>0.1.8</version>
     <name>MediDrop API</name>
     <description>MediDrop healthcare commerce and delivery platform API</description>
 

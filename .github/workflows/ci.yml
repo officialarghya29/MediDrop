@@ -139,6 +139,13 @@ jobs:
           exit 1
       - name: Run end-to-end smoke suite
         run: bash infrastructure/scripts/smoke-test.sh
+      - name: Sustained load and soak gate
+        run: >-
+          python3 infrastructure/scripts/soak-check.py
+          --base-url http://127.0.0.1:8080
+          --duration-seconds 60
+          --search-workers 3
+          --order-interval-seconds 2
       - name: Upload API log
         if: always()
         uses: actions/upload-artifact@v7

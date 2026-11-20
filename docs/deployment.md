@@ -93,9 +93,10 @@ The console providers print messages to the API log in development. Before go-li
 ## Verified vs pending
 
 Verified locally: migrations on PostgreSQL 16 (V1–V7), API boot with seed data, 52 backend tests,
-33-check API smoke test, frontend typecheck/build, 13 frontend tests, 5 Playwright/axe public checks
-and 250K catalogue search p95 280.5 ms. Sustained load, Lighthouse, full role accessibility and live
-providers are not verified.
+33-check API smoke test, frontend typecheck/build, 13 frontend tests, 9 Playwright/axe public and
+authenticated checks, the 60-second search/order soak, 250K catalogue search p95 280.5 ms, and a
+Lighthouse mobile median of 92/93 performance with accessibility 100. Multi-instance load, keyboard
+and screen-reader passes, full page coverage and live providers are not verified.
 
 Not verified (no credentials in this environment): live Razorpay payments and refunds, Google Maps
 geocoding, SMTP delivery, SMS delivery, S3 storage, OCR. Their integrations are isolated behind
