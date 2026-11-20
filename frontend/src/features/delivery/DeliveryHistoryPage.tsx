@@ -27,7 +27,12 @@ export default function DeliveryHistoryPage() {
       {history.length === 0 ? (
         <EmptyState icon={<Bike className="h-5 w-5" />} title="No past deliveries" description="Completed and failed runs will be listed here." />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <div
+          className="overflow-x-auto rounded-2xl border border-slate-200 bg-white"
+          role="region"
+          aria-label="Delivery history table"
+          tabIndex={0}
+        >
           <table className="table-base min-w-[44rem]">
             <thead>
               <tr>

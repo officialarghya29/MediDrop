@@ -224,6 +224,145 @@ const tracking = {
   pharmacyLongitude: 88.3639,
 };
 
+const deliveredAssignment = {
+  id: 2,
+  orderId: 2,
+  orderNumber: 'MD-2601-0002',
+  status: 'DELIVERED',
+  pharmacyName: 'Salt Lake Care Pharmacy',
+  pharmacyAddress: 'DN 51, Sector V, Kolkata',
+  customerArea: 'New Town, Kolkata',
+  destinationLatitude: 22.5867,
+  destinationLongitude: 88.4172,
+  distanceKm: 5.1,
+  estimatedMinutes: 24,
+  payout: 68,
+  assignedAt: '2026-11-19T14:10:00Z',
+  prescriptionRequired: false,
+  otpVerified: true,
+};
+
+const inventoryRow = {
+  id: 1,
+  medicineId: 1,
+  medicineName: medicine.name,
+  brand: medicine.brand,
+  strength: medicine.strength,
+  packSize: medicine.packSize,
+  prescriptionRequired: false,
+  price: 32.5,
+  mrp: 40,
+  stockQuantity: 6,
+  availableQuantity: 6,
+  lowStockThreshold: 10,
+  active: true,
+};
+
+const pendingPrescriptions = [{
+  id: 1,
+  customerId: 2,
+  customerName: 'Arghya Demo Customer',
+  fileName: 'prescription-november.pdf',
+  uploadedAt: '2026-11-20T09:30:00Z',
+  status: 'UPLOADED',
+  notes: 'Please review before dispensing.',
+  orderId: 1,
+  orderNumber: 'MD-2601-0001',
+}];
+
+const pharmacyAnalytics = {
+  days: 30,
+  series: [{ date: '2026-11-20', orders: 18, revenue: 6240.5 }],
+  revenue: 48260.5,
+  averageOrderValue: 312.4,
+  deliveredOrders: 154,
+  cancelledOrders: 5,
+  lowStockItems: 2,
+  topProducts: [{ label: 'Paracetamol 500 mg', count: 62 }],
+  forecast: [{
+    medicine: 'ORS Sachet',
+    unitsLast30Days: 44,
+    suggestedNext7Days: 12,
+    method: 'moving-average',
+  }],
+};
+
+const adminPharmacy = {
+  id: 4,
+  name: 'Behala Community Pharmacy',
+  city: 'Kolkata',
+  licenseNumber: 'WB-DL-2026-0042',
+  phone: '9800000004',
+  status: 'PENDING',
+  registeredAt: '2026-11-18T08:00:00Z',
+  rating: 0,
+  documents: [{
+    documentType: 'DRUG_LICENSE',
+    fileName: 'drug-licence.pdf',
+    status: 'UPLOADED',
+  }],
+};
+
+const adminPartner = {
+  id: 6,
+  fullName: 'Suman Demo Rider',
+  phone: '9800000006',
+  vehicleType: 'Motorcycle',
+  status: 'PENDING',
+  online: false,
+  completedDeliveries: 0,
+  rating: 0,
+  appliedAt: '2026-11-18T10:00:00Z',
+  documents: [{
+    documentType: 'DRIVING_LICENSE',
+    fileName: 'driving-licence.pdf',
+    status: 'UPLOADED',
+  }],
+};
+
+const adminOrder = {
+  id: 1,
+  orderNumber: 'MD-2601-0001',
+  customerName: 'Arghya Demo Customer',
+  pharmacyName: 'Salt Lake Care Pharmacy',
+  status: 'READY_FOR_PICKUP',
+  totalAmount: 63.13,
+  placedAt: '2026-11-20T10:15:00Z',
+  customerRole: 'CUSTOMER',
+};
+
+const adminUser = {
+  id: 2,
+  fullName: 'Arghya Demo Customer',
+  email: 'customer@medidrop.local',
+  phone: '9800000002',
+  role: 'CUSTOMER',
+  enabled: true,
+  locked: false,
+  emailVerified: true,
+  joinedAt: '2026-01-12T08:00:00Z',
+};
+
+const systemSettings = [{
+  key: 'delivery.base-fee',
+  value: '25.00',
+  description: 'Base delivery fee in INR.',
+  publicSetting: true,
+}];
+
+const coupons = [{
+  id: 1,
+  code: 'WELCOME10',
+  type: 'PERCENT',
+  value: 10,
+  minOrderValue: 199,
+  maxDiscount: 50,
+  active: true,
+  usageLimit: 500,
+  usedCount: 42,
+  validTo: '2026-12-31',
+}];
+
 const deliveryAssignment = {
   id: 1,
   orderId: 1,
@@ -403,6 +542,7 @@ export async function mockRoleApi(page: Page, role: Role) {
     if (path === '/notifications/unread-count') return route.fulfill(body({ count: 1 }));
     if (path === '/notifications') return route.fulfill(body(notifications));
     if (path === '/tracking/demo-tracking-key') return route.fulfill(body(tracking));
+    if (path === '/medicines/categories') return route.fulfill(body(categories));
 
     if (role === 'CUSTOMER') {
       if (path === '/cart') return route.fulfill(body(cart));
@@ -437,6 +577,9 @@ export async function mockRoleApi(page: Page, role: Role) {
         }));
       }
       if (path === '/pharmacy/orders') return route.fulfill(body(pageOf([orderSummary])));
+      if (path === '/pharmacy/inventory') return route.fulfill(body(pageOf([inventoryRow])));
+      if (path === '/pharmacy/prescriptions') return route.fulfill(body(pendingPrescriptions));
+      if (path === '/pharmacy/analytics') return route.fulfill(body(pharmacyAnalytics));
       if (path === '/pharmacy/inventory/low-stock') {
         return route.fulfill(body([{
           inventoryId: 1,
@@ -486,7 +629,10 @@ export async function mockRoleApi(page: Page, role: Role) {
         }));
       }
       if (path === '/delivery/assignments') {
-        return route.fulfill(body([{ ...deliveryAssignment, status: 'ASSIGNED' }]));
+        const status = url.searchParams.get('status');
+        return route.fulfill(body(status === 'ASSIGNED'
+          ? [{ ...deliveryAssignment, status: 'ASSIGNED' }]
+          : [{ ...deliveryAssignment, status: 'ASSIGNED' }, deliveredAssignment]));
       }
     }
 
@@ -522,6 +668,13 @@ export async function mockRoleApi(page: Page, role: Role) {
           topMedicines: [{ label: 'Paracetamol 500 mg', count: 214 }],
         }));
       }
+      if (path === '/admin/pharmacies') return route.fulfill(body(pageOf([adminPharmacy])));
+      if (path === '/admin/delivery-partners') return route.fulfill(body(pageOf([adminPartner])));
+      if (path === '/admin/orders') return route.fulfill(body(pageOf([adminOrder])));
+      if (path === '/admin/users') return route.fulfill(body(pageOf([adminUser])));
+      if (path === '/admin/settings') return route.fulfill(body(systemSettings));
+      if (path === '/admin/coupons') return route.fulfill(body(coupons));
+      if (path === '/admin/categories') return route.fulfill(body(categories));
     }
 
     return route.fulfill(body(null));

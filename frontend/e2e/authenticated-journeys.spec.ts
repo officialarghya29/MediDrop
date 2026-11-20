@@ -58,16 +58,70 @@ const pages = [
     heading: /Salt Lake Care Pharmacy/i,
   },
   {
+    name: 'pharmacy orders',
+    path: '/pharmacy/orders',
+    role: 'PHARMACY' as const,
+    heading: /^Orders$/i,
+  },
+  {
+    name: 'pharmacy inventory',
+    path: '/pharmacy/inventory',
+    role: 'PHARMACY' as const,
+    heading: /^Inventory$/i,
+  },
+  {
+    name: 'pharmacy prescription review',
+    path: '/pharmacy/prescriptions',
+    role: 'PHARMACY' as const,
+    heading: /^Prescription review$/i,
+  },
+  {
+    name: 'pharmacy analytics',
+    path: '/pharmacy/analytics',
+    role: 'PHARMACY' as const,
+    heading: /^Analytics$/i,
+  },
+  {
     name: 'delivery dashboard',
     path: '/delivery',
     role: 'DELIVERY' as const,
     heading: /Namaste, Rakesh/i,
   },
   {
+    name: 'delivery history',
+    path: '/delivery/history',
+    role: 'DELIVERY' as const,
+    heading: /^Delivery history$/i,
+  },
+  {
     name: 'admin dashboard',
     path: '/admin',
     role: 'ADMIN' as const,
     heading: /Platform overview/i,
+  },
+  {
+    name: 'admin approvals',
+    path: '/admin/approvals',
+    role: 'ADMIN' as const,
+    heading: /^Approvals$/i,
+  },
+  {
+    name: 'admin orders',
+    path: '/admin/orders',
+    role: 'ADMIN' as const,
+    heading: /^Orders$/i,
+  },
+  {
+    name: 'admin users',
+    path: '/admin/users',
+    role: 'ADMIN' as const,
+    heading: /^Users$/i,
+  },
+  {
+    name: 'admin configuration',
+    path: '/admin/config',
+    role: 'ADMIN' as const,
+    heading: /^Configuration$/i,
   },
 ];
 

@@ -3,11 +3,13 @@
 
 This is an external black-box benchmark. It seeds a disposable PostgreSQL
 database with a realistic synthetic catalogue and one inventory row per
-medicine, then measures real HTTP search latency through the application.
+medicine, then measures real HTTP search latency through one or more API
+instances that share that database.
 
 The gate fails when the p95 is at or above the target, when any request errors,
-or when any search returns no rows. The exact row count, query count, machine
-and run date are printed with the result so the number is reproducible.
+when any search returns no rows or when a configured instance receives no
+samples. The exact row count, query count, per-instance result, machine and run
+date are printed so the number is reproducible.
 
 Requires: psql on PATH (or Docker with a psql container), Python 3.11+, and an
 API already running against the same database.
@@ -125,7 +127,7 @@ def search(base_url, term, timeout):
         "lng": "88.3639",
         "size": "12",
     })
-    request = urllib.request.Request(f"{base_url.rstrip('/')}/api/v1/medicines/search?{query}")
+    request = urllib.request.Request(f"{base_url.rstrip('/')}/medicines/search?{query}")
     start = time.perf_counter()
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -148,7 +150,11 @@ def percentile(values, fraction):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base-url", default="http://127.0.0.1:8080")
+    parser.add_argument(
+        "--base-url",
+        action="append",
+        help="API base URL; repeat to spread the benchmark across shared-database instances",
+    )
     parser.add_argument("--rows", type=int, default=250_000)
     parser.add_argument("--samples", type=int, default=100)
     parser.add_argument("--warmup", type=int, default=10)
@@ -166,36 +172,59 @@ def main():
         raise SystemExit("--rows and --samples must be positive")
 
     total = seed_catalogue(args)
-    # Warm the JVM, connection pool, and PostgreSQL plan cache before sampling.
-    for index in range(args.warmup):
-        status, _, body = search(args.base_url, TERMS[index % len(TERMS)], args.timeout)
+    roots = [url.rstrip("/") for url in (args.base_url or ["http://127.0.0.1:8080"])]
+    api_bases = [f"{root}/api/v1" for root in dict.fromkeys(roots)]
+    # Warm each JVM, connection pool and PostgreSQL plan cache before sampling.
+    for index in range(max(args.warmup, len(api_bases))):
+        instance = api_bases[index % len(api_bases)]
+        status, _, body = search(instance, TERMS[index % len(TERMS)], args.timeout)
         if status != 200:
-            raise RuntimeError(f"Warmup request failed with HTTP {status}: {body[:300]}")
+            raise RuntimeError(f"Warmup request to {instance} failed with HTTP {status}: {body[:300]}")
 
     latencies = []
     errors = []
     empty = []
+    per_instance = {instance: {"latencies": [], "errors": []} for instance in api_bases}
     for index in range(args.samples):
+        instance = api_bases[index % len(api_bases)]
         term = TERMS[index % len(TERMS)]
-        status, elapsed, body = search(args.base_url, term, args.timeout)
+        status, elapsed, body = search(instance, term, args.timeout)
         latencies.append(elapsed)
+        per_instance[instance]["latencies"].append(elapsed)
         if status != 200:
-            errors.append((status, body[:300]))
+            detail = f"{instance}: HTTP {status}: {body[:300]}"
+            errors.append(detail)
+            per_instance[instance]["errors"].append(detail)
             continue
         try:
             payload = json.loads(body)
             items = payload.get("data", {}).get("items", [])
             total_elements = payload.get("data", {}).get("totalElements", 0)
             if not items or total_elements < 1:
-                empty.append(term)
+                detail = f"{instance}: empty result for {term}"
+                empty.append(detail)
+                per_instance[instance]["errors"].append(detail)
         except json.JSONDecodeError:
-            errors.append((status, "non-JSON response"))
+            detail = f"{instance}: non-JSON response"
+            errors.append(detail)
+            per_instance[instance]["errors"].append(detail)
 
     p50 = percentile(latencies, 0.50)
     p95 = percentile(latencies, 0.95)
     p99 = percentile(latencies, 0.99)
+    instance_report = {}
+    for instance, values in per_instance.items():
+        instance_latencies = values["latencies"]
+        instance_report[instance] = {
+            "samples": len(instance_latencies),
+            "p50_ms": round(percentile(instance_latencies, 0.50), 1),
+            "p95_ms": round(percentile(instance_latencies, 0.95), 1),
+            "p99_ms": round(percentile(instance_latencies, 0.99), 1),
+            "errors": len(values["errors"]),
+        }
     report = {
         "dataset_rows": total,
+        "instances": instance_report,
         "samples": args.samples,
         "warmup": args.warmup,
         "p50_ms": round(p50, 1),
@@ -217,10 +246,18 @@ def main():
     if empty:
         print(f"Gate failed: {len(empty)} searches returned no rows, first={empty[0]}", file=sys.stderr)
         return 1
+    if len(api_bases) > 1:
+        unused = [instance for instance, values in per_instance.items() if not values["latencies"]]
+        if unused:
+            print(f"Gate failed: no samples completed on {', '.join(unused)}", file=sys.stderr)
+            return 1
     if p95 >= args.p95_ms:
         print(f"Gate failed: p95 {p95:.1f} ms is not below {args.p95_ms:.1f} ms", file=sys.stderr)
         return 1
-    print(f"PASS: p95 {p95:.1f} ms < {args.p95_ms:.1f} ms across {args.samples} requests")
+    print(
+        f"PASS: p95 {p95:.1f} ms < {args.p95_ms:.1f} ms across {args.samples} requests "
+        f"on {len(api_bases)} instance(s)"
+    )
     return 0
 
 

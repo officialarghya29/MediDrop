@@ -79,6 +79,105 @@ jobs:
           path: frontend/dist/
           retention-days: 7
 
+  lighthouse:
+    name: Lighthouse · mobile medians
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: medidrop
+          POSTGRES_USER: medidrop
+          POSTGRES_PASSWORD: medidrop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U medidrop -d medidrop"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - name: Package API
+        working-directory: backend
+        run: mvn -B --no-transfer-progress -DskipTests package
+      - name: Start API and wait for readiness
+        working-directory: backend
+        env:
+          API_LOG: ${{ github.workspace }}/api-lighthouse.log
+          MEDIDROP_DB_URL: jdbc:postgresql://localhost:5432/medidrop
+          MEDIDROP_DB_USERNAME: medidrop
+          MEDIDROP_DB_PASSWORD: medidrop
+          MEDIDROP_JWT_SECRET: ci-only-medidrop-secret-with-at-least-32-bytes
+          MEDIDROP_SEED_ENABLED: 'true'
+          MEDIDROP_STORAGE_PATH: /tmp/medidrop-storage
+        run: |
+          API_JAR=$(find target -maxdepth 1 -name 'medidrop-api-*.jar' ! -name '*.original' | head -1)
+          test -n "$API_JAR"
+          nohup java -jar "$API_JAR" > "$API_LOG" 2>&1 &
+          for attempt in $(seq 1 60); do
+            if READY=$(curl -fsS 'http://127.0.0.1:8080/api/v1/medicines?size=1' 2>/dev/null \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["totalElements"])' 2>/dev/null) \
+                && [ "${READY:-0}" -ge 1 ]; then
+              echo "API ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become ready"
+          cat "$API_LOG"
+          exit 1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install and build web app
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: Start built preview
+        working-directory: frontend
+        env:
+          VITE_PROXY_TARGET: http://127.0.0.1:8080
+        run: |
+          nohup npm run preview -- --host 127.0.0.1 --port 4174 --strictPort > "$GITHUB_WORKSPACE/preview.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS 'http://127.0.0.1:4174/' >/dev/null 2>&1; then
+              echo "Preview ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Preview did not become ready"
+          cat "$GITHUB_WORKSPACE/preview.log"
+          exit 1
+      - name: Mobile Lighthouse median gate
+        run: >-
+          python3 infrastructure/scripts/lighthouse-check.py
+          --base-url http://127.0.0.1:4174
+          --runs 5
+          --output lighthouse-ci.json
+      - name: Upload Lighthouse evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-evidence
+          path: |
+            lighthouse-ci.json
+            preview.log
+            api-lighthouse.log
+          if-no-files-found: ignore
+          retention-days: 7
+
   smoke:
     name: API smoke · PostgreSQL
     runs-on: ubuntu-latest

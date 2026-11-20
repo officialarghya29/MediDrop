@@ -159,7 +159,7 @@ export default function InventoryPage() {
                     <span className={row.stockQuantity <= row.lowStockThreshold ? 'font-semibold text-amber-700' : ''}>
                       {row.stockQuantity}
                     </span>
-                    <span className="block text-[10px] text-slate-400">{row.availableQuantity} available</span>
+                    <span className="block text-[10px] text-slate-500">{row.availableQuantity} available</span>
                   </td>
                   <td>
                     <Badge tone={row.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
