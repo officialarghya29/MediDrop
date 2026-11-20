@@ -165,6 +165,7 @@ jobs:
           python3 infrastructure/scripts/lighthouse-check.py
           --base-url http://127.0.0.1:4174
           --runs 5
+          --min-performance 75
           --output lighthouse-ci.json
       - name: Upload Lighthouse evidence
         if: always()

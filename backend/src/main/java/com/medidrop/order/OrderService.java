@@ -690,7 +690,10 @@ public class OrderService {
     private String generateOrderNumber() {
         String date = DateTimeFormatter.ofPattern("yyyyMMdd")
                 .withZone(ZoneId.of("Asia/Kolkata")).format(Instant.now());
-        return "MD" + date + Crypto.numericCode(5);
+        // Eight digits keep the human-readable order number while making
+        // cross-instance collisions negligible. The unique index remains the
+        // final guard if two nodes ever generate the same value.
+        return "MD" + date + Crypto.numericCode(8);
     }
 
     private String maskPhone(String phone) {
