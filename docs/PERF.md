@@ -24,7 +24,7 @@ until it is measured on the stated dataset and profile.
 
 These are build/test facts, not performance results:
 
-- Backend: **28 tests passed**.
+- Backend: **43 tests passed** at the 0.1.4 baseline.
 - Frontend: **13 tests passed**; production build passed.
 - OpenAPI document: **200**, 96,425 bytes, approximately **1.5 s** on the clean local API. This is a
   single documentation-endpoint observation, not a p95.

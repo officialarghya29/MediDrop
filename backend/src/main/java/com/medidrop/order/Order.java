@@ -27,6 +27,11 @@ public class Order extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Guards concurrent status changes: the losing writer gets a 409, not a silent overwrite. */
+    @Version
+    @Column(nullable = false)
+    private long version;
+
     @Column(name = "order_number", nullable = false, unique = true, length = 30)
     private String orderNumber;
 

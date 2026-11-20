@@ -1,9 +1,9 @@
 {
   "name": "medidrop-web",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "UNLICENSED",
-  "author": "MediDrop Team",
+  "author": "Arghya Bose",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"

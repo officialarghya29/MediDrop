@@ -1,66 +1,176 @@
 <p align="center">
-  <img src="docs/assets/brand-banner.png" alt="MediDrop — healthcare, delivered" width="82%" />
+  <img src="docs/assets/hero-v014.png" alt="MediDrop 0.1.4 — care at local velocity" width="100%" />
 </p>
 
 <p align="center">
   <a href="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml"><img src="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://github.com/officialarghya29/MediDrop/releases"><img src="https://img.shields.io/github/v/release/officialarghya29/MediDrop?include_prereleases&label=release&color=0b8b68" alt="Latest pre-release" /></a>
+  <a href="https://github.com/officialarghya29/MediDrop/releases"><img src="https://img.shields.io/github/v/release/officialarghya29/MediDrop?label=release&color=0b8b68" alt="Latest release" /></a>
+  <img src="https://img.shields.io/badge/status-pre--pilot-f59e0b" alt="Pre-pilot" />
+  <img src="https://img.shields.io/badge/tests-43_backend_%2F_13_frontend-0b8b68" alt="Tests" />
   <img src="https://img.shields.io/badge/Java-21-0b8b68" alt="Java 21" />
   <img src="https://img.shields.io/badge/Spring_Boot-3.5.16-0b8b68" alt="Spring Boot 3.5.16" />
-  <img src="https://img.shields.io/badge/React-18-17313d" alt="React 18" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-17313d" alt="PostgreSQL 16" />
-  <img src="https://img.shields.io/badge/Region-Kolkata,_India-34d3a0" alt="Kolkata, India" />
+  <img src="https://img.shields.io/badge/Kolkata-22.57N_88.36E-34d3a0" alt="Kolkata" />
+</p>
+
+<h3 align="center">MEDIDROP // HYPERLOCAL PHARMACY OS</h3>
+
+<p align="center">
+  <b>One city. One network. One order truth.</b><br/>
+  Verified stock · pharmacist-reviewed prescriptions · versioned order state · OTP handover.
 </p>
 
 <p align="center">
-  <img src="docs/assets/brand-emblem.png" alt="MediDrop shield emblem" width="86" />
-</p>
-
-<p align="center">
-  <b>A verified local health network.</b><br/>
-  Live pharmacy stock · pharmacist-reviewed prescriptions · OTP-verified delivery · full audit trail.
-</p>
-
-<p align="center">
-  <a href="#inside-the-product">Product</a> ·
-  <a href="#proof-not-promises">Measured results</a> ·
-  <a href="#system-map">Architecture</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#documentation">Documentation</a>
+  <a href="#00--current-signal">Signal</a> ·
+  <a href="#01--the-operating-loop">Model</a> ·
+  <a href="#03--system-topology">Architecture</a> ·
+  <a href="#05--verification-deck">Verification</a> ·
+  <a href="#06--launch-it">Launch</a> ·
+  <a href="#08--release-rail">Releases</a>
 </p>
 
 ---
 
-## The 30-second version
+> **STATUS / 0.1.4 — pre-pilot foundation.** This is a working, CI-verified system, not a
+> `1.0.0` claim and not a licensed pharmacy service. Live provider certification, the full
+> 250K/50-way/accessibility gate, legal review and operations sign-off remain open. The honest
+> boundary is documented in [Versions](docs/VERSIONS.md), [Progress](docs/PROGRESS.md) and
+> [Audit](docs/AUDIT.md).
 
-**Current release:** [v0.1.3 — substitute reliability (foundation release, pre-pilot)](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3).
-It is verified by CI but is **not** a pilot or `1.0.0` release; the launch gates are listed in
-[Versions](docs/VERSIONS.md) and [Progress](docs/PROGRESS.md).
+## / 00 · CURRENT SIGNAL
 
-MediDrop is a production-shaped hyperlocal medicine delivery platform built for Kolkata. A customer searches
-medicine stock held by licensed pharmacies nearby, uploads a prescription when required, and receives the
-order through a tracked rider. Pharmacies fulfil, riders deliver, administrators govern.
-
-**What makes it different from a catalogue with a checkout button:**
-
-| Signal | What it means |
+| Signal | Reading |
 | --- | --- |
-| **Real local stock** | Every cart line is re-priced and re-validated against a pharmacy's ledger before the order is accepted. |
-| **Clinical gate** | Prescription-only items cannot be dispensed until a registered pharmacist approves the uploaded prescription. |
-| **One order truth** | A single state machine authorises every transition, for every role, and appends it to history. |
-| **Provable delivery** | Handover requires the customer's OTP; the public tracking page exposes status, never personal data. |
-| **Governed money** | Gateway signatures are verified server-side, refunds are admin-only, and test payments are permanently flagged. |
-| **Safe savings** | Lower-cost equivalents are compared only when composition, strength, form, pack size and schedule match; prescription replacements still need pharmacist review. |
+| **Release** | `v0.1.4` — model hardening |
+| **Continuity** | `v0.1.3` fallback reliability → `v0.1.4` concurrency and identity hardening |
+| **Backend** | **43 passed, 0 failed** |
+| **Frontend** | **13 passed, 0 failed** |
+| **Live API** | **33 checks, 0 failed** against PostgreSQL 16 |
+| **Schema** | **33 tables · 36 indexes · Flyway V1–V6** |
+| **Dependencies** | `npm audit --omit=dev`: **0 vulnerabilities** |
+| **Surface** | React SPA → nginx → Spring Boot → PostgreSQL |
+| **Region** | Kolkata, West Bengal · `22.5726° N, 88.3639° E` |
 
-> MediDrop does not provide medical advice or substitute prescribed medicines. Prescription-only medicines
-> are dispensed only after review by a registered pharmacist.
+### The 0.1.4 hardening pass
+
+This release is deliberately narrow. It closes failure paths that could produce a wrong outcome:
+
+- **Locked accounts cannot mint sessions through OTP.** Verification now rejects locked, disabled
+  and deletion-pending accounts before issuing tokens.
+- **OTP and password-reset tokens are single-use under concurrency.** Both rows are taken with a
+  pessimistic write lock, so two simultaneous requests cannot both succeed.
+- **Order transitions are version-guarded.** Every order carries an optimistic version; a stale
+  cancellation, acceptance or refund attempt receives a recoverable `409` instead of silently
+  overwriting the newer state.
+- **A rejected rider no longer strands an order.** Reassignment replaces the rider while the order
+  remains `DELIVERY_ASSIGNED`; it no longer expects the order to travel backwards to
+  `READY_FOR_PICKUP`.
+- **The demo console reports the real version.** The stale `v1.0` label is gone.
+
+These changes do not make the product "perfect". They remove specific ways the model could lie about
+stock, identity or order state.
 
 ---
 
-## Inside the product
+## / 01 · THE OPERATING LOOP
 
-These are live screenshots of this repository running against its own API and seeded PostgreSQL data — not
-mockups.
+```text
+        SEARCH                 VERIFY                 DISPENSE                PROVE
+   live pharmacy stock  →  Rx + licensed review  →  pharmacy fulfilment  →  OTP handover
+          │                     │                       │                      │
+      price ordered        scoped access            locked ledger          audit + history
+```
+
+| Stage | What the system refuses to do |
+| --- | --- |
+| **Search** | Show a paused, suspended or out-of-radius pharmacy as an orderable source. |
+| **Verify** | Let a prescription-only item pass without a verified pharmacist decision. |
+| **Dispense** | Accept a cart line whose price, stock or pharmacy changed after it was added. |
+| **Hand over** | Mark delivered without the customer's current four-digit code. |
+| **Refund** | Jump an order to `REFUNDED` without a captured payment and a refund ledger record. |
+
+### Substitute comparison
+
+Lower-cost equivalents are a **comparison aid**, not automatic substitution. The API only compares
+products with identical generic composition, strength, dosage form, pack size, prescription flag and
+schedule class. The candidate must be in stock at the selected pharmacy, strictly cheaper, and not
+sales-blocked. Prescription alternatives stay behind pharmacist review.
+
+When no pharmacy is supplied, MediDrop walks price-ordered stock until it finds the cheapest
+**approved, active, accepting** pharmacy. A paused cheapest listing cannot hide a valid match.
+
+---
+
+## / 02 · THE INVARIANTS
+
+| Invariant | Enforcement |
+| --- | --- |
+| **One order truth** | Every transition passes through `OrderStateMachine`; history records from, to, actor, reason and time. |
+| **One writer wins** | Orders use an optimistic version; stock, coupons, payments and refresh tokens use row locks where a race would lose value. |
+| **Tenant is not a parameter** | Pharmacy invoices, reviews and prescription files resolve the caller's pharmacy server-side. |
+| **Money is server-side** | Totals, discounts, delivery fees, tax and refund ceilings are recomputed by the API. |
+| **Identity is checked twice** | Endpoint roles plus ownership/tenancy checks inside services. |
+| **Public means minimal** | Tracking exposes status, city, neighbourhood-level coordinates and a masked rider phone — never the street address. |
+| **Demo is visible** | Sandbox payments are `is_test=true`; seeded records are marked as demo where the schema supports it. |
+
+### Concurrency, explicitly
+
+The 0.1.4 model does not claim that every race is solved. It makes the important races **safe to
+retry**:
+
+```text
+checkout     → inventory row lock in deterministic order → one stock winner
+coupon       → coupon row lock before redemption → usage cannot exceed the limit
+refresh      → refresh-token row lock before rotation → one rotation winner
+refund       → payment row lock + ledger sum → refund cannot exceed captured amount
+order status → optimistic version → stale writer gets 409, not a silent overwrite
+OTP / reset  → token row lock → one successful consumption
+```
+
+The 50-way stock gate is still **not** complete. That is a performance proof, not a licence to claim
+the race is solved.
+
+---
+
+## / 03 · SYSTEM TOPOLOGY
+
+<p align="center">
+  <img src="docs/assets/architecture.png" alt="MediDrop system architecture" width="100%" />
+</p>
+
+The core is a **modular monolith** on purpose. Placing an order touches stock, pricing, prescription
+state, payment state and history inside one ACID transaction. Splitting those into services would buy
+independent scaling this product does not yet need, at the cost of distributed consistency.
+
+| Layer | Responsibility |
+| --- | --- |
+| **React 18 SPA** | Storefront, pharmacy console, rider console, admin control tower. |
+| **nginx edge** | SPA fallback, `/api` proxy, `/ws` upgrade, TLS and security headers. |
+| **Spring Boot 3.5.16** | Auth, catalogue, inventory, cart, orders, prescriptions, payments, delivery, governance. |
+| **PostgreSQL 16** | Flyway-owned schema, trigram search, optimistic locks, ledger tables. |
+| **Prescription vault** | Private files behind an authenticated, role-scoped streaming endpoint. |
+| **Provider seams** | Payments, maps, mail, SMS, OCR and storage are interfaces; the stack boots without credentials. |
+
+### Source shape
+
+```text
+backend/src/main/java/com/medidrop/
+  auth/          identity, OTP, rotating refresh tokens
+  medicine/      catalogue, search, substitute comparison
+  inventory/     stock ledger, batches, expiry
+  cart/          single-pharmacy cart and live revalidation
+  order/         state machine, history, invoices, tracking
+  prescription/  private upload, review, access control
+  payment/       sandbox + Razorpay seam, webhooks, refunds
+  delivery/      assignment, rider transitions, proof of handover
+  admin/         approvals, settings, reports, audit
+```
+
+---
+
+## / 04 · PRODUCT SURFACES
+
+These are live screenshots of this repository against its own API and seeded PostgreSQL data.
 
 <table>
   <tr>
@@ -77,202 +187,62 @@ mockups.
   </tr>
   <tr>
     <td align="center"><sub><b>Admin console</b> — orders, revenue, approvals, support from the live database</sub></td>
-    <td align="center"><sub><b>Pharmacy console</b> — fulfilment queue, prescription review, inventory, analytics</sub></td>
+    <td align="center"><sub><b>Pharmacy console</b> — fulfilment queue, prescription review, inventory</sub></td>
   </tr>
 </table>
 
 <p align="center">
   <img src="docs/assets/screen-track.png" alt="Public live delivery tracking page" width="82%" />
   <br/>
-  <sub><b>Public tracking</b> — keyed by an unguessable token, showing rider position and ETA without exposing an account.</sub>
+  <sub><b>Public tracking</b> — keyed by an unguessable token; status and a neighbourhood-level map, never an address book.</sub>
 </p>
 
 ---
 
-## Why hyperlocal wins
-
-The model is simple: **move the pharmacy to the patient, not the patient to the pharmacy.** Three distances
-decide whether that works.
-
-| Distance | The problem | MediDrop's answer |
-| --- | --- | --- |
-| **Physical** | A medicine 20 km away is not urgent care. | Pharmacies are discovered by delivery radius and ranked by real distance. |
-| **Clinical** | Speed is dangerous without pharmacist oversight. | Rx items wait for a registered pharmacist's decision before fulfilment. |
-| **Operational** | Stock shown online rarely matches the shelf. | Inventory is a ledger; carts and orders revalidate it server-side. |
-
-The result is not “faster e-commerce”. It is a smaller loop: **search → verify → dispense → hand over**, with
-each step owned by a role that is accountable for it.
-
----
-
-## System map
+## / 05 · VERIFICATION DECK
 
 <p align="center">
-  <img src="docs/assets/architecture.png" alt="MediDrop system architecture" width="100%" />
-</p>
-
-The API is a **modular monolith** on purpose. Placing an order touches stock, pricing, prescriptions, payment
-state and history inside one ACID transaction. Splitting those into services would buy independent scaling
-this product does not yet need, at the cost of distributed consistency. Modules are separated by package and
-service boundaries today, so a future split has natural seams.
-
-| Layer | Responsibility |
-| --- | --- |
-| **React SPA** | Storefront, pharmacy console, rider console, admin console; optimistic reads via TanStack Query. |
-| **nginx edge** | SPA fallback, `/api` proxy, `/ws` upgrade, TLS, asset caching, security headers. |
-| **Spring Boot core** | Auth, catalogue, pharmacy, inventory, cart, orders, prescriptions, payments, delivery, governance. |
-| **PostgreSQL 16** | Flyway-owned schema, 34 tables, 94 indexes, trigram search, optimistic locking. |
-| **Prescription vault** | Private files behind an authenticated, role-scoped streaming endpoint. |
-| **Provider seams** | Payment, maps, mail, SMS, OCR and storage are interfaces; the system runs without credentials. |
-
-### One order, six signals
-
-<p align="center">
-  <img src="docs/assets/lifecycle.png" alt="Order lifecycle from cart to OTP handover" width="100%" />
-</p>
-
-Three invariants hold at every edge:
-
-1. **No state is reachable out of order.** All transitions pass through `OrderStateMachine`; unknown edges are rejected with `409`.
-2. **Role and resource are checked separately.** A pharmacist may accept an order — but only their own pharmacy's order.
-3. **Every transition is evidence.** History stores `from`, `to`, actor role, reason and timestamp, and customers can see it.
-
-Full rules: [docs/order-lifecycle.md](docs/order-lifecycle.md).
-
----
-
-## Proof, not promises
-
-<p align="center">
-  <img src="docs/assets/latency.png" alt="Measured API response time" width="100%" />
-</p>
-
-Measured on the running stack: Spring Boot 3.5.16 on Java 21, PostgreSQL 16 in Docker, warm cache, HTTP
-keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. Raw data is committed in
-[`docs/assets/measurements.json`](docs/assets/measurements.json) and reproducible with
-`infrastructure/scripts/generate-report-assets.py`.
-
-| Endpoint | p50 | p95 | p99 | Sequential throughput |
-| --- | ---: | ---: | ---: | ---: |
-| `GET /medicines/search` | 13.0 ms | 17.4 ms | 18.8 ms | ~76 req/s |
-| `GET /medicines` | 8.5 ms | 10.5 ms | 12.4 ms | ~117 req/s |
-| `GET /pharmacies/nearby` | 4.5 ms | 5.8 ms | 7.6 ms | ~218 req/s |
-
-> **Read this honestly:** these are local single-node numbers on a development machine with a demo dataset.
-> They prove the request path is lean, not that production will hit these figures. Capacity must be validated
-> against real catalogue size, network latency and concurrent load before launch.
-
-### Quality gates
-
-<p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 40 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 43 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
-| Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 40 tests | **40 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 43 tests | **43 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
+| Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
+| Dependency audit | `npm audit --omit=dev` | production tree | **0 vulnerabilities** |
 
-The smoke suite is not a happy-path script. It proves anonymous requests get `401`, a customer gets `403` on
-admin routes, COD orders move through pharmacy acceptance and preparation, delivery auto-assignment works,
-handover fails without the OTP, sandbox payments reconcile back to the order, and admin reporting reflects
-the newly created data.
+### What the regression suite specifically proves
 
-**Bugs caught by this validation, not hidden:** unfiltered catalogue browse returned `500` on PostgreSQL
-because Hibernate bound a null search term as `bytea`, breaking `lower(?)`. The fix coalesces the term in JPQL;
-it is covered by `MedicineSearchTest` and two smoke checks (browse and term-less search), which is why the suite
-runs **33** checks, not 31.
+- Locked accounts cannot verify an OTP or receive an access/refresh pair.
+- A successful OTP is consumed once; replay is rejected.
+- OTP and password-reset rows are loaded for update, not read-then-write.
+- A stale order write cannot overwrite a newer order version.
+- A rejected rider is replaced without moving the order backwards.
+- Substitute filtering excludes different packs, Rx mismatches, blocked products, out-of-stock
+  candidates and unavailable pharmacies.
+- Cancellation and prescription rejection restore stock and coupon capacity exactly once.
+- Cross-tenant invoices, review history and prescription files are refused.
+- Refund terminal states require `REFUND_PENDING` and a ledger record.
 
-A later stabilization pass tightened the product paths around it: public tracking now resolves through the
-indexed tracking key instead of scanning the orders table; the Active, Delivered and Cancelled tabs filter and
-paginate in SQL (they previously fell through to an unfiltered list); status counts are database counts; stock
-restoration, coupon redemption, refresh-token rotation and refunds take row locks so concurrent requests cannot
-lose updates; and the H2 test schema now initialises every table instead of silently skipping `coupons`.
-`OrderQueryTest` covers the filters, counts and tracking lookup. A follow-up audit found and fixed the last
-unhandled enum filters (admin approvals and prescription queues now return `400`), stopped platform reports
-from loading every order and assignment in memory, and made the public tracking projection reveal only the
-city and a neighbourhood-level coordinate — never the street address. A cancellation audit then found that
-stock and coupon capacity were only released on one cancellation path; `V4` adds idempotent release markers
-and `OrderReleaseTest` proves that cancellation and prescription rejection put both back exactly once. The
-storefront also gained a real pharmacy filter — the link previously carried a query parameter the API ignored.
-`AdminQueryTest` guards the admin filter path. CI now compiles from a clean checkout and runs the live smoke
-suite on PostgreSQL.
+### Bugs caught by validation, not hidden
+
+This repository has a habit of documenting its own failures. Earlier passes caught a PostgreSQL
+null-term browse `500`, invoice and review-history IDORs, a direct refund bypass, an OTP account
+enumeration oracle, a paused-cheapest-pharmacy substitute dead end, and a rider rejection that left
+the order assigned forever. Each fixed defect has a regression or a live reproduction note.
 
 ---
 
-## Engineering decisions, compared
-
-| Decision | Alternative | Why this codebase chose it |
-| --- | --- | --- |
-| Modular monolith | Microservices per domain | One transaction for order + stock + payment; operational simplicity for a city-scale launch. |
-| Server revalidates the cart | Trust client-side totals | Prevents oversell, stale prices, out-of-radius delivery and paused pharmacies. |
-| Opaque rotating refresh tokens | Long-lived JWT | Refresh tokens are hashed at rest and revocable; access tokens stay short-lived. |
-| Unguessable tracking key | Order ID in the URL | A public link cannot enumerate other customers' deliveries. |
-| Sandbox payment default | Live gateway by default | The stack boots safely with no secrets; live mode is an explicit, auditable choice. |
-| Haversine distance default | Require a maps API key | Distance works offline; the fallback refuses geocoding instead of inventing coordinates. |
-| Ledger for stock | Mutable stock column only | Every change has an actor, reason and balance; reconciliation is possible. |
-
-### Provider modes, without theatre
-
-| Capability | Default in this repo | To go live | Verified here |
-| --- | --- | --- | --- |
-| Payments | Sandbox (HMAC verification, `is_test=true`) | Razorpay keys + webhook secret | Sandbox end-to-end; **live Razorpay not verified** |
-| Maps | Haversine distance | Google server key | Distance verified; **geocoding not verified** |
-| Email | Console provider | SMTP credentials | **Not verified** |
-| SMS / OTP | Console provider | SMS gateway adapter | **Not implemented** |
-| Prescription storage | Local private volume | S3-compatible adapter | Local verified; **S3 not implemented** |
-| OCR | Disabled interface | OCR provider | **Not verified; never required for approval** |
-
-Nothing in the core flow depends on a credential that is absent. That is deliberate: the platform is honest
-about what is simulated, and the UI says so where it matters.
-
----
-
-## Security is a feature, not a footnote
-
-| Control | Implementation |
-| --- | --- |
-| Passwords | Argon2id with per-user salt |
-| Access tokens | HS256 JWT, 15-minute lifetime, issuer-checked |
-| Refresh tokens | Opaque 256-bit values, SHA-256 hashed at rest, rotated on every use |
-| Authorisation | Endpoint role checks **plus** ownership/tenancy checks in services |
-| Prescriptions | Private storage; file access scoped to owner, linked pharmacy or admin |
-| Payments | Server-side signature verification, idempotent webhooks, refunds restricted to admins |
-| Abuse prevention | Rate limits on login, OTP and password reset; generic error messages |
-| Audit | Append-only rows for approvals, suspensions, refunds and status overrides |
-| Transport | TLS termination, HSTS, nosniff, frame, referrer and permissions policies at nginx |
-| Realtime | STOMP CONNECT requires an access token; tracking subscriptions are owner-scoped and client publishing is rejected |
-| API schema | Swagger/OpenAPI disabled under the production profile unless `MEDIDROP_OPENAPI_ENABLED=true` |
-
-**Documented trade-off:** the SPA stores tokens in `localStorage` to keep the API stateless. Short access-token
-lifetimes and refresh rotation limit exposure; cookie-based sessions with CSRF protection are the stricter
-alternative. Details: [docs/architecture.md](docs/architecture.md#security-model).
-
----
-
-## Stack
-
-| Layer | Technology |
-| --- | --- |
-| API | Java 21, Spring Boot 3.5.16, Spring Security, Spring Data JPA, Bean Validation, Springdoc |
-| Data | PostgreSQL 16, Flyway, trigram indexes, H2 for tests |
-| Auth | Argon2id, JJWT, rotating opaque refresh tokens |
-| Web | React 18, TypeScript 5.6, Vite 8, Tailwind CSS 3, TanStack Query 5, React Router 7, Zustand, React Hook Form + Zod |
-| Realtime | STOMP over native WebSocket |
-| Delivery | Multi-stage Docker images, nginx, GitHub Actions |
-
----
-
-## Quick start
+## / 06 · LAUNCH IT
 
 ### Docker Compose — the whole stack
 
 ```bash
 cp .env.example .env
-# required: MEDIDROP_JWT_SECRET (openssl rand -base64 48) and strong DB passwords
+# required: MEDIDROP_JWT_SECRET and strong database passwords
 docker compose up -d --build
 docker compose ps
 ```
@@ -294,22 +264,20 @@ providers require explicit credentials.
 ```bash
 createdb medidrop
 
-# API — dev profile seeds a demo Kolkata network
 cd backend
 MEDIDROP_JWT_SECRET=dev-only-medidrop-secret-change-before-deploy-9f3c1a \
 MEDIDROP_SEED_ENABLED=true \
 mvn spring-boot:run
 
-# Web — proxies /api and /ws to :8080
-cd frontend
+cd ../frontend
 npm install
 npm run dev
 ```
 
 ### Demo accounts
 
-Seeded only when `MEDIDROP_SEED_ENABLED=true`. Demo rows are flagged and must never be treated as production
-data.
+Seeded only when `MEDIDROP_SEED_ENABLED=true`. Demo rows are flagged and must never be treated as
+production data.
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -322,74 +290,102 @@ data.
 
 ---
 
-## Repository map
+## / 07 · SECURITY GRID
 
-```text
-MediDrop/
-├── backend/
-│   ├── src/main/java/com/medidrop/       auth · catalogue · pharmacy · inventory · cart ·
-│   │                                     order · prescription · payment · delivery ·
-│   │                                     admin · reporting · notification · support · audit
-│   ├── src/main/resources/db/migration/  V1 schema · V2 indexes · V3 trigram search · V4 release markers
-│   ├── src/test/java/com/medidrop/       state machine · pricing · auth · payments · search
-│   └── Dockerfile
-├── frontend/
-│   ├── src/features/                     auth · customer · pharmacy · delivery · admin
-│   ├── src/components/                   shell · UI primitives · map · medicine card
-│   ├── src/test/                         Vitest setup and tests
-│   ├── nginx.conf
-│   └── Dockerfile
-├── docs/
-│   ├── assets/                           diagrams, screenshots, charts, measurements.json
-│   ├── architecture.md · api.md · order-lifecycle.md · deployment.md · testing.md
-├── infrastructure/scripts/               smoke-test.sh · generate-report-assets.py
-├── .github/workflows/ci.yml
-├── docker-compose.yml
-├── LICENSE
-└── .env.example
-```
+| Control | Implementation |
+| --- | --- |
+| Passwords | Argon2id with per-user salt |
+| Access tokens | HS256 JWT, 15-minute lifetime, issuer checked |
+| Refresh tokens | Opaque 256-bit values, SHA-256 hashed at rest, row-locked rotation |
+| Authorisation | Endpoint roles **plus** ownership/tenancy checks |
+| Prescriptions | Private storage; owner, linked pharmacy or admin only |
+| Payments | Server-side HMAC verification, idempotent webhooks, admin-only refunds |
+| Account state | Locked, disabled and deletion-pending accounts are blocked at login, refresh and OTP |
+| Abuse prevention | Per-instance rate limit on auth and webhook paths; generic auth errors |
+| Audit | Append-only rows for approvals, suspensions, refunds, settings and order actions |
+| Transport | TLS, HSTS, nosniff, frame, referrer and permissions policies at nginx |
+| Realtime | STOMP CONNECT requires an access token; public tracking is keyed and PII-minimal |
+| API schema | Swagger/OpenAPI disabled in the production profile unless explicitly enabled |
 
-**API shape:** `/api/v1`, envelope `{ success, message, data, timestamp }`, OpenAPI at `/swagger-ui.html`
-under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.md).
+**Documented trade-off:** the SPA stores tokens in `localStorage` to keep the API stateless. Short
+access-token lifetimes and refresh rotation limit exposure; cookie sessions with CSRF protection are
+the stricter alternative.
+
+### Provider reality
+
+| Capability | Default in this repo | Verified here |
+| --- | --- | --- |
+| Payments | Sandbox with HMAC verification and `is_test=true` | Sandbox end-to-end; **live Razorpay not verified** |
+| Maps | Haversine distance | Distance verified; **geocoding not verified** |
+| Email | Console provider | **Live SMTP not verified** |
+| SMS / OTP | Console provider | **Gateway not implemented** |
+| Prescription storage | Local private volume | Local verified; **S3 not implemented** |
+| OCR | Disabled interface | **Not verified; never required for approval** |
+
+Nothing in the core flow depends on a credential that is absent. That is deliberate.
 
 ---
 
-## Documentation
+## / 08 · RELEASE RAIL
+
+| Version | Scope | State |
+| --- | --- | --- |
+| [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, concurrent token consumption, order version, rider reassignment, README command deck | **Latest foundation release** |
+| [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Paused-pharmacy substitute fallback | Previous release |
+| [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison | Pre-release |
+| `v0.2.0-m1` | Remaining M1 gate: 50-way stock, one-command run, design tokens | In progress |
+
+### Why this is not `1.0.0`
+
+The honest blockers are unchanged:
+
+- M2–M15, including a separate verified pharmacist role, pilot gates, node selection, ETA, Rx Vault,
+  savings engine, cold chain, dispatch and ComplianceSignoff.
+- Live Razorpay, SMTP, SMS, Maps, S3 and OCR certification.
+- The 250K catalogue, 50-way stock, axe, Lighthouse and browser-driven journey gates.
+- Legal, regulatory and operations sign-off for online pharmacy, Schedule H/H1/X handling,
+  prescription retention, DPDP, GST and substitution.
+- GitHub branch protection, secret scanning/push protection and Dependabot are still disabled; the
+  repository is public.
+
+No release on this rail is a launch-readiness claim.
+
+---
+
+## / 09 · DOCUMENTATION
 
 | Document | What it answers |
 | --- | --- |
-| [Architecture](docs/architecture.md) | How the modules fit, what stays consistent, where providers plug in |
-| [Order lifecycle](docs/order-lifecycle.md) | Every state, transition, role, cancellation and refund rule |
-| [Versions](docs/VERSIONS.md) | Pre-pilot SemVer, milestone tags and checkpoint rules |
-| [Releases](https://github.com/officialarghya29/MediDrop/releases) | Published pre-releases, notes and downloadable artifacts |
-| [API reference](docs/api.md) | Conventions and the complete endpoint catalogue |
-| [Deployment](docs/deployment.md) | Docker, environment matrix, operations, go-live checklist |
-| [Testing](docs/testing.md) | Test layers, commands, coverage and known gaps |
+| [Architecture](docs/architecture.md) | Module boundaries, consistency model, provider seams |
+| [Order lifecycle](docs/order-lifecycle.md) | States, actors, cancellation, refunds, handover |
+| [API reference](docs/api.md) | Conventions and endpoint catalogue |
+| [Testing](docs/testing.md) | Layers, commands, counts and known gaps |
+| [Deployment](docs/deployment.md) | Docker, environment matrix, go-live checklist |
+| [Runbook](docs/RUNBOOK.md) | Operations, failure handling, recovery |
+| [Versions](docs/VERSIONS.md) | SemVer and checkpoint rules |
+| [Progress](docs/PROGRESS.md) | What is done, open and blocked |
+| [Audit](docs/AUDIT.md) | Deep-scan findings and evidence |
+
+```text
+Repository map
+├── backend/       Spring Boot API · Flyway V1–V6 · JUnit
+├── frontend/      React 18 SPA · Vitest · nginx
+├── docs/          architecture · API · audits · release notes
+├── infrastructure/ smoke suite · measurement scripts
+└── .github/       CI: backend, frontend, PostgreSQL smoke
+```
 
 ---
 
-## Integration status and next moves
+## / 10 · LICENSE
 
-| Status | Item |
-| --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 40 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
-| Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
-| Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
-
-**Roadmap:** provider sandbox certification · SMS OTP delivery · encrypted object storage for prescriptions ·
-Redis-backed rate limiting and WebSocket fan-out · city-by-city catalogue and delivery zones · accessibility
-audit and Bengali/Hindi localisation.
-
----
-
-## License
-
-MediDrop is proprietary software. Copyright © 2026 MediDrop Team. All rights reserved.
-No part of the code, documentation, designs or brand assets may be copied, modified, distributed or used
-without prior written permission. The full terms are in [LICENSE](LICENSE).
+Proprietary software. Copyright © 2026 **Arghya Bose**. All rights reserved.
+No part of the code, documentation, designs or brand assets may be copied, modified, distributed or
+used without prior written permission. Full terms: [LICENSE](LICENSE).
 
 ---
 
 <p align="center">
-  <sub>Built for hyperlocal healthcare in India · Kolkata, West Bengal · 22.5726° N, 88.3639° E</sub>
+  <sub>Designed and engineered by <b>Arghya Bose</b> · Kolkata, West Bengal · 22.5726° N, 88.3639° E</sub><br/>
+  <sub>No launch claim. No automatic substitution. No handover without proof.</sub>
 </p>

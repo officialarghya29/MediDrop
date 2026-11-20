@@ -92,6 +92,19 @@ and fixed with regressions; they do not make the repository launch-ready.
 | Per-account login lockout / distributed abuse controls. | **OPEN** | The limiter is still per instance and per IP+path; brute-force resistance is not certified. |
 | Separate `PHARMACIST` login role, secure admin bootstrap, `DEMO_MODE`, flags, `ComplianceSignoff`. | **OPEN (M2)** | Deliberately not started before the M2 gate. |
 
+### 0.1.4 model hardening (2026-11-20)
+
+The second stabilization pass targeted identity and lifecycle races rather than adding surface area.
+
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| OTP verification could issue tokens for a locked/disabled account. | **FIXED** | `AuthService.verifyOtp` now checks enabled, locked and deletion-pending state before reading or consuming a code; `AuthFlowTest.lockedAccountCannotVerifyOtpOrReceiveTokens`. |
+| OTP and password-reset tokens could be consumed twice by simultaneous requests. | **FIXED** | Both repositories expose a pessimistic-write lookup; `verifyOtp` and `resetPassword` use it inside their transaction. Replayed OTP is covered by the same auth regression. |
+| Concurrent order transitions had no stale-write guard. | **FIXED** | `Order` carries `@Version`, `V6__order_version.sql` adds the column, and `OrderVersionTest` proves a stale write fails. |
+| A rejected rider left the order assigned with no replacement path. | **FIXED** | `DeliveryService.autoAssign` now distinguishes initial assignment from reassignment and preserves `DELIVERY_ASSIGNED`; `DeliveryReassignTest`. |
+| Console sidebar displayed a stale `v1.0` label. | **FIXED** | `Shell.tsx` reports `v0.1.4`. |
+| 50-way stock race, live providers, full browser/a11y/performance gates. | **OPEN** | Unchanged. Do not infer them from unit tests or the 33-check smoke suite. |
+
 ### GitHub controls (reviewed 2026-11-20)
 
 | Control | State |

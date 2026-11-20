@@ -2,6 +2,8 @@ package com.medidrop.auth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medidrop.user.User;
+import com.medidrop.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -24,6 +26,9 @@ class AuthFlowTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     void registerLoginRefreshAndProtectedAccess() throws Exception {
@@ -92,6 +97,49 @@ class AuthFlowTest {
                         .content("{\"email\":\"missing-account@medidrop.local\",\"purpose\":\"EMAIL_VERIFICATION\",\"code\":\"123456\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Invalid or expired verification code"));
+    }
+
+    @Test
+    void lockedAccountCannotVerifyOtpOrReceiveTokens() throws Exception {
+        String unique = java.util.UUID.randomUUID().toString().replaceAll("[^0-9]", "").substring(0, 9);
+        String email = "locked.otp." + unique + "@medidrop.local";
+        String phone = "9" + unique;
+        String response = mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"fullName":"Locked OTP","email":"%s","phone":"%s","password":"Secret123"}
+                                """.formatted(email, phone)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String otp = objectMapper.readTree(response).path("data").path("devOtp").asText();
+        assertThat(otp).isNotBlank();
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setLocked(true);
+        userRepository.save(user);
+
+        String verifyBody = """
+                {"email":"%s","purpose":"EMAIL_VERIFICATION","code":"%s"}
+                """.formatted(email, otp);
+        mockMvc.perform(post("/api/v1/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON).content(verifyBody))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false));
+
+        user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setLocked(false);
+        userRepository.save(user);
+
+        mockMvc.perform(post("/api/v1/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON).content(verifyBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.emailVerified").value(true));
+
+        // The successful verification consumes the code; replay must not mint another pair.
+        mockMvc.perform(post("/api/v1/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON).content(verifyBody))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

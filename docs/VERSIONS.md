@@ -30,12 +30,13 @@ claim `1.0.0` yet.
 | [`v0.1.0-m0`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.0-m0) | Repository audit only; no application code | **Released pre-release** |
 | [`v0.1.1`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1) | M1 safety slice and deep-scan hardening; pre-pilot | **Released pre-release** |
 | [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison with safety filters | **Released pre-release** |
-| [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Substitute fallback reliability; current foundation release | **Published latest release** |
+| [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Substitute fallback reliability | Published foundation release |
+| [`v0.1.4`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.4) | OTP identity guard, versioned order transitions, rider reassignment; current foundation release | **Published latest release** |
 | `v0.2.0-m1` | Remaining M1 gate: 50-way stock, one-command run, design tokens | In progress |
 | `v0.3.0-m2` | Five roles, pilot gates, DEMO_MODE and ComplianceSignoff | Not started |
 
-`v0.1.1` is intentionally a pre-release. It is the current downloadable foundation build, not a
-claim that the product is pilot-ready.
+`v0.1.1` and `v0.1.2` remain historical pre-releases. `v0.1.4` is the current downloadable
+foundation build and the latest normal release; this is still not a pilot-readiness claim.
 
 ## Why this helps
 

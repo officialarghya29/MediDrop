@@ -104,6 +104,10 @@ public class AuthService {
         if (!user.isEnabled() || user.isLocked()) {
             throw ApiException.forbidden("This account is not active");
         }
+        if (user.getDeletionRequestedAt() != null) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DELETION_PENDING",
+                    "This account is scheduled for deletion. Contact support to restore it.");
+        }
         token.setRevoked(true);
         refreshTokenRepository.save(token);
         AuthDtos.AuthResponse response = issueTokens(user, null);
@@ -145,9 +149,17 @@ public class AuthService {
         String purpose = normalisePurpose(request.purpose());
         User user = userRepository.findByEmailIgnoreCase(request.email().trim())
                 .orElseThrow(() -> ApiException.badRequest("Invalid or expired verification code"));
+        if (!user.isEnabled() || user.isLocked()) {
+            throw ApiException.forbidden("This account is not active. Contact support.");
+        }
+        if (user.getDeletionRequestedAt() != null) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "ACCOUNT_DELETION_PENDING",
+                    "This account is scheduled for deletion. Contact support to restore it.");
+        }
 
         OtpToken token = otpTokenRepository
-                .findFirstByUserIdAndPurposeAndConsumedFalseOrderByCreatedAtDesc(user.getId(), purpose)
+                .findActiveForUpdate(user.getId(), purpose, org.springframework.data.domain.PageRequest.of(0, 1))
+                .stream().findFirst()
                 .orElseThrow(() -> ApiException.badRequest("No active verification code. Request a new one."));
 
         if (token.getExpiresAt().isBefore(Instant.now())) {
@@ -197,7 +209,7 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String rawToken, String newPassword) {
-        PasswordResetToken token = passwordResetTokenRepository.findByTokenHash(Crypto.sha256Hex(rawToken))
+        PasswordResetToken token = passwordResetTokenRepository.findForUpdateByTokenHash(Crypto.sha256Hex(rawToken))
                 .orElseThrow(() -> ApiException.badRequest("Invalid or expired reset link"));
         if (token.isUsed() || token.getExpiresAt().isBefore(Instant.now())) {
             throw ApiException.badRequest("Invalid or expired reset link");

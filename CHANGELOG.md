@@ -3,6 +3,36 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
+## [0.1.4] — 2026-11-20
+
+**Foundation hardening. Pre-pilot; not `1.0.0`.**
+
+### Fixed
+
+- OTP verification now refuses locked, disabled and deletion-pending accounts before issuing tokens.
+- OTP and password-reset rows are read with pessimistic write locks, so concurrent requests cannot
+  consume the same single-use token twice.
+- Orders now carry an optimistic version (`V6`). A stale status transition receives a recoverable
+  conflict instead of overwriting a newer cancellation, acceptance or refund.
+- A rider rejection replaces the rider while the order remains `DELIVERY_ASSIGNED`; the order no
+  longer strands because reassignment expected `READY_FOR_PICKUP`.
+- The console version label now follows the release instead of showing a stale `v1.0`.
+
+### Presentation
+
+- Rebuilt the README as a verified command deck with a new futuristic hero, live telemetry, model
+  invariants, surface gallery, release rail and explicit launch boundaries.
+- Regenerated quality/architecture assets against the current test and schema counts.
+
+### Verification
+
+- Backend: **43 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**.
+- Production frontend build: **passed**.
+- Fresh PostgreSQL 16 migration: **V1–V6**.
+- Live API smoke: **33 passed, 0 failed**.
+- `npm audit --omit=dev`: **0 vulnerabilities**.
+
 ## [0.1.3] — 2026-11-20
 
 **Foundation release. Pre-pilot; not `1.0.0`.**

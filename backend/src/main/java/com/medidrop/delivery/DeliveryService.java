@@ -285,7 +285,16 @@ public class DeliveryService {
 
     private boolean autoAssign(Long orderId, Long excludePartnerId) {
         Order order = orderRepository.findById(orderId).orElse(null);
-        if (order == null || order.getStatus() != OrderStatus.READY_FOR_PICKUP) return false;
+        if (order == null) return false;
+        DeliveryAssignment existing = assignmentRepository.findByOrderId(orderId).orElse(null);
+        boolean reassigning = order.getStatus() == OrderStatus.DELIVERY_ASSIGNED;
+        // A rejected rider leaves the order assigned. Allow a replacement rider without
+        // moving the order backwards; every other assignment path starts at READY_FOR_PICKUP.
+        if (reassigning) {
+            if (existing == null || existing.getStatus() != AssignmentStatus.REJECTED) return false;
+        } else if (order.getStatus() != OrderStatus.READY_FOR_PICKUP) {
+            return false;
+        }
         Pharmacy pharmacy = pharmacyRepository.findById(order.getPharmacyId()).orElse(null);
         if (pharmacy == null) return false;
         double radius = properties.getDelivery().getAssignmentSearchRadiusKm();
@@ -312,7 +321,7 @@ public class DeliveryService {
             log.info("No delivery partner available for order {}", order.getOrderNumber());
             return false;
         }
-        DeliveryAssignment assignment = assignmentRepository.findByOrderId(orderId).orElseGet(DeliveryAssignment::new);
+        DeliveryAssignment assignment = existing == null ? new DeliveryAssignment() : existing;
         assignment.setOrderId(orderId);
         assignment.setPartnerId(best.getId());
         assignment.setStatus(AssignmentStatus.ASSIGNED);
@@ -320,6 +329,7 @@ public class DeliveryService {
         assignment.setAcceptedAt(null);
         assignment.setPickedUpAt(null);
         assignment.setDeliveredAt(null);
+        assignment.setRejectionReason(null);
         double distance = Haversine.distanceKm(pharmacy.getLatitude(), pharmacy.getLongitude(),
                 order.getLatitude(), order.getLongitude());
         assignment.setDistanceKm(Math.round(distance * 10.0) / 10.0);
@@ -334,7 +344,9 @@ public class DeliveryService {
         order.setDeliveryOtp(otp);
         order.setDeliveryOtpVerified(false);
         orderRepository.save(order);
-        orderService.systemTransition(order, OrderStatus.DELIVERY_ASSIGNED, "Delivery partner assigned");
+        if (!reassigning) {
+            orderService.systemTransition(order, OrderStatus.DELIVERY_ASSIGNED, "Delivery partner assigned");
+        }
 
         smsSender.send(order.getRecipientPhone(), "Your MediDrop delivery code is " + otp
                 + ". Share it with the delivery partner only after receiving your order.");

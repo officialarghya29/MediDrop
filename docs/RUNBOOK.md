@@ -89,8 +89,8 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline after M1: **33** backend tests, **13** frontend tests, **33** smoke checks.
-Flyway now runs **V1–V5**; V5 adds the M1 safety invariants.
+Expected current baseline: **43** backend tests, **13** frontend tests, **33** smoke checks.
+Flyway now runs **V1–V6**; V6 adds the order optimistic-version column.
 
 The current gate is **not** the v5 Part 8 gate. There is no Testcontainers/PostGIS, Playwright,
 axe, Lighthouse, coverage threshold, 50-way checkout harness or 250K-product performance run.
@@ -149,9 +149,10 @@ java -jar target/medidrop-api-*.jar --server.port=8081
    carry the same version.
 2. Run `mvn -B -ntp verify` and `npm test && npm run build`; wait for CI on the exact commit.
 3. Create an annotated tag and push it:
-   `git tag -a v0.1.3 -m "MediDrop 0.1.3" && git push origin v0.1.3`.
-4. Publish a **pre-release** while the project is pre-pilot:
-   `gh release create v0.1.3 --verify-tag --latest --notes-file docs/releases/v0.1.3.md`.
+   `git tag -a v0.1.4 -m "MediDrop 0.1.4" && git push origin v0.1.4`.
+4. Publish a **normal latest release** with attached artifacts:
+   `gh release create v0.1.4 --verify-tag --latest --notes-file docs/releases/v0.1.4.md`.
+   Use `--prerelease` only when the build is deliberately not the latest runnable foundation.
 5. Never label a build `1.0.0` or “launch-ready” until the Part 8/original-36 gate, provider
    certification and legal/ops sign-off are complete.
 
