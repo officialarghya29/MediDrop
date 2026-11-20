@@ -93,6 +93,137 @@ const orderSummary = {
   city: 'Kolkata',
 };
 
+const orderDetail = {
+  id: 1,
+  orderNumber: 'MD-2601-0001',
+  status: 'OUT_FOR_DELIVERY',
+  pharmacyId: 1,
+  pharmacyName: 'Salt Lake Care Pharmacy',
+  pharmacyPhone: '9800000003',
+  customerName: 'Arghya Demo Customer',
+  customerPhone: '9800000002',
+  addressLine: 'DN 51, Sector V',
+  city: 'Kolkata',
+  state: 'West Bengal',
+  pincode: '700091',
+  latitude: 22.5726,
+  longitude: 88.3639,
+  pharmacyLatitude: 22.5801,
+  pharmacyLongitude: 88.4172,
+  subtotal: 32.5,
+  discount: 0,
+  deliveryFee: 29,
+  taxAmount: 1.63,
+  totalAmount: 63.13,
+  paymentMethod: 'COD',
+  prescriptionRequired: false,
+  placedAt: '2026-11-20T10:15:00Z',
+  etaMinutes: 18,
+  items: [{
+    id: 1,
+    medicineId: 1,
+    medicineName: medicine.name,
+    unitPrice: 32.5,
+    quantity: 1,
+    lineTotal: 32.5,
+    prescriptionRequired: false,
+  }],
+  history: [
+    { toStatus: 'PAYMENT_CONFIRMED', actorRole: 'CUSTOMER', at: '2026-11-20T10:15:00Z' },
+    { toStatus: 'PHARMACY_ACCEPTED', actorRole: 'PHARMACY', at: '2026-11-20T10:17:00Z' },
+    { toStatus: 'OUT_FOR_DELIVERY', actorRole: 'DELIVERY', at: '2026-11-20T10:31:00Z' },
+  ],
+  deliveryPartner: {
+    id: 1,
+    name: 'Rakesh Demo Delivery',
+    phone: '9800000005',
+    latitude: 22.576,
+    longitude: 88.401,
+    lastLocationAt: '2026-11-20T10:33:00Z',
+    vehicleType: 'Motorcycle',
+  },
+  trackingKey: 'demo-tracking-key',
+  deliveryOtp: '482913',
+  deliveryOtpVerified: false,
+};
+
+const prescriptions = [
+  {
+    id: 1,
+    fileName: 'prescription-november.pdf',
+    contentType: 'application/pdf',
+    sizeBytes: 245000,
+    status: 'APPROVED',
+    orderId: 1,
+    notes: 'For the cardiology follow-up.',
+    uploadedAt: '2026-11-18T09:30:00Z',
+    reviewedAt: '2026-11-18T10:05:00Z',
+    fileUrl: '/api/v1/customer/prescriptions/1/file',
+    demo: true,
+  },
+  {
+    id: 2,
+    fileName: 'prescription-old.jpg',
+    contentType: 'image/jpeg',
+    sizeBytes: 512000,
+    status: 'REJECTED',
+    rejectionReason: 'The prescriber signature and date are not visible.',
+    uploadedAt: '2026-11-12T16:20:00Z',
+    reviewedAt: '2026-11-12T17:00:00Z',
+    fileUrl: '/api/v1/customer/prescriptions/2/file',
+    demo: true,
+  },
+];
+
+const profile = {
+  id: 2,
+  fullName: 'Arghya Demo Customer',
+  email: 'customer@medidrop.local',
+  phone: '9800000002',
+  role: 'CUSTOMER',
+  emailVerified: true,
+  phoneVerified: true,
+  createdAt: '2026-01-12T08:00:00Z',
+};
+
+const supportTickets = [{
+  id: 1,
+  customerId: 2,
+  customerName: 'Arghya Demo Customer',
+  orderId: 1,
+  subject: 'Delivery instructions',
+  message: 'Please call on arrival instead of ringing the doorbell.',
+  status: 'OPEN',
+  createdAt: '2026-11-20T10:18:00Z',
+}];
+
+const notifications = [{
+  id: 1,
+  type: 'ORDER',
+  title: 'Your order is out for delivery',
+  body: 'Rakesh is on the way with order MD-2601-0001.',
+  link: '/orders/1',
+  read: false,
+  createdAt: '2026-11-20T10:31:00Z',
+}];
+
+const tracking = {
+  orderNumber: 'MD-2601-0001',
+  status: 'OUT_FOR_DELIVERY',
+  trackingKey: 'demo-tracking-key',
+  updatedAt: '2026-11-20T10:33:00Z',
+  partner: { name: 'Rakesh Demo Delivery', phone: '9800000005', vehicleType: 'Motorcycle' },
+  partnerLatitude: 22.576,
+  partnerLongitude: 88.401,
+  partnerUpdatedAt: '2026-11-20T10:33:00Z',
+  etaMinutes: 12,
+  destinationLabel: 'Salt Lake Sector II, Kolkata',
+  destinationLatitude: 22.5801,
+  destinationLongitude: 88.4172,
+  pharmacyLatitude: 22.5726,
+  pharmacyLongitude: 88.3639,
+};
+
 const deliveryAssignment = {
   id: 1,
   orderId: 1,
@@ -269,13 +400,20 @@ export async function mockRoleApi(page: Page, role: Role) {
     const url = new URL(route.request().url());
     const path = url.pathname.replace(/^\/api\/v1/, '');
 
-    if (path === '/notifications/unread-count') return route.fulfill(body({ count: 0 }));
-    if (path === '/notifications') return route.fulfill(body([]));
+    if (path === '/notifications/unread-count') return route.fulfill(body({ count: 1 }));
+    if (path === '/notifications') return route.fulfill(body(notifications));
+    if (path === '/tracking/demo-tracking-key') return route.fulfill(body(tracking));
 
     if (role === 'CUSTOMER') {
       if (path === '/cart') return route.fulfill(body(cart));
       if (path === '/customer/addresses') return route.fulfill(body([address]));
-      if (path === '/customer/prescriptions') return route.fulfill(body([]));
+      if (path === '/customer/me') return route.fulfill(body(profile));
+      if (path === '/customer/prescriptions') return route.fulfill(body(prescriptions));
+      if (path === '/support') return route.fulfill(body(supportTickets));
+      if (path === '/orders/counts') {
+        return route.fulfill(body({ total: 1, active: 1, delivered: 0, cancelled: 0 }));
+      }
+      if (path === '/orders/1') return route.fulfill(body(orderDetail));
       if (path === '/orders') return route.fulfill(body(pageOf([orderSummary])));
     }
 

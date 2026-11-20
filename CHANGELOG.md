@@ -9,13 +9,15 @@ after its gate passes.
 
 ### Added
 
-- `soak-check.py`: a 60-second sustained gate that runs three concurrent catalogue-search workers
-  while placing real cash-on-delivery orders through the public HTTP flow. It reports p50/p95/p99,
-  error counts and machine details, and fails the required CI smoke job on any error or
-  search p95 ≥ 300 ms / order p95 ≥ 800 ms.
-- Playwright + axe checks for checkout, the pharmacy dashboard, the delivery dashboard and the admin
-  dashboard. They seed the same browser session the login route writes and use deterministic DTO
-  fixtures, so no database is required.
+- `soak-check.py`: a 60-second sustained gate that runs concurrent catalogue-search workers while
+  placing real cash-on-delivery orders through the public HTTP flow. It accepts repeated
+  `--base-url` values, distributes search workers across nodes and submits each order on the next
+  node to prove shared cart and token state. It reports p50/p95/p99 per instance and machine details.
+- Two API instances now run against one PostgreSQL database in the required CI smoke job. The soak
+  fails on any error, an unused instance, search p95 ≥ 300 ms or order p95 ≥ 800 ms.
+- Playwright + axe checks for cart, checkout, orders, order detail, prescriptions, profile,
+  notifications, public tracking, pharmacy, delivery and admin. They seed the same browser session
+  the login route writes and use deterministic DTO fixtures, so no database is required.
 - Lighthouse runner and recorded three-run mobile report for the built home and catalogue-search
   journey.
 - Preview-server API proxy, so the production build can be measured against the real backend
@@ -25,18 +27,23 @@ after its gate passes.
 
 - Search results added a hidden level-two heading before the medicine cards. Lighthouse's
   `heading-order` audit found the h1-to-h3 jump; the page structure now descends correctly.
+- The notification bell's accessible name now includes its visible unread count. Axe's
+  `label-content-name-mismatch` rule found the mismatch once authenticated fixtures contained an
+  unread notification.
+- Support-ticket timestamps now use AA-contrast text instead of `text-slate-400` on a tinted card.
 
 ### Verification
 
 - Backend: **52 passed, 0 failed**.
 - Frontend: **13 passed, 0 failed**; production build passed.
-- Browser + axe: **9 passed, 0 failed** (five public, four authenticated) with zero WCAG A/AA
+- Browser + axe: **16 passed, 0 failed** (five public, eleven authenticated) with zero WCAG A/AA
   violations.
-- Soak: **5,001 searches at p95 7.9 ms** and **31 real COD orders at p95 28.7 ms** over 60 seconds,
-  zero errors; search target 300 ms, order target 800 ms.
-- Lighthouse mobile, median of three runs: home **performance 92 / accessibility 100 / best-practices
-  100 / SEO 92**; search **93 / 100 / 100 / 92**. One home sample scored 82, so this is a measured
-  median with variance, not a guaranteed floor.
+- Two-instance soak: **4,263 searches** (2,132 / 2,131 per node) at p95 **16.8 ms**, and **31 real
+  cross-node COD orders** at p95 **93.9 ms** over 60 seconds, zero errors; targets 300 ms and 800 ms.
+- Single-instance soak remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
+- Lighthouse mobile, median of three runs: home **performance 91 / accessibility 100 / best-practices
+  100 / SEO 92**; search **92 / 100 / 100 / 92**. The runner fails below 90/100/100/90 on the median;
+  it remains manual because a prior sample scored 82.
 - Live API smoke: **33 passed, 0 failed**.
 - `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**.
 

@@ -135,7 +135,7 @@ The second stabilization pass targeted identity and lifecycle races rather than 
 | Concurrent order transitions had no stale-write guard. | **FIXED** | `Order` carries `@Version`, `V6__order_version.sql` adds the column, and `OrderVersionTest` proves a stale write fails. |
 | A rejected rider left the order assigned with no replacement path. | **FIXED** | `DeliveryService.autoAssign` now distinguishes initial assignment from reassignment and preserves `DELIVERY_ASSIGNED`; `DeliveryReassignTest`. |
 | Console sidebar displayed a stale `v1.0` label. | **FIXED** | `Shell.tsx` reports `v0.1.4`. |
-| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS (0.1.6)**; public/role Playwright-axe, 250K search, 60-second soak and Lighthouse added by 0.1.8. Live providers, multi-instance load and full keyboard/screen-reader coverage remain open. |
+| 50-way stock race, live providers, full browser/a11y/performance gates. | **PARTIAL** | 50-way gate **PASS (0.1.6)**; public/customer/role Playwright-axe, 250K search, two-instance soak and Lighthouse added by 0.1.8. Live providers, 250K multi-instance load and full keyboard/screen-reader coverage remain open. |
 
 ### 0.1.7 measured edge (2026-11-20)
 
@@ -157,14 +157,16 @@ keyboard/screen-reader pass. This is still not a launch-readiness claim.
 
 | Finding | Status | Evidence |
 | --- | --- | --- |
-| Order placement had no sustained-load or percentile evidence. | **FIXED** | `soak-check.py` ran three search workers plus real COD order placement for 60 seconds: **5,001 searches, p95 7.9 ms; 31 orders, p95 28.7 ms; 0 errors**. Targets are 300 ms and 800 ms. The gate now runs in the required CI smoke job. |
-| Role dashboards and checkout had no automated axe coverage. | **FIXED** | Playwright/axe now checks checkout, pharmacy, delivery and admin with role-scoped fixtures. Browser suite is **9 passed**, zero WCAG A/AA violations. |
-| Lighthouse performance and accessibility were unmeasured. | **MEASURED** | Lighthouse 12.8.2 mobile, three-run median: home **92 performance / 100 accessibility**, search **93 / 100**. One home sample scored 82, so this is a median with recorded variance, not a CI floor. |
+| Order placement had no sustained-load or percentile evidence. | **FIXED** | Two API instances on one PostgreSQL database ran three distributed search workers plus real COD orders for 60 seconds: **4,263 searches, p95 16.8 ms; 31 cross-node orders, p95 93.9 ms; 0 errors**. Targets are 300 ms and 800 ms. The gate runs in the required CI smoke job. |
+| Customer pages, checkout and role dashboards had no automated axe coverage. | **FIXED** | Playwright/axe now checks 16 journeys covering public pages, cart, checkout, orders, order detail, prescriptions, profile, notifications, tracking, pharmacy, delivery and admin with role-scoped fixtures. Zero WCAG A/AA violations. |
+| Lighthouse performance and accessibility were unmeasured. | **MEASURED** | Lighthouse 12.8.2 mobile, three-run median: home **91 performance / 100 accessibility**, search **92 / 100**. Median thresholds are now 90/100/100/90; an earlier sample scored 82, so this remains a manual gate, not a CI floor. |
 | Search results skipped a heading level. | **FIXED** | Lighthouse `heading-order` found h1 → h3. A hidden h2 now labels the results; no rule was disabled. |
+| The notification bell's accessible name omitted its visible unread count. | **FIXED** | The expanded axe suite found `label-content-name-mismatch`; the label now includes the count rather than hiding the badge from assistive technology. |
+| A support-ticket timestamp failed AA contrast. | **FIXED** | The timestamp moved from `text-slate-400` to `text-slate-500` on the tinted card; the rule was not suppressed. |
 
-Limits: the soak uses the 18-row demo catalogue and a single API/database node. Lighthouse covers the
-public home and search only, not checkout or consoles. Keyboard, screen-reader, touch-target, Ops Night,
-i18n and 1440 px audits remain open.
+Limits: the soak uses the 18-row demo catalogue on two local API processes, not a 250K multi-instance
+or PostGIS workload. Lighthouse covers the public home and search only, not checkout or consoles.
+Console subpages, keyboard, screen-reader, touch-target, Ops Night, i18n and 1440 px audits remain open.
 
 ### GitHub controls (reviewed 2026-11-20)
 
@@ -595,14 +597,14 @@ requirements from M0 are complete; no milestone below has been started.
 - Google geocoding.
 - S3/object storage.
 - OCR extraction.
-- Cross-browser visual regression, remaining page-level axe coverage and full keyboard/screen-reader audits.
-- Multi-instance load, 250K-with-soak combination and PostGIS/nearby-node performance.
+- Cross-browser visual regression, remaining console-subpage axe coverage and full keyboard/screen-reader audits.
+- Multi-instance load at 250K and PostGIS/nearby-node performance.
 - Production backup/restore, monitoring and alerting.
 - Original Section 24 exact wording.
 - Legal/compliance sign-off.
 - Addendum v5 Node Selection, ETA, Rx Vault, Savings Engine, cold chain, rider dispatch, step events,
   DEMO_MODE, feature flags and ComplianceSignoff.
-- Multi-instance load, Lighthouse CI thresholds, full page/keyboard/screen-reader audits,
+- Lighthouse CI thresholds, console-subpage axe coverage, full keyboard/screen-reader audits,
   390/1440 screenshots, Testcontainers and a coverage threshold.
 - Live node capacity, cold-chain capability, rider batching and ETA backtest data.
 

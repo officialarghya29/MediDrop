@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-20T15:08:21.811653+00:00",
+  "generated_at": "2026-11-20T16:21:53.736851+00:00",
   "base_url": "http://127.0.0.1:4174",
   "runs_per_url": 3,
   "form_factor": "mobile",
@@ -7,49 +7,33 @@
     "home": {
       "url": "http://127.0.0.1:4174/",
       "categories": {
-        "performance": 92,
+        "performance": 91,
         "accessibility": 100,
         "best-practices": 100,
         "seo": 92
       },
       "metrics": {
-        "fcp_ms": 2403.925,
-        "lcp_ms": 2930.619,
-        "tbt_ms": 61.5,
+        "fcp_ms": 2311.713,
+        "lcp_ms": 2935.677,
+        "tbt_ms": 86,
         "cls": 0,
-        "speed_index_ms": 2812.232
+        "speed_index_ms": 2311.713
       },
       "samples": [
         {
           "lighthouse_version": "12.8.2",
           "categories": {
-            "performance": 82,
+            "performance": 91,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2404.382,
-            "lcp_ms": 2931.417,
-            "tbt_ms": 68,
-            "cls": 0.097,
-            "speed_index_ms": 7866.235
-          }
-        },
-        {
-          "lighthouse_version": "12.8.2",
-          "categories": {
-            "performance": 92,
-            "accessibility": 100,
-            "best-practices": 100,
-            "seo": 92
-          },
-          "metrics": {
-            "fcp_ms": 2403.925,
-            "lcp_ms": 2780.728,
-            "tbt_ms": 57,
+            "fcp_ms": 2326.059,
+            "lcp_ms": 2709.827,
+            "tbt_ms": 180.5,
             "cls": 0,
-            "speed_index_ms": 2812.232
+            "speed_index_ms": 2326.059
           }
         },
         {
@@ -61,11 +45,27 @@
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2253.796,
-            "lcp_ms": 2930.619,
-            "tbt_ms": 61.5,
+            "fcp_ms": 2257.208,
+            "lcp_ms": 2935.677,
+            "tbt_ms": 49,
+            "cls": 0.001,
+            "speed_index_ms": 2257.208
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 91,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2311.713,
+            "lcp_ms": 3065.944,
+            "tbt_ms": 86,
             "cls": 0,
-            "speed_index_ms": 2253.796
+            "speed_index_ms": 2311.713
           }
         }
       ]
@@ -73,19 +73,51 @@
     "search": {
       "url": "http://127.0.0.1:4174/search?q=Paracetamol",
       "categories": {
-        "performance": 93,
+        "performance": 92,
         "accessibility": 100,
         "best-practices": 100,
         "seo": 92
       },
       "metrics": {
-        "fcp_ms": 2403.981,
-        "lcp_ms": 2781.585,
-        "tbt_ms": 51.5,
-        "cls": 0.012,
-        "speed_index_ms": 2403.981
+        "fcp_ms": 2299.066,
+        "lcp_ms": 2977.394,
+        "tbt_ms": 78,
+        "cls": 0,
+        "speed_index_ms": 2299.066
       },
       "samples": [
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 94,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2304.317,
+            "lcp_ms": 2682.179,
+            "tbt_ms": 54,
+            "cls": 0.014,
+            "speed_index_ms": 2304.317
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 91,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2299.066,
+            "lcp_ms": 2977.461,
+            "tbt_ms": 100,
+            "cls": 0,
+            "speed_index_ms": 2299.066
+          }
+        },
         {
           "lighthouse_version": "12.8.2",
           "categories": {
@@ -95,43 +127,11 @@
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2403.981,
-            "lcp_ms": 2780.752,
-            "tbt_ms": 66,
-            "cls": 0.012,
-            "speed_index_ms": 2403.981
-          }
-        },
-        {
-          "lighthouse_version": "12.8.2",
-          "categories": {
-            "performance": 93,
-            "accessibility": 100,
-            "best-practices": 100,
-            "seo": 92
-          },
-          "metrics": {
-            "fcp_ms": 2404.517,
-            "lcp_ms": 2781.604,
-            "tbt_ms": 51.5,
+            "fcp_ms": 2298.721,
+            "lcp_ms": 2977.394,
+            "tbt_ms": 78,
             "cls": 0,
-            "speed_index_ms": 2404.517
-          }
-        },
-        {
-          "lighthouse_version": "12.8.2",
-          "categories": {
-            "performance": 93,
-            "accessibility": 100,
-            "best-practices": 100,
-            "seo": 92
-          },
-          "metrics": {
-            "fcp_ms": 2254.473,
-            "lcp_ms": 2781.585,
-            "tbt_ms": 8,
-            "cls": 0.012,
-            "speed_index_ms": 2254.473
+            "speed_index_ms": 2298.721
           }
         }
       ]

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Runs Lighthouse against the built MediDrop public journey.
 
-The script uses the pinned Lighthouse CLI through npx, so the measurement does
-not depend on a globally installed package. It runs the home page and a
-catalogue search three times each, keeps the median category scores and reports
-the Core Web Vitals used by the performance register.
+The script uses the pinned Lighthouse CLI through npx, so the measurementdoes not depend on a globally installed package. It runs the home page and a
+catalogue search three times each, keeps the median category scores, reports the
+Core Web Vitals used by the performance register and fails below the documented
+median thresholds (90 performance, 100 accessibility, 100 best-practices, 90
+SEO).
 
 Start the built app and API first, for example:
     cd frontend && VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run preview -- --port 4174
@@ -83,7 +84,10 @@ def main():
         "--output",
         default=str(Path(__file__).resolve().parents[2] / "docs/assets/lighthouse-v018.json"),
     )
-    parser.add_argument("--min-performance", type=int, default=0)
+    parser.add_argument("--min-performance", type=int, default=90)
+    parser.add_argument("--min-accessibility", type=int, default=100)
+    parser.add_argument("--min-best-practices", type=int, default=100)
+    parser.add_argument("--min-seo", type=int, default=90)
     args = parser.parse_args()
 
     if args.runs < 1:
@@ -135,17 +139,22 @@ def main():
     print(json.dumps(summary["results"], indent=2))
     print(f"Wrote {output}")
 
-    if args.min_performance:
-        failed = [
-            name for name, result in summary["results"].items()
-            if result["categories"]["performance"] < args.min_performance
-        ]
-        if failed:
-            print(
-                f"Performance is below {args.min_performance} on: {', '.join(failed)}",
-                file=sys.stderr,
-            )
-            return 1
+    thresholds = {
+        "performance": args.min_performance,
+        "accessibility": args.min_accessibility,
+        "best-practices": args.min_best_practices,
+        "seo": args.min_seo,
+    }
+    failed = []
+    for name, result in summary["results"].items():
+        for category, minimum in thresholds.items():
+            score = result["categories"][category]
+            if score < minimum:
+                failed.append(f"{name} {category} {score} < {minimum}")
+    if failed:
+        for failure in failed:
+            print(f"Threshold failed: {failure}", file=sys.stderr)
+        return 1
     return 0
 
 

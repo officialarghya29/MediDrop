@@ -45,12 +45,12 @@
 | **Continuity** | `v0.1.6` runtime hardening → `v0.1.7` 250K search → `0.1.8` soak, authenticated axe, Lighthouse |
 | **Backend** | **52 passed, 0 failed** |
 | **Frontend** | **13 passed, 0 failed** |
-| **Browser + axe** | **9 passed, 0 failures** · Chrome · 390 px |
+| **Browser + axe** | **16 passed, 0 failures** · Chrome · 390 px |
 | **Live API** | **33 checks, 0 failed** against PostgreSQL 16 |
 | **Search p95** | **280.5 ms** at **250K** medicines, 100 requests |
-| **Order p95** | **28.7 ms** across **31** real COD orders in a 60-second soak |
-| **Sustained search** | **5,001 requests · p95 7.9 ms · 0 errors** |
-| **Lighthouse mobile** | **92 home / 93 search performance · 100 accessibility** (median of 3) |
+| **Order p95** | **93.9 ms** across **31** real cross-node COD orders in a 60-second soak |
+| **Sustained search** | **4,263 requests across 2 instances · p95 16.8 ms · 0 errors** |
+| **Lighthouse mobile** | **91 home / 92 search performance · 100 accessibility** (median of 3) |
 | **Stock race** | **50 concurrent checkouts on stock 10 → 10 orders, 0 oversold** |
 | **Schema** | **33 tables · 37 indexes · Flyway V1–V7** |
 | **Dependencies** | `npm audit --omit=dev`: **0 vulnerabilities** |
@@ -61,20 +61,21 @@
 
 This patch closes the three gates left open by 0.1.7 without changing the release tag:
 
-- **Sustained search and order load is measured.** `soak-check.py` runs three search workers for 60
-  seconds while placing real COD orders every two seconds through the public HTTP flow. It completed
-  **5,001 searches at p95 7.9 ms** and **31 orders at p95 28.7 ms**, with zero errors, and now runs
-  in the required CI smoke job after the 33-check suite.
-- **Checkout and every role dashboard have automated axe coverage.** The Playwright gate now seeds
-  customer, pharmacy, delivery and admin browser sessions and checks `/checkout`, `/pharmacy`,
-  `/delivery` and `/admin` as well as the public pages. Result: **9 passed**, zero WCAG A/AA
-  violations.
-- **Lighthouse is measured, not assumed.** Pinned Lighthouse 12.8.2 runs three mobile samples on the
-  built app against the real API. Median: home **92 performance / 100 accessibility**, search **93 /
-  100**. One home sample scored 82, so the report records the median and variance rather than
-  claiming a guaranteed floor.
-- **One real defect was fixed.** Lighthouse found an h1 → h3 heading-order jump on search results;
-  a hidden h2 now labels the results without changing the visible design. No axe rule was disabled.
+- **Two-instance search and order load is measured.** CI now starts two API processes against one
+  PostgreSQL database. `soak-check.py` distributes three search workers across both nodes and adds
+  each COD order on one node before submitting it on the next. It completed **4,263 searches**
+  (2,132 / 2,131 per node) at p95 **16.8 ms**, and **31 orders** at p95 **93.9 ms**, with zero errors.
+- **All customer and role surfaces have automated axe coverage.** The Playwright gate checks 16
+  journeys: public home, search, medicine detail, sign-in and search-to-detail, plus cart, checkout,
+  orders, order detail, prescriptions, profile, notifications, public tracking, pharmacy, delivery
+  and admin. Result: **16 passed**, zero WCAG A/AA violations.
+- **Lighthouse is measured against explicit median thresholds.** Pinned Lighthouse 12.8.2 runs three
+  mobile samples on the built app against the real API. Median: home **91 performance / 100
+  accessibility**, search **92 / 100**; the runner now fails below 90 performance, 100 accessibility,
+  100 best-practices or 90 SEO. It remains a manual gate because a prior run varied as low as 82.
+- **Three real defects were fixed.** Lighthouse found an h1 → h3 heading-order jump on search
+  results; the expanded axe gate found a notification button whose accessible name omitted its
+  visible unread count and a support-ticket timestamp with sub-AA contrast. No rule was disabled.
 
 ### The 0.1.7 measured-edge pass
 
@@ -85,10 +86,10 @@ dependency batch:
   inventory row each, then measures 100 real HTTP searches. The first run exposed a concrete index
   mismatch; V7 adds lowercased trigram expression indexes and a prefix index. p95 is now **280.5 ms**
   against the **300 ms** target, with p50 189.1 ms and 0 errors.
-- **Public browser and axe journeys gate CI.** Playwright runs five checks against the built app at
-  390 px: home, search, medicine detail, sign-in and a search-to-detail journey. WCAG A/AA axe
-  violations fail the required frontend job. The gate found and fixed the logo accessible-name
-  mismatch instead of suppressing the rule.
+- **Browser and axe journeys gate CI.** The gate began with five public checks at 390 px: home,
+  search, medicine detail, sign-in and a search-to-detail journey. WCAG A/AA axe violations fail the
+  required frontend job. It found and fixed the logo accessible-name mismatch instead of suppressing
+  the rule; 0.1.8 extended the same gate to 16 journeys.
 - **Deferred minor/patch dependencies are applied.** React Query, Zustand, TypeScript,
   Testing Library, Autoprefixer and Springdoc are current; production npm audit remains at zero.
 
@@ -272,7 +273,7 @@ These are live screenshots of this repository against its own API and seeded Pos
 ## / 05 · VERIFICATION DECK
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 52 backend tests, 13 frontend tests and 9 browser/axe checks" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 52 backend tests, 13 frontend tests and 16 browser/axe checks" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
@@ -281,9 +282,9 @@ These are live screenshots of this repository against its own API and seeded Pos
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Browser + axe | `cd frontend && npm run test:e2e` | 9 journeys | **9 passed, 0 violations** |
-| Sustained soak | `infrastructure/scripts/soak-check.py` | 60 s | **5,001 searches · 31 orders · 0 errors** |
-| Lighthouse | `infrastructure/scripts/lighthouse-check.py` | 3 mobile runs | **92 / 93 performance · 100 accessibility** |
+| Browser + axe | `cd frontend && npm run test:e2e` | 16 journeys | **16 passed, 0 violations** |
+| Two-instance soak | `infrastructure/scripts/soak-check.py --base-url … --base-url …` | 60 s | **4,263 searches · 31 orders · 0 errors** |
+| Lighthouse | `infrastructure/scripts/lighthouse-check.py` | 3 mobile runs | **91 / 92 performance · 100 accessibility** |
 | Stock race | `infrastructure/scripts/stock-race-check.py` | 50 checkouts | **10 winners · 40 conflicts · 0 oversold** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
 | Dependency audit | `npm audit --omit=dev` | production tree | **0 vulnerabilities** |
@@ -413,7 +414,7 @@ Nothing in the core flow depends on a credential that is absent. That is deliber
 
 | Version | Scope | State |
 | --- | --- | --- |
-| `0.1.8` | 60-second search/order soak, authenticated axe journeys, measured Lighthouse report, search heading fix | **Mainline patch · not tagged** |
+| `0.1.8` | Two-instance search/order soak, 16 axe journeys, median-threshold Lighthouse report, three accessibility fixes | **Mainline patch · not tagged** |
 | [`v0.1.7`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.7) | 250K search gate, WCAG axe browser gate, dependency refresh, lowercased search indexes | **Latest foundation release** |
 | [`v0.1.6`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.6) | Realtime suspension enforcement, inactive-pharmacy RX guard, two-channel verification, graceful runtime, branch protection | Previous release |
 | [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate, Dependabot and security policy | Previous release |
@@ -428,7 +429,7 @@ The honest blockers are unchanged:
 - M2–M15, including a separate verified pharmacist role, pilot gates, node selection, ETA, Rx Vault,
   savings engine, cold chain, dispatch and ComplianceSignoff.
 - Live Razorpay, SMTP, SMS, Maps, S3 and OCR certification.
-- Multi-instance load, Lighthouse CI thresholds, full page/keyboard/screen-reader/touch-target coverage.
+- Multi-instance load at 250K, Lighthouse CI thresholds, console subpages and full keyboard/screen-reader/touch-target coverage.
 - Legal, regulatory and operations sign-off for online pharmacy, Schedule H/H1/X handling,
   prescription retention, DPDP, GST and substitution.
 

@@ -10,6 +10,48 @@ const pages = [
     heading: /^Checkout$/i,
   },
   {
+    name: 'cart',
+    path: '/cart',
+    role: 'CUSTOMER' as const,
+    heading: /^Your cart$/i,
+  },
+  {
+    name: 'orders',
+    path: '/orders',
+    role: 'CUSTOMER' as const,
+    heading: /^Your orders$/i,
+  },
+  {
+    name: 'order detail',
+    path: '/orders/1',
+    role: 'CUSTOMER' as const,
+    heading: /MD-2601-0001/i,
+  },
+  {
+    name: 'prescriptions',
+    path: '/prescriptions',
+    role: 'CUSTOMER' as const,
+    heading: /^Prescriptions$/i,
+  },
+  {
+    name: 'profile',
+    path: '/profile',
+    role: 'CUSTOMER' as const,
+    heading: /^Your profile$/i,
+  },
+  {
+    name: 'notifications',
+    path: '/notifications',
+    role: 'CUSTOMER' as const,
+    heading: /^Notifications$/i,
+  },
+  {
+    name: 'delivery tracking',
+    path: '/track/demo-tracking-key',
+    role: 'CUSTOMER' as const,
+    heading: /^Delivery status$/i,
+  },
+  {
     name: 'pharmacy dashboard',
     path: '/pharmacy',
     role: 'PHARMACY' as const,

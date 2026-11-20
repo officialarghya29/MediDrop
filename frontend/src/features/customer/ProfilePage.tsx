@@ -293,7 +293,7 @@ export default function ProfilePage() {
                     </div>
                     <p className="mt-1 text-xs text-slate-600">{ticket.message}</p>
                     {ticket.response && <p className="mt-2 rounded-lg bg-white p-2 text-xs text-slate-700"><strong>Support:</strong> {ticket.response}</p>}
-                    <p className="mt-1 text-[11px] text-slate-400">{dateTime(ticket.createdAt)}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">{dateTime(ticket.createdAt)}</p>
                   </li>
                 ))}
               </ul>

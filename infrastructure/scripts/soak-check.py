@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Runs a sustained catalogue-search and order-placement soak gate.
 
-The gate drives a real API with the demo seed: several workers search the
-catalogue continuously while a separate worker places real cash-on-delivery
-orders through the customer HTTP flow. Search and order latency are reported
-together with the dataset, duration and machine so the result is reproducible.
+The gate drives one or more API instances that share a database: several
+workers search the catalogue continuously while a separate worker places real
+cash-on-delivery orders through the customer HTTP flow. With two or more base
+URLs, search workers are distributed across instances and each order is added
+on one instance then submitted on the next, proving shared cart and token state.
+Search and order latency are reported per instance together with the duration
+and machine so the result is reproducible.
 
 The check fails on any transport/API error, any empty search result, or when
 either p95 is at or above its target. It is intentionally external to the
@@ -171,7 +174,7 @@ def search_once(base, term, timeout):
     return elapsed, None
 
 
-def place_order(base, token, address_id, inventory_id, timeout):
+def place_order(base, order_base, token, address_id, inventory_id, timeout):
     clear_cart(base, token, timeout)
     status, _, _, error = request(
         base, "/cart/items", "POST", {"inventoryId": inventory_id, "quantity": 1},
@@ -186,7 +189,7 @@ def place_order(base, token, address_id, inventory_id, timeout):
         "note": "Sustained load soak gate",
     }
     status, elapsed, payload, error = request(
-        base,
+        order_base,
         "/orders",
         "POST",
         body,
@@ -204,7 +207,11 @@ def place_order(base, token, address_id, inventory_id, timeout):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base-url", default="http://127.0.0.1:8080")
+    parser.add_argument(
+        "--base-url",
+        action="append",
+        help="API base URL; repeat to spread the soak across shared-database instances",
+    )
     parser.add_argument("--duration-seconds", type=float, default=60.0)
     parser.add_argument("--search-workers", type=int, default=3)
     parser.add_argument("--order-interval-seconds", type=float, default=2.0)
@@ -220,7 +227,9 @@ def main():
     if args.order_interval_seconds <= 0:
         raise SystemExit("--order-interval-seconds must be positive")
 
-    base = args.base_url.rstrip("/") + "/api/v1"
+    roots = [url.rstrip("/") for url in (args.base_url or ["http://127.0.0.1:8080"])]
+    api_bases = [f"{root}/api/v1" for root in dict.fromkeys(roots)]
+    base = api_bases[0]
     try:
         token = login(base, args.customer, args.password, args.timeout)
         address_id = ensure_address(base, token, args.timeout)
@@ -235,17 +244,24 @@ def main():
     order_latencies = []
     order_errors = []
     fatal_errors = []
+    per_instance = {
+        instance: {"latencies": [], "errors": []} for instance in api_bases
+    }
     lock = threading.Lock()
 
     def search_worker(worker_index):
         counter = worker_index
         while not stop.is_set():
+            instance = api_bases[counter % len(api_bases)]
             term = SEARCH_TERMS[counter % len(SEARCH_TERMS)]
-            elapsed, error = search_once(base, term, args.timeout)
+            elapsed, error = search_once(instance, term, args.timeout)
             with lock:
                 search_latencies.append(elapsed)
+                per_instance[instance]["latencies"].append(elapsed)
                 if error:
-                    search_errors.append(error)
+                    message = f"{instance}: {error}"
+                    search_errors.append(message)
+                    per_instance[instance]["errors"].append(message)
             counter += 1
             time.sleep(0.03)
 
@@ -253,18 +269,20 @@ def main():
         counter = 0
         while not stop.is_set():
             started = time.monotonic()
+            instance = api_bases[counter % len(api_bases)]
+            order_instance = api_bases[(counter + 1) % len(api_bases)]
             term = ORDER_TERMS[counter % len(ORDER_TERMS)]
-            inventory_id, error = find_inventory(base, term, args.timeout)
+            inventory_id, error = find_inventory(instance, term, args.timeout)
             if error:
                 with lock:
-                    order_errors.append(error)
+                    order_errors.append(f"{instance}: {error}")
             else:
                 elapsed, error = place_order(
-                    base, token, address_id, inventory_id, args.timeout
+                    instance, order_instance, token, address_id, inventory_id, args.timeout
                 )
                 with lock:
                     if error:
-                        order_errors.append(error)
+                        order_errors.append(f"{order_instance}: {error}")
                     elif elapsed is not None:
                         order_latencies.append(elapsed)
             counter += 1
@@ -301,9 +319,20 @@ def main():
     op50 = percentile(order_latencies, 0.50)
     op95 = percentile(order_latencies, 0.95)
     op99 = percentile(order_latencies, 0.99)
+    instance_report = {}
+    for instance, values in per_instance.items():
+        latencies = values["latencies"]
+        instance_report[instance] = {
+            "search_samples": len(latencies),
+            "search_p50_ms": round(percentile(latencies, 0.50), 1),
+            "search_p95_ms": round(percentile(latencies, 0.95), 1),
+            "search_p99_ms": round(percentile(latencies, 0.99), 1),
+            "search_errors": len(values["errors"]),
+        }
     report = {
         "gate": "sustained-search-and-order",
         "duration_seconds": round(elapsed_seconds, 1),
+        "instances": instance_report,
         "search_workers": args.search_workers,
         "order_interval_seconds": args.order_interval_seconds,
         "search": {
@@ -337,6 +366,10 @@ def main():
         failures.append("no completed search requests")
     if search_errors:
         failures.append(f"{len(search_errors)} search errors, first={search_errors[0]}")
+    if len(api_bases) > 1:
+        unused = [instance for instance, values in per_instance.items() if not values["latencies"]]
+        if unused:
+            failures.append(f"no search requests completed on {', '.join(unused)}")
     if not order_latencies:
         failures.append("no completed orders")
     if order_errors:
@@ -352,8 +385,9 @@ def main():
         return 1
 
     print(
-        f"PASS: {len(search_latencies)} searches at p95 {sp95:.1f} ms and "
-        f"{len(order_latencies)} orders at p95 {op95:.1f} ms over {elapsed_seconds:.0f}s"
+        f"PASS: {len(search_latencies)} searches across {len(api_bases)} instance(s) "
+        f"at p95 {sp95:.1f} ms and {len(order_latencies)} orders at p95 {op95:.1f} ms "
+        f"over {elapsed_seconds:.0f}s"
     )
     return 0
 

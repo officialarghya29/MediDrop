@@ -132,7 +132,11 @@ export default function Shell() {
                   type="button"
                   onClick={() => setBellOpen((open) => !open)}
                   className="relative rounded-full p-2.5 text-navy-700 transition hover:bg-white"
-                  aria-label="Notifications"
+                  aria-label={`Notifications${
+                    (unread?.count ?? 0) > 0
+                      ? `, ${unread!.count > 9 ? '9+' : unread!.count} unread`
+                      : ''
+                  }`}
                   aria-expanded={bellOpen}
                 >
                   <Bell className="h-5 w-5" />

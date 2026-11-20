@@ -90,15 +90,17 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline: **52** backend tests, **13** frontend tests, **9** Playwright/axe checks,
-**33** smoke checks, a passing 60-second search/order soak, a passing 50-way stock race and 250K
-search p95 below 300 ms. Flyway now runs **V1–V7**; V7 adds lowercased search expression indexes.
+Expected current baseline: **52** backend tests, **13** frontend tests, **16** Playwright/axe checks,
+**33** smoke checks, a passing two-instance 60-second search/order soak, a passing 50-way stock race
+and 250K search p95 below 300 ms. Flyway now runs **V1–V7**; V7 adds lowercased search expression
+indexes.
 
-The current gate is **still not** the v5 Part 8 gate. Public/authenticated Playwright/axe, a 250K
-search harness, a single-node soak and a recorded Lighthouse median now exist, but
-Testcontainers/PostGIS, a Lighthouse CI threshold, a coverage threshold, multi-instance load and full
-page/keyboard/screen-reader coverage are missing. The 50-way stock harness does not replace those
-gates. Do not claim Part 8 from a green CI run. See `docs/PERF.md` and `docs/A11Y.md`.
+The current gate is **still not** the v5 Part 8 gate. Public/customer/role Playwright/axe, a 250K
+search harness, a two-instance soak and a median-threshold Lighthouse report now exist, but
+Testcontainers/PostGIS, a Lighthouse CI threshold, a coverage threshold, 250K multi-instance load,
+console-subpage axe and full keyboard/screen-reader coverage are missing. The 50-way stock harness
+does not replace those gates. Do not claim Part 8 from a green CI run. See `docs/PERF.md` and
+`docs/A11Y.md`.
 
 Browser/axe gate:
 
@@ -117,11 +119,12 @@ python3 infrastructure/scripts/catalogue-load-check.py \
   --psql-container medidrop-gate
 ```
 
-Sustained search/order soak (API with demo seed; also runs in CI):
+Two-instance search/order soak (two APIs on one seeded database; CI does this after smoke):
 
 ```bash
 python3 infrastructure/scripts/soak-check.py \
   --base-url http://127.0.0.1:8080 \
+  --base-url http://127.0.0.1:8081 \
   --duration-seconds 60 --search-workers 3 --order-interval-seconds 2
 ```
 

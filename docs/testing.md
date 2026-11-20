@@ -8,11 +8,11 @@
 | API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 33 end-to-end checks against a running API |
 | Stock race (live stack) | `infrastructure/scripts/stock-race-check.py` | 50 concurrent checkouts against stock 10 |
 | Frontend unit | `cd frontend && npm test` | Formatting helpers and shared UI primitives |
-| Browser + axe (built app) | `cd frontend && npm run test:e2e` | Public journeys, checkout and three role dashboards; WCAG A/AA in Chrome at 390 px |
+| Browser + axe (built app) | `cd frontend && npm run test:e2e` | Public, customer and role journeys; WCAG A/AA in Chrome at 390 px |
 | Frontend build | `cd frontend && npm run build` | TypeScript strict typecheck + production bundle |
 | 250K search (live stack) | `python3 infrastructure/scripts/catalogue-load-check.py` | Real HTTP search p95 over a 250,000-row catalogue |
-| Sustained soak (live stack) | `python3 infrastructure/scripts/soak-check.py` | 60 seconds of concurrent search plus real COD order placement, with p95 gates |
-| Lighthouse (built app) | `python3 infrastructure/scripts/lighthouse-check.py` | Three mobile runs of the home and search journey; median scores and Web Vitals |
+| Sustained soak (live stack) | `python3 infrastructure/scripts/soak-check.py` | 60 seconds of concurrent search plus real COD orders across one or more nodes, with p95 gates |
+| Lighthouse (built app) | `python3 infrastructure/scripts/lighthouse-check.py` | Three mobile runs of home and search; median scores, thresholds and Web Vitals |
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
@@ -96,19 +96,23 @@ and open targets.
 
 ## Sustained soak
 
-The required CI smoke job now runs a 60-second soak after the smoke suite:
+The required CI smoke job starts two API instances against one PostgreSQL database, then runs a
+60-second soak across both after the smoke suite:
 
 ```bash
 python3 infrastructure/scripts/soak-check.py \
   --base-url http://127.0.0.1:8080 \
+  --base-url http://127.0.0.1:8081 \
   --duration-seconds 60 --search-workers 3 --order-interval-seconds 2
 ```
 
-It logs in as the documented demo customer, ensures an address, then runs three search workers while
-placing real COD orders at two-second intervals. The order path is the public one: search → detail →
-add to cart → `POST /orders`. It fails on any transport/API error, any empty search result, any order
-not reaching `PAYMENT_CONFIRMED`, search p95 ≥ 300 ms or order p95 ≥ 800 ms. The current local run
-completed **5,001 searches at p95 7.9 ms** and **31 orders at p95 28.7 ms**, with zero errors.
+It logs in as the documented demo customer, ensures an address, then distributes three search workers
+across the nodes while placing real COD orders at two-second intervals. Each order is added on one
+node and submitted on the next, so the run exercises shared cart and token state. It fails on any
+transport/API error, empty search result, unused instance, order not reaching `PAYMENT_CONFIRMED`,
+search p95 ≥ 300 ms or order p95 ≥ 800 ms. The two-instance run completed **4,263 searches** (2,132 /
+2,131 per node) at p95 **16.8 ms** and **31 orders** at p95 **93.9 ms**, zero errors. A single-instance
+run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
 
 The search side uses the 18-row demo catalogue, not the 250K dataset; the 250K gate is the scale
 test. The soak gate is about sustained concurrency and write-path stability.
@@ -125,9 +129,10 @@ npm run test:e2e  # Playwright + axe against the built preview
 Vitest uses jsdom with `src/test/setup.ts`. Component tests avoid network calls; data fetching is tested
 through the API smoke script instead of mocking every endpoint. The browser gate uses deterministic
 API fixtures, so it does not require PostgreSQL. It checks four public pages and exercises search →
-medicine detail, then seeds a customer, pharmacy, delivery or admin browser session and checks
-checkout plus all three role dashboards. All nine tests run at 390 px in Chrome and fail on WCAG A/AA
-axe violations. The gate is automated coverage, not a substitute for keyboard or screen-reader audits.
+medicine detail, then seeds a customer, pharmacy, delivery or admin browser session and checks cart,
+checkout, orders, order detail, prescriptions, profile, notifications, public tracking and all three
+role dashboards. All sixteen journeys run at 390 px in Chrome and fail on WCAG A/AA axe violations.
+The gate is automated coverage, not a substitute for keyboard or screen-reader audits.
 
 Lighthouse is a separate manual gate against the built preview with the API proxied:
 
@@ -140,9 +145,10 @@ VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run preview -- --port 4174
 python3 infrastructure/scripts/lighthouse-check.py --base-url http://127.0.0.1:4174
 ```
 
-It writes `docs/assets/lighthouse-v018.json`. The 0.1.8 median is **92** performance on home and
-**93** on search, with accessibility **100** on both. Lighthouse is not in CI because a single mobile
-sample varied between 82 and 93 on the same build.
+It writes `docs/assets/lighthouse-v018.json`. The 0.1.8 median is **91** performance on home and
+**92** on search, with accessibility **100** on both. The runner fails below median thresholds of 90
+performance, 100 accessibility, 100 best-practices and 90 SEO. Lighthouse is not in CI because an
+earlier sample varied between 82 and 93 on the same build.
 
 ## Not covered automatically
 
@@ -151,7 +157,7 @@ sample varied between 82 and 93 on the same build.
 - Google Maps geocoding
 - OCR extraction
 - Cross-browser visual regression
-- Sustained multi-instance load, PostGIS/nearby-node queries and N+1 proof
+- 250K multi-instance load, PostGIS/nearby-node queries and N+1 proof
 - Lighthouse in CI as a hard threshold (the current report is a recorded manual median)
 - Recorded keyboard and screen-reader passes
 - Touch-target, Ops Night, i18n and 1440 px audits

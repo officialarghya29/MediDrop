@@ -31,7 +31,7 @@ claim `1.0.0` yet.
 | [`v0.1.1`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1) | M1 safety slice and deep-scan hardening; pre-pilot | **Released pre-release** |
 | [`v0.1.2`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.2) | Lower-cost substitute comparison with safety filters | **Released pre-release** |
 | [`v0.1.3`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.3) | Substitute fallback reliability | Published foundation release |
-| `0.1.8` | Sustained search/order soak, authenticated axe coverage, measured Lighthouse report, search heading fix | **Mainline patch; not tagged** |
+| `0.1.8` | Two-instance search/order soak, 16 public/customer/role axe journeys, median-threshold Lighthouse report, three accessibility fixes | **Mainline patch; not tagged** |
 | [`v0.1.7`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.7) | Measured 250K search, Playwright + axe public gate, lowercased search indexes, dependency refresh | **Current foundation release** |
 | [`v0.1.6`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.6) | Realtime suspension enforcement, inactive-pharmacy RX guard, two-channel verification, production runtime controls | Previous release |
 | [`v0.1.5`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.5) | Suspended-provider authority, prescription privacy state, measured 50-way stock gate | Previous release |

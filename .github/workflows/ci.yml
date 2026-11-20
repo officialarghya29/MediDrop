@@ -137,20 +137,50 @@ jobs:
           echo "API did not become ready with seeded data"
           cat "$API_LOG"
           exit 1
+      - name: Start second API instance
+        working-directory: backend
+        env:
+          API_LOG: ${{ github.workspace }}/api-smoke-2.log
+          PORT: '8081'
+          MEDIDROP_DB_URL: jdbc:postgresql://localhost:5432/medidrop
+          MEDIDROP_DB_USERNAME: medidrop
+          MEDIDROP_DB_PASSWORD: medidrop
+          MEDIDROP_JWT_SECRET: ci-only-medidrop-secret-with-at-least-32-bytes
+          MEDIDROP_SEED_ENABLED: 'true'
+          MEDIDROP_STORAGE_PATH: /tmp/medidrop-storage
+        run: |
+          API_JAR=$(find target -maxdepth 1 -name 'medidrop-api-*.jar' ! -name '*.original' | head -1)
+          test -n "$API_JAR"
+          nohup java -jar "$API_JAR" > "$API_LOG" 2>&1 &
+          for attempt in $(seq 1 60); do
+            if READY=$(curl -fsS 'http://127.0.0.1:8081/api/v1/medicines?size=1' 2>/dev/null \
+                | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["totalElements"])' 2>/dev/null) \
+                && [ "${READY:-0}" -ge 1 ]; then
+              echo "Second API ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Second API did not become ready"
+          cat "$API_LOG"
+          exit 1
       - name: Run end-to-end smoke suite
         run: bash infrastructure/scripts/smoke-test.sh
-      - name: Sustained load and soak gate
+      - name: Two-instance sustained load and soak gate
         run: >-
           python3 infrastructure/scripts/soak-check.py
           --base-url http://127.0.0.1:8080
+          --base-url http://127.0.0.1:8081
           --duration-seconds 60
           --search-workers 3
           --order-interval-seconds 2
-      - name: Upload API log
+      - name: Upload API logs
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: api-smoke-log
-          path: api-smoke.log
+          path: |
+            api-smoke.log
+            api-smoke-2.log
           if-no-files-found: ignore
           retention-days: 7
