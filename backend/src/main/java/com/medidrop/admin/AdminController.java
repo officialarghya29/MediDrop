@@ -138,6 +138,9 @@ public class AdminController {
     @PostMapping("/orders/{id}/refund")
     public ApiResponse<PaymentDtos.RefundResponse> refund(@PathVariable Long id,
                                                           @Valid @RequestBody PaymentDtos.RefundRequest request) {
+        if (!id.equals(request.orderId())) {
+            throw com.medidrop.common.exception.ApiException.badRequest("Order id in path and body must match");
+        }
         var withOrder = new PaymentDtos.RefundRequest(id, request.amount(), request.reason());
         return ApiResponse.ok("Refund processed", paymentService.refund(CurrentUser.id(), withOrder));
     }
@@ -214,7 +217,7 @@ public class AdminController {
     @PutMapping("/settings/{key}")
     public ApiResponse<SystemSetting> updateSetting(@PathVariable String key,
                                                     @Valid @RequestBody AdminDtos.SettingRequest request) {
-        return ApiResponse.ok("Setting updated", adminService.updateSetting(key, request));
+        return ApiResponse.ok("Setting updated", adminService.updateSetting(CurrentUser.id(), key, request));
     }
 
     @GetMapping("/support-tickets")

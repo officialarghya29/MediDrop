@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -75,6 +76,39 @@ class AuthFlowTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void otpEndpointsDoNotRevealWhetherAnAccountExists() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/otp/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"missing-account@medidrop.local\",\"purpose\":\"EMAIL_VERIFICATION\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.message")
+                        .value("If the account exists, a verification code has been sent"));
+
+        mockMvc.perform(post("/api/v1/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"missing-account@medidrop.local\",\"purpose\":\"EMAIL_VERIFICATION\",\"code\":\"123456\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid or expired verification code"));
+    }
+
+    @Test
+    void pharmacyRegistrationDoesNotEchoThePassword() throws Exception {
+        String response = mockMvc.perform(post("/api/v1/pharmacies/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"pharmacyName":"Deep Scan Pharmacy","ownerName":"Deep Scan Owner",
+                                 "email":"pharmacy.deepscan@medidrop.local","phone":"9833334444",
+                                 "password":"Secret123","licenseNumber":"WB-DEEP-SCAN-01",
+                                 "registeredAddress":"1 Test Road","city":"Kolkata","state":"West Bengal",
+                                 "pincode":"700001","latitude":22.5726,"longitude":88.3639,
+                                 "deliveryRadiusKm":5}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(response).doesNotContain("password", "Secret123");
     }
 
     @Test

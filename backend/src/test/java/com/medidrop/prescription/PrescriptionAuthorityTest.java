@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
@@ -22,6 +23,43 @@ class PrescriptionAuthorityTest {
     @Autowired private PrescriptionService prescriptionService;
     @Autowired private PrescriptionRepository prescriptionRepository;
     @Autowired private PharmacyRepository pharmacyRepository;
+
+    private Pharmacy pharmacy(long ownerId) {
+        Pharmacy pharmacy = new Pharmacy();
+        pharmacy.setOwnerUserId(ownerId);
+        pharmacy.setName("Pharmacy " + ownerId);
+        pharmacy.setLicenseNumber("WB-AUTH-" + UUID.randomUUID().toString().substring(0, 8));
+        pharmacy.setRegisteredAddress("1 Test Road");
+        pharmacy.setCity("Kolkata");
+        pharmacy.setState("West Bengal");
+        pharmacy.setPincode("700001");
+        pharmacy.setLatitude(22.5726);
+        pharmacy.setLongitude(88.3639);
+        pharmacy.setPhone("9800000000");
+        pharmacy.setEmail("pharmacy" + ownerId + "@example.test");
+        pharmacy.setStatus(ApprovalStatus.APPROVED);
+        return pharmacyRepository.save(pharmacy);
+    }
+
+    @Test
+    void reviewHistoryIsScopedToTheAssignedPharmacy() {
+        Pharmacy first = pharmacy(730_010L);
+        pharmacy(730_011L);
+        Prescription prescription = new Prescription();
+        prescription.setCustomerId(730_012L);
+        prescription.setFileName("rx.png");
+        prescription.setStorageKey("test/" + UUID.randomUUID());
+        prescription.setContentType("image/png");
+        prescription.setSizeBytes(12L);
+        prescription.setPharmacyId(first.getId());
+        prescription.setStatus(PrescriptionStatus.UPLOADED);
+        Prescription saved = prescriptionRepository.save(prescription);
+
+        assertThat(prescriptionService.reviews(730_010L, saved.getId())).isEmpty();
+        assertThatThrownBy(() -> prescriptionService.reviews(730_011L, saved.getId()))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("Prescription not found");
+    }
 
     @Test
     void unverifiedPharmacyOwnerCannotApprovePrescription() {

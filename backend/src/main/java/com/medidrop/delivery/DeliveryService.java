@@ -60,6 +60,9 @@ public class DeliveryService {
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("An account with this email already exists");
         }
+        if (userRepository.findByPhone(request.phone()).isPresent()) {
+            throw ApiException.conflict("An account with this mobile number already exists");
+        }
         User user = new User();
         user.setFullName(request.fullName());
         user.setEmail(email);
@@ -148,11 +151,15 @@ public class DeliveryService {
         if (assignment.getStatus() != AssignmentStatus.ASSIGNED) {
             throw ApiException.conflict("This delivery can no longer be accepted");
         }
+        Order order = orderRepository.findById(assignment.getOrderId())
+                .orElseThrow(() -> ApiException.notFound("Order not found"));
+        if (order.getStatus() != OrderStatus.DELIVERY_ASSIGNED) {
+            throw ApiException.conflict("This order is no longer available for delivery");
+        }
         assignment.setStatus(AssignmentStatus.ACCEPTED);
         assignment.setAcceptedAt(Instant.now());
         assignmentRepository.save(assignment);
-        notificationService.notifyUser(orderRepository.findById(assignment.getOrderId())
-                        .map(Order::getCustomerId).orElse(0L), "DELIVERY", "Delivery partner assigned",
+        notificationService.notifyUser(order.getCustomerId(), "DELIVERY", "Delivery partner assigned",
                 "A MediDrop delivery partner accepted your delivery.", null);
         return toRow(assignment);
     }
@@ -198,7 +205,7 @@ public class DeliveryService {
                 if (!ACTIVE.contains(assignment.getStatus())) {
                     throw ApiException.conflict("This delivery is already closed");
                 }
-                orderService.adminTransition(partner.getUserId(), order.getId(), OrderStatus.FAILED,
+                orderService.deliveryFailure(partner.getUserId(), order.getId(),
                         request.note() == null ? "Delivery failed" : request.note());
             }
             default -> throw ApiException.badRequest("Unsupported delivery status update");
@@ -217,8 +224,7 @@ public class DeliveryService {
                 .orElseThrow(() -> ApiException.notFound("Delivery not found"));
         Order order = orderRepository.findById(assignment.getOrderId())
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
-        if (assignment.getStatus() != AssignmentStatus.OUT_FOR_DELIVERY
-                && assignment.getStatus() != AssignmentStatus.PICKED_UP) {
+        if (assignment.getStatus() != AssignmentStatus.OUT_FOR_DELIVERY) {
             throw ApiException.conflict("Mark the order out for delivery before completing it");
         }
         if (order.getDeliveryOtpHash() == null) {

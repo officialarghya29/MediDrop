@@ -18,12 +18,21 @@ after its gate passes.
 - Verified pharmacist identity is required before prescription review.
 - Medicine schedule `H/H1/X/UNKNOWN` forces prescription review, and `sales_blocked` is enforced.
 - Database checks reject price above MRP and invalid stock balances.
+- Public pharmacy/delivery onboarding is explicitly permitted instead of returning `401`.
+- Pharmacy registration no longer echoes the plaintext password, and duplicate phone numbers are
+  rejected by pharmacy and delivery registration.
+- Prescription review history is scoped to the calling pharmacy.
+- OTP request/verify no longer disclose whether an email has an account.
+- Pharmacy documents now require a matching PDF/JPEG/PNG signature.
+- Delivery failure is audited as a delivery action; completion requires `OUT_FOR_DELIVERY`.
+- Console SMS/email no longer log OTP or reset bodies; admin setting changes are audited.
+- Refund path/body order IDs must match; customer OTP is hidden once delivery is closed.
 
 ### Added
 
 - `docs/VERSIONS.md` and this changelog.
 - Pharmacist verification endpoint and audit action.
-- Regression tests for refund bypass, invoice tenancy, audit listing and prescription authority.
+- Regression tests for refund bypass, invoice tenancy, audit listing, prescription authority, OTP enumeration, review-history tenancy and pharmacy-registration response leakage.
 
 ## [0.1.0-m0] — 2026-11-20
 

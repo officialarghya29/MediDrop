@@ -127,9 +127,12 @@ public class AuthService {
 
     @Transactional
     public void requestOtp(AuthDtos.OtpRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(request.email().trim())
-                .orElseThrow(() -> ApiException.notFound("No account found for this email"));
         String purpose = normalisePurpose(request.purpose());
+        User user = userRepository.findByEmailIgnoreCase(request.email().trim()).orElse(null);
+        if (user == null) {
+            // Same external response as a real account; do not create an enumeration oracle.
+            return;
+        }
         String otp = createOtp(user, purpose, true);
         if (PURPOSE_PHONE.equals(purpose) && user.getPhone() != null) {
             smsSender.send(user.getPhone(), "Your MediDrop verification code is " + otp
@@ -139,9 +142,10 @@ public class AuthService {
 
     @Transactional
     public AuthDtos.AuthResponse verifyOtp(AuthDtos.OtpVerifyRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(request.email().trim())
-                .orElseThrow(() -> ApiException.notFound("No account found for this email"));
         String purpose = normalisePurpose(request.purpose());
+        User user = userRepository.findByEmailIgnoreCase(request.email().trim())
+                .orElseThrow(() -> ApiException.badRequest("Invalid or expired verification code"));
+
         OtpToken token = otpTokenRepository
                 .findFirstByUserIdAndPurposeAndConsumedFalseOrderByCreatedAtDesc(user.getId(), purpose)
                 .orElseThrow(() -> ApiException.badRequest("No active verification code. Request a new one."));

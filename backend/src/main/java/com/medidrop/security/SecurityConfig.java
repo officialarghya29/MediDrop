@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/v1/payments/webhook").permitAll()
                         .requestMatchers("/api/v1/tracking/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/pharmacies/register", "/api/v1/delivery/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/medicines/**", "/api/v1/pharmacies/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

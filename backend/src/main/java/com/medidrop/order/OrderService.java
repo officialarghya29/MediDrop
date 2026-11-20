@@ -86,6 +86,9 @@ public class OrderService {
             OrderStatus.CANCELLED, OrderStatus.PRESCRIPTION_REJECTED, OrderStatus.FAILED,
             OrderStatus.REFUNDED);
 
+    private static final Set<OrderStatus> OTP_VISIBLE_STATUSES = EnumSet.of(
+            OrderStatus.DELIVERY_ASSIGNED, OrderStatus.PICKED_UP, OrderStatus.OUT_FOR_DELIVERY);
+
     @Transactional
     public OrderDtos.OrderDetail place(Long customerId, OrderDtos.PlaceOrderRequest request, String idempotencyKey) {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
@@ -339,6 +342,15 @@ public class OrderService {
                 .orElseThrow(() -> ApiException.notFound("Order not found"));
         transition(order, target, Role.ADMIN, adminId, reason);
         notifyCustomer(order, target);
+        return detail(order, false);
+    }
+
+    @Transactional
+    public OrderDtos.OrderDetail deliveryFailure(Long deliveryUserId, Long orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> ApiException.notFound("Order not found"));
+        transition(order, OrderStatus.FAILED, Role.DELIVERY, deliveryUserId, reason);
+        notifyCustomer(order, OrderStatus.FAILED);
         return detail(order, false);
     }
 
@@ -621,7 +633,8 @@ public class OrderService {
                 order.getPrescriptionId(), rx == null ? null : rx.getStatus().name(), order.getCouponCode(),
                 order.getCustomerNote(), order.getCancellationReason(), order.getPlacedAt(), order.getDeliveredAt(),
                 order.getDistanceKm(), eta, items, history, partner, order.getTrackingKey(),
-                includeOtp && !order.isDeliveryOtpVerified() ? order.getDeliveryOtp() : null,
+                includeOtp && !order.isDeliveryOtpVerified() && OTP_VISIBLE_STATUSES.contains(order.getStatus())
+                        ? order.getDeliveryOtp() : null,
                 order.isDeliveryOtpVerified());
     }
 

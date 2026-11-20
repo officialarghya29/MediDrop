@@ -13,6 +13,8 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, Long
 
     Optional<Prescription> findByIdAndCustomerId(Long id, Long customerId);
 
+    Optional<Prescription> findByIdAndPharmacyId(Long id, Long pharmacyId);
+
     Page<Prescription> findByPharmacyIdAndStatus(Long pharmacyId, PrescriptionStatus status, Pageable pageable);
 
     Page<Prescription> findByStatus(PrescriptionStatus status, Pageable pageable);

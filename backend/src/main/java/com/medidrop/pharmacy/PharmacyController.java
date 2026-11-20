@@ -20,10 +20,9 @@ public class PharmacyController {
     private final PharmacyService pharmacyService;
 
     @PostMapping("/register")
-    public ApiResponse<PharmacyDtos.RegistrationRequest> register(
-            @Valid @RequestBody PharmacyDtos.RegistrationRequest request) {
+    public ApiResponse<Void> register(@Valid @RequestBody PharmacyDtos.RegistrationRequest request) {
         pharmacyService.register(request);
-        return ApiResponse.ok("Registration submitted. Your licence will be verified before activation.", request);
+        return ApiResponse.ok("Registration submitted. Your licence will be verified before activation.", null);
     }
 
     @GetMapping("/nearby")

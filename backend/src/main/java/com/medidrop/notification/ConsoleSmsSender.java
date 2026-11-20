@@ -11,7 +11,7 @@ public class ConsoleSmsSender implements SmsSender {
 
     @Override
     public void send(String phone, String message) {
-        // Local development transport only. No SMS is actually delivered.
-        log.info("[dev-sms] to={} message={}", phone, message);
+        // Local development transport only. Never print OTP/message bodies.
+        log.info("[dev-sms] to={} messageLength={}", phone, message == null ? 0 : message.length());
     }
 }

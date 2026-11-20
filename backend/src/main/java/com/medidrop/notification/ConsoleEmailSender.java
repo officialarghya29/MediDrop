@@ -11,7 +11,7 @@ public class ConsoleEmailSender implements EmailSender {
 
     @Override
     public void send(String to, String subject, String body) {
-        // Console transport is for local development only; it never claims a real delivery.
-        log.info("[dev-email] to={} subject={} body={}", to, subject, body);
+        // Console transport is for local development only; never print bodies or reset links.
+        log.info("[dev-email] to={} subject={} bodyLength={}", to, subject, body == null ? 0 : body.length());
     }
 }

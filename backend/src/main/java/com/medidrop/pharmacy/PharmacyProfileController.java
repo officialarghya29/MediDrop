@@ -2,6 +2,7 @@ package com.medidrop.pharmacy;
 
 import com.medidrop.admin.ReportingService;
 import com.medidrop.common.ApiResponse;
+import com.medidrop.common.FileValidation;
 import com.medidrop.common.exception.ApiException;
 import com.medidrop.security.CurrentUser;
 import com.medidrop.storage.FileStorage;
@@ -11,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -72,8 +74,15 @@ public class PharmacyProfileController {
         if (file.getSize() > 8 * 1024 * 1024) {
             throw ApiException.badRequest("Document must be smaller than 8 MB");
         }
+        byte[] content;
+        try {
+            content = file.getBytes();
+        } catch (IOException e) {
+            throw ApiException.badRequest("Could not read the uploaded document");
+        }
+        FileValidation.assertMagicBytes(content, contentType);
         FileStorage.StoredFile stored;
-        try (InputStream in = file.getInputStream()) {
+        try (InputStream in = new ByteArrayInputStream(content)) {
             stored = fileStorage.store(in, file.getOriginalFilename(), contentType, "pharmacy-documents");
         } catch (IOException e) {
             throw new IllegalStateException("Unable to store document", e);
@@ -81,7 +90,7 @@ public class PharmacyProfileController {
         PharmacyDocument document = new PharmacyDocument();
         document.setPharmacyId(pharmacy.getId());
         document.setDocumentType(documentType.toUpperCase().replaceAll("[^A-Z_]", ""));
-        document.setFileName(file.getOriginalFilename());
+        document.setFileName(safeName(file.getOriginalFilename()));
         document.setStorageKey(stored.key());
         document.setContentType(contentType);
         document.setStatus(com.medidrop.common.ApprovalStatus.PENDING);
@@ -89,6 +98,12 @@ public class PharmacyProfileController {
         return ApiResponse.ok("Document uploaded for verification",
                 new PharmacyDtos.DocumentResponse(document.getId(), document.getDocumentType(),
                         document.getFileName(), document.getStatus(), document.getCreatedAt(), null));
+    }
+
+    private String safeName(String name) {
+        if (name == null || name.isBlank()) return "document";
+        String cleaned = name.replaceAll("[\\\\/\r\n]", "_").trim();
+        return cleaned.length() > 200 ? cleaned.substring(0, 200) : cleaned;
     }
 
     @GetMapping("/analytics")

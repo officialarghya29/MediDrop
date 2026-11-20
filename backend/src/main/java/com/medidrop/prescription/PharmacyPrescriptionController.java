@@ -40,7 +40,7 @@ public class PharmacyPrescriptionController {
 
     @GetMapping("/{id}/reviews")
     public ApiResponse<List<PrescriptionDtos.ReviewHistory>> reviews(@PathVariable Long id) {
-        return ApiResponse.ok(prescriptionService.reviews(id));
+        return ApiResponse.ok(prescriptionService.reviews(CurrentUser.id(), id));
     }
 
     @PostMapping("/{id}/review")

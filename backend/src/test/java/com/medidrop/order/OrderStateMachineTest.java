@@ -71,6 +71,14 @@ class OrderStateMachineTest {
     }
 
     @Test
+    void deliveryPartnerCanFailAnAssignedDeliveryButCustomerCannot() {
+        assertDoesNotThrow(() -> OrderStateMachine.assertAllowed(
+                OrderStatus.DELIVERY_ASSIGNED, OrderStatus.FAILED, Role.DELIVERY));
+        assertThrows(ApiException.class, () -> OrderStateMachine.assertAllowed(
+                OrderStatus.DELIVERY_ASSIGNED, OrderStatus.FAILED, Role.CUSTOMER));
+    }
+
+    @Test
     void customerCancellationWindowIsEnforced() {
         assertTrue(OrderStateMachine.customerMayCancel(OrderStatus.PAYMENT_CONFIRMED));
         assertFalse(OrderStateMachine.customerMayCancel(OrderStatus.PICKED_UP));

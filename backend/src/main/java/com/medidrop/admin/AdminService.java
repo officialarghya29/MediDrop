@@ -226,13 +226,14 @@ public class AdminService {
     }
 
     @Transactional
-    public SystemSetting updateSetting(String key, AdminDtos.SettingRequest request) {
+    public SystemSetting updateSetting(Long adminId, String key, AdminDtos.SettingRequest request) {
         SystemSetting setting = settingRepository.findById(key).orElseGet(SystemSetting::new);
         setting.setKey(key);
         setting.setValue(request.value());
         setting.setDescription(request.description());
         if (request.publicSetting() != null) setting.setPublicSetting(request.publicSetting());
         settingRepository.save(setting);
+        auditService.recordForUser(adminId, Role.ADMIN.name(), "SETTING_UPDATED", "SystemSetting", key, null);
         return setting;
     }
 

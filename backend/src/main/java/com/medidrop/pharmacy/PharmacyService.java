@@ -84,10 +84,13 @@ public class PharmacyService {
     }
 
     @Transactional
-    public PharmacyDtos.RegistrationRequest register(PharmacyDtos.RegistrationRequest request) {
+    public void register(PharmacyDtos.RegistrationRequest request) {
         String email = request.email().trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw ApiException.conflict("An account with this email already exists");
+        }
+        if (userRepository.findByPhone(request.phone()).isPresent()) {
+            throw ApiException.conflict("An account with this mobile number already exists");
         }
         if (pharmacyRepository.existsByLicenseNumberIgnoreCase(request.licenseNumber())) {
             throw ApiException.conflict("This drug licence number is already registered");
@@ -128,7 +131,6 @@ public class PharmacyService {
         }
         auditService.recordForUser(owner.getId(), Role.PHARMACY.name(), "PHARMACY_REGISTERED", "Pharmacy",
                 pharmacy.getId(), "Awaiting verification");
-        return request;
     }
 
     @Transactional(readOnly = true)

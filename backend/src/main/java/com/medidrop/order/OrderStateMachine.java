@@ -63,6 +63,7 @@ public final class OrderStateMachine {
         allow(OrderStatus.READY_FOR_PICKUP, OrderStatus.CANCELLED, Role.ADMIN);
 
         allow(OrderStatus.DELIVERY_ASSIGNED, OrderStatus.PICKED_UP, Role.DELIVERY);
+        allow(OrderStatus.DELIVERY_ASSIGNED, OrderStatus.FAILED, Role.DELIVERY, Role.ADMIN);
         allow(OrderStatus.DELIVERY_ASSIGNED, OrderStatus.CANCELLATION_REQUESTED, Role.CUSTOMER);
         allow(OrderStatus.DELIVERY_ASSIGNED, OrderStatus.CANCELLED, Role.ADMIN);
 

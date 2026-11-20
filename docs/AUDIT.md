@@ -1,7 +1,7 @@
 # M0 repository audit — Addendum v5
 
 - Audit date: 2026-11-20
-- Repository: `officialarghya29/MediDrop` (private)
+- Repository: `officialarghya29/MediDrop` (public; visibility checked 2026-11-20)
 - Branch: `main`
 - Audited application commit: `0e9b76c79b39b1139f57681500448dbb55d4b9f8`
 - Documentation baseline: `4a37d33f64b61b237e3796273e5961acc4609f16`
@@ -71,12 +71,49 @@ separates “fixed” from “still open”.
 | Concurrency loser `500` | **PARTIAL** | Projection-before-lock and `409` mapping implemented; the 50-way stock-10 gate is still open. |
 | Price/MRP and stock DB constraints | **FIXED** | `V5__m1_safety_invariants.sql`; fresh PostgreSQL applied all five migrations. |
 
+## 2B. Deep-scan remediation (2026-11-20)
+
+The deep scan re-read the whole backend surface, not only the M1 diff. These defects were confirmed
+and fixed with regressions; they do not make the repository launch-ready.
+
+| Finding | Status | Evidence |
+| --- | --- | --- |
+| Pharmacy registration echoed the plaintext password in its JSON response. | **FIXED** | `PharmacyController.register` now returns `ApiResponse<Void>`; `AuthFlowTest.pharmacyRegistrationDoesNotEchoThePassword`. |
+| Public pharmacy and delivery onboarding returned `401` because the catch-all rule required authentication. | **FIXED** | `SecurityConfig` explicitly permits `POST /api/v1/pharmacies/register` and `POST /api/v1/delivery/register`; the pharmacy response regression now exercises the public route. |
+| Prescription review history was readable by any pharmacy that knew an ID. | **FIXED** | `PrescriptionService.reviews` resolves the caller's pharmacy and uses `findByIdAndPharmacyId`; `PrescriptionAuthorityTest.reviewHistoryIsScopedToTheAssignedPharmacy`. |
+| OTP request/verify returned account-specific `404`s. | **FIXED** | `requestOtp` returns the same success envelope for unknown emails; `verifyOtp` returns a generic invalid-code `400`; `AuthFlowTest.otpEndpointsDoNotRevealWhetherAnAccountExists`. |
+| Pharmacy licence documents trusted the client's content type. | **FIXED** | Shared `FileValidation.assertMagicBytes` now checks PDF/JPEG/PNG signatures before storage. |
+| Delivery failure was routed through `adminTransition`, producing an admin audit actor, and completion accepted an impossible `PICKED_UP` state. | **FIXED** | `OrderService.deliveryFailure` uses `Role.DELIVERY`; `DELIVERY_ASSIGNED → FAILED` is a delivery edge; completion requires `OUT_FOR_DELIVERY`. |
+| Pharmacy and delivery registration did not check duplicate phone numbers. | **FIXED** | Both services reject an existing phone before creating the account. |
+| Console SMS/email transports logged OTP and reset bodies. | **FIXED** | Console transports log only recipient/subject and body length. |
+| Admin setting changes had no audit row. | **FIXED** | `SETTING_UPDATED` is written on every setting mutation. |
+| Refund path and body could name different orders. | **FIXED** | `AdminController.refund` rejects a mismatch. |
+| Customer order detail could reveal an old OTP after the order closed. | **FIXED** | OTP is returned only for `DELIVERY_ASSIGNED/PICKED_UP/OUT_FOR_DELIVERY`. |
+| Per-account login lockout / distributed abuse controls. | **OPEN** | The limiter is still per instance and per IP+path; brute-force resistance is not certified. |
+| Separate `PHARMACIST` login role, secure admin bootstrap, `DEMO_MODE`, flags, `ComplianceSignoff`. | **OPEN (M2)** | Deliberately not started before the M2 gate. |
+
+### GitHub controls (reviewed 2026-11-20)
+
+| Control | State |
+| --- | --- |
+| Repository visibility | **Public** |
+| Open issues / pull requests | **0 / 0** |
+| Branch protection on `main` | **Disabled** (`404 Branch not protected`) |
+| Secret scanning / push protection | **Disabled** |
+| Dependabot alerts / security updates | **Disabled** (`403 alerts are disabled`) |
+| Latest CI before the deep-scan commit | Run `44712057566` — **success** |
+
+The public visibility exposes the source and this audit, including the historical P0 descriptions. No
+token or `.env` file is tracked, but a public security audit is still a disclosure decision. Making
+the repository private, enabling secret scanning/push protection, enabling Dependabot and protecting
+`main` are GitHub settings changes; they are not silently performed by code commits.
+
 ## 3. Environment, build and dependency evidence
 
 | Check | Command | Result |
 | --- | --- | --- |
 | Backend tests (M0) | `cd backend && mvn -B -ntp test` | **28 passed, 0 failed** |
-| Backend tests (M1) | `cd backend && mvn -B -ntp test` | **33 passed, 0 failed** |
+| Backend tests (deep scan) | `cd backend && mvn -B -ntp test` | **37 passed, 0 failed** |
 | PostgreSQL migration | fresh PostgreSQL 16, Flyway V1–V5 | **5 migrations successful; app started; 15 seeded products** |
 | Frontend tests | `cd frontend && npm test` | **13 passed, 0 failed** |
 | Frontend production build | `cd frontend && npm run build` | **passed** (1819 modules, Vite 8.3.8) |
@@ -300,7 +337,7 @@ Breaks / gaps:
 - Unfiltered audit-log query returns `500`; filtered action query works.
 - Admin can mark a delivered order refunded without a refund transaction.
 - No live heatmap, command palette or SLA breach board.
-- Settings changes are not audited.
+- Settings changes are now audited; pharmacy/delivery document review remains status-only.
 - Admin approval of partner documents is a status change, not a document review.
 
 ### Public
@@ -316,15 +353,15 @@ Verified:
 | --- | --- | --- | --- |
 | Cross-tenant order data | Pharmacy 2 can read pharmacy 1's invoice by order ID. `PharmacyOrderController.invoice` calls `orderService.invoice(..., staff=true)` and `invoice()` fetches by order ID only. | **P0** | `GET /api/v1/pharmacy/orders/14/invoice` as pharmacy 2 → `200`; seller `MediDrop Demo Pharmacy — Salt Lake`; detail as same token → `404`. |
 | Financial state bypass | Admin can transition `DELIVERED → REFUNDED` without `PaymentService.refund`. | **P0** | Admin PATCH returned `200 REFUNDED`; `/admin/refunds` count `0 → 0`. `OrderStateMachine` allows the edge. |
-| Prescription review history | Pharmacy 2 can read pharmacy 1's review comments by prescription ID. | **P1** | `GET /pharmacy/prescriptions/1/reviews` as pharmacy 2 → `200`, one row. |
+| Prescription review history | Pharmacy 2 could read pharmacy 1's review comments by prescription ID. | **FIXED** | `PrescriptionService.reviews` now resolves the owner's pharmacy and `findByIdAndPharmacyId`; regression added. |
 | Controlled medicines | No pharmacist role, restricted list, CDSCO schedule enforcement or `UNKNOWN → REQUIRED` rule. | **P0** | `Role.java`; `PrescriptionService.review`; V1 `schedule_class` is free text. |
-| Auth enumeration | Unknown email OTP request returns account-specific `404`. | **P1** | Live `/auth/otp/request` with unknown email → `404`. |
+| Auth enumeration | Unknown email OTP request/verify returned account-specific `404`. | **FIXED** | Generic success/`400` envelopes; regression added. |
 | Brute force | Five bad passwords followed by a correct login still succeeds; limiter is per IP+path, not per account/device. | **P1** | Five `401`s then `200`; `RateLimitFilter` key. |
 | Admin bootstrap | Known dev admin password; no forced rotation. | **P1** | `DemoDataSeeder`; `application-dev.yml`. |
 | Secrets | Gitleaks: 11 commits, no leaks. No tracked `.env`; only `.env.example` files. | **PASS** | Gitleaks output; `git ls-files`. |
 | Dependency risk | npm 0; Maven OSV 2 Spring WebMVC advisories. | **P2 residual** | OSV batch 101 queries; `docs/DEPENDENCIES` evidence in this file. |
 | Webhook | Invalid signature rejected. | **PASS** | `POST /payments/webhook` with bad signature → `401`. |
-| File upload | Content-type + magic-byte validation; private access checks on the file endpoint. | **PASS/PARTIAL** | Bad magic → `400`; customer B → `403`; pharmacy 2 → `403`. |
+| File upload | Prescription and pharmacy-document uploads validate content-type, size and magic bytes; private access checks on the file endpoint. | **PASS** | Bad magic → `400`; customer B → `403`; pharmacy 2 → `403`. |
 | Public URLs | Tracking key is opaque; response has no PII. | **PASS** | Live tracking response. |
 | Audit integrity | Audit rows are append-only by convention, not by DB permissions; IP address is always null. | **P1** | `AuditService.record`; `AuditLog.ipAddress`; no DB trigger. |
 
@@ -425,10 +462,10 @@ at com.medidrop.order.OrderService.place(OrderService.java:153)
    a regression test.
 2. Concurrency loser returns `500`; return `409`, add the 50-way stock-10 gate and use an atomic
    conditional decrement.
-3. Prescription review-history IDOR; scope by pharmacy/owner.
+3. Prescription review-history IDOR — **fixed** by pharmacy scoping and a regression test.
 4. No DB `CHECK (price <= mrp)` or non-negative stock constraints.
 5. Batch/expiry is bookkeeping only; no batch allocation, expiry exclusion or FEFO.
-6. No per-account/device lockout; OTP account enumeration.
+6. No per-account/device lockout. OTP account enumeration is fixed; brute-force resistance remains open.
 7. Admin bootstrap uses a known dev password; no rotation/one-time setup.
 8. OTP UI uses `deliveryOtp: null`; rider copy says 6 digits; no proof-of-delivery storage.
 9. No GST HSN columns, server-side invoice sequence or PDF; returns/damaged/near-expiry disputes absent.

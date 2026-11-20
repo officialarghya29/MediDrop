@@ -11,7 +11,7 @@ Status: **M1 safety slice complete; remaining M1 polish and the 50-way gate are 
 - Read the existing repository, docs, migrations, controllers, services, security configuration
   and CI.
 - Audited against the **36-item Section 24 reconstruction** and the **Addendum v5 Part 8** gates.
-- M0 backend baseline: **28 passed**; after the M1 safety slice: **33 passed**.
+- M0 backend baseline: **28 passed**; after the M1 safety slice and deep scan: **37 passed**.
 - Ran frontend tests: **13 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
@@ -57,12 +57,28 @@ Completed and covered by tests:
   surface as a 500. Optimistic conflicts map to `409`.
 - Fresh PostgreSQL 16 boot applied Flyway V1–V5, seeded 15 medicines, and served the catalogue.
 
+Deep scan (2026-11-20):
+
+- Pharmacy and delivery onboarding routes are explicitly public instead of falling through to `401`.
+- Pharmacy registration no longer echoes the plaintext password.
+- Prescription review history is scoped to the assigned pharmacy, with a cross-tenant regression.
+- OTP request/verify no longer disclose whether an email has an account.
+- Pharmacy documents are magic-byte checked, not just content-type checked.
+- Delivery failure is audited as a delivery action and cannot complete from an impossible state.
+- Duplicate phone registration is rejected for pharmacy and delivery accounts.
+- Console SMS/email transports no longer log OTP or reset bodies.
+- Admin setting changes are audited; refund path/body order IDs must match.
+- Customer OTP is hidden once the order leaves an active delivery state.
+
 Still open in M1:
 
 - 50-way stock-10 concurrency test and measured result.
 - One-command developer entry point and shared design-token pass.
 - Live gateway refund and browser-driven OTP handover.
 - Admin UI for pharmacist verification and medicine sale blocks (API exists; UI is M2/M12).
+- Per-account login lockout and distributed abuse controls are not implemented.
+- GitHub `main` protection, secret scanning/push protection and Dependabot are disabled; the
+  repository is public. These are settings decisions, not code changes.
 
 ## In progress
 

@@ -1,6 +1,7 @@
 package com.medidrop.prescription;
 
 import com.medidrop.audit.AuditService;
+import com.medidrop.common.FileValidation;
 import com.medidrop.common.PageResponse;
 import com.medidrop.common.exception.ApiException;
 import com.medidrop.config.MedidropProperties;
@@ -68,7 +69,7 @@ public class PrescriptionService {
         } catch (IOException e) {
             throw ApiException.badRequest("Could not read the uploaded file");
         }
-        assertMagicBytes(content, contentType);
+        FileValidation.assertMagicBytes(content, contentType);
         if (pharmacyId != null) {
             pharmacyRepository.findById(pharmacyId)
                     .filter(p -> p.getStatus() == com.medidrop.common.ApprovalStatus.APPROVED)
@@ -244,7 +245,11 @@ public class PrescriptionService {
     }
 
     @Transactional(readOnly = true)
-    public List<PrescriptionDtos.ReviewHistory> reviews(Long prescriptionId) {
+    public List<PrescriptionDtos.ReviewHistory> reviews(Long userId, Long prescriptionId) {
+        Pharmacy pharmacy = pharmacyRepository.findByOwnerUserId(userId)
+                .orElseThrow(() -> ApiException.notFound("Pharmacy profile not found"));
+        prescriptionRepository.findByIdAndPharmacyId(prescriptionId, pharmacy.getId())
+                .orElseThrow(() -> ApiException.notFound("Prescription not found"));
         return reviewRepository.findByPrescriptionIdOrderByReviewedAtDesc(prescriptionId).stream()
                 .map(r -> new PrescriptionDtos.ReviewHistory(r.getId(), r.getDecision(), r.getComments(),
                         r.getReviewedAt()))
@@ -266,23 +271,6 @@ public class PrescriptionService {
                 p.getRejectionReason(), p.getCreatedAt(), p.getReviewedAt(),
                 "/api/v1/customer/prescriptions/" + p.getId() + "/file",
                 staff ? p.getOcrExtractedText() : null, p.isDemo());
-    }
-
-    private void assertMagicBytes(byte[] content, String contentType) {
-        boolean valid;
-        if ("application/pdf".equals(contentType)) {
-            valid = content.length > 4 && content[0] == '%' && content[1] == 'P' && content[2] == 'D'
-                    && content[3] == 'F';
-        } else if ("image/jpeg".equals(contentType)) {
-            valid = content.length > 3 && (content[0] & 0xFF) == 0xFF && (content[1] & 0xFF) == 0xD8
-                    && (content[2] & 0xFF) == 0xFF;
-        } else {
-            valid = content.length > 8 && (content[0] & 0xFF) == 0x89 && content[1] == 'P'
-                    && content[2] == 'N' && content[3] == 'G';
-        }
-        if (!valid) {
-            throw ApiException.badRequest("The file content does not match its declared type");
-        }
     }
 
     private String safeName(String name) {
