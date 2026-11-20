@@ -15,10 +15,14 @@ after its gate passes.
   node to prove shared cart and token state. It reports p50/p95/p99 per instance and machine details.
 - Two API instances now run against one PostgreSQL database in the required CI smoke job. The soak
   fails on any error, an unused instance, search p95 ≥ 300 ms or order p95 ≥ 800 ms.
-- Playwright + axe checks for cart, checkout, orders, order detail, prescriptions, profile,
-  notifications, public tracking, pharmacy, delivery and admin. They seed the same browser session
-  the login route writes and use deterministic DTO fixtures, so no database is required.
-- Lighthouse runner and recorded three-run mobile report for the built home and catalogue-search
+- Playwright + axe checks for 25 journeys covering public pages, every customer surface, the three
+  dashboards and all nine console subpages. They seed the same browser session the login route
+  writes and use deterministic DTO fixtures, so no database is required.
+- `catalogue-load-check.py` accepts repeated `--base-url` values and reports p50/p95/p99 per node,
+  so the 250K gate can run across shared-database API instances.
+- A Lighthouse CI job runs five mobile samples on the built app and enforces the
+  documented hosted-runner performance floor plus 100 accessibility and best-practices.
+- Lighthouse runner and recorded five-run mobile report for the built home and catalogue-search
   journey.
 - Preview-server API proxy, so the production build can be measured against the real backend
   without nginx.
@@ -31,21 +35,28 @@ after its gate passes.
   `label-content-name-mismatch` rule found the mismatch once authenticated fixtures contained an
   unread notification.
 - Support-ticket timestamps now use AA-contrast text instead of `text-slate-400` on a tinted card.
+- Order numbers now use eight random digits instead of five. Two-instance concurrent checkout found
+  a real duplicate-key collision; the unique index remains the final guard.
+- Pharmacy inventory's available-quantity label moved to AA contrast, and the delivery-history
+  scroll region is now keyboard-focusable.
 
 ### Verification
 
 - Backend: **52 passed, 0 failed**.
 - Frontend: **13 passed, 0 failed**; production build passed.
-- Browser + axe: **16 passed, 0 failed** (five public, eleven authenticated) with zero WCAG A/AA
+- Browser + axe: **25 passed, 0 failed** (five public, twenty authenticated) with zero WCAG A/AA
   violations.
-- Two-instance CI soak: **4,913 searches** at p95 **11.5 ms**, and **31 real cross-node COD orders**
-  at p95 **51.6 ms** over 60 seconds, zero errors; targets 300 ms and 800 ms.
-- Local per-node two-instance run: **4,263 searches** (2,132 / 2,131), p95 **16.8 ms**; orders p95
-  **93.9 ms**. Single-instance run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders
+- 250K two-instance search: **p50 189.3 ms · p95 286.5 ms · p99 293.4 ms · 0 errors** across 100
+  requests; the slower node measured p95 **290.6 ms**.
+- Two-instance CI soak: **4,883 searches** at p95 **13.1 ms**, and **31 real cross-node COD orders**
+  at p95 **61.8 ms** over 60 seconds, zero errors; targets 300 ms and 800 ms.
+- Local per-node two-instance soak: **4,351 searches** (2,176 / 2,175), p95 **16.2 ms**; orders p95
+  **99.7 ms**. Single-instance run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders
   p95 28.7 ms**.
-- Lighthouse mobile, median of three runs: home **performance 91 / accessibility 100 / best-practices
-  100 / SEO 92**; search **92 / 100 / 100 / 92**. The runner fails below 90/100/100/90 on the median;
-  it remains manual because a prior sample scored 82.
+- Lighthouse local, median of five: home **performance 93 / accessibility 100 / best-practices 100 /
+  SEO 92**; search **92 / 100 / 100 / 92**. Hosted CI median: **78 / 77** performance, **100**
+  accessibility and best-practices, **92** SEO, against a hosted floor of **75** and the **90**
+  product target.
 - Live API smoke: **33 passed, 0 failed**.
 - `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**.
 

@@ -1,39 +1,39 @@
 {
-  "generated_at": "2026-11-20T16:21:53.736851+00:00",
+  "generated_at": "2026-11-20T16:56:54.182566+00:00",
   "base_url": "http://127.0.0.1:4174",
-  "runs_per_url": 3,
+  "runs_per_url": 5,
   "form_factor": "mobile",
   "results": {
     "home": {
       "url": "http://127.0.0.1:4174/",
       "categories": {
-        "performance": 91,
+        "performance": 93,
         "accessibility": 100,
         "best-practices": 100,
         "seo": 92
       },
       "metrics": {
-        "fcp_ms": 2311.713,
-        "lcp_ms": 2935.677,
-        "tbt_ms": 86,
+        "fcp_ms": 2301.04,
+        "lcp_ms": 2829.821,
+        "tbt_ms": 95.5,
         "cls": 0,
-        "speed_index_ms": 2311.713
+        "speed_index_ms": 2301.04
       },
       "samples": [
         {
           "lighthouse_version": "12.8.2",
           "categories": {
-            "performance": 91,
+            "performance": 94,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2326.059,
-            "lcp_ms": 2709.827,
-            "tbt_ms": 180.5,
+            "fcp_ms": 2174.391,
+            "lcp_ms": 2557.764,
+            "tbt_ms": 120,
             "cls": 0,
-            "speed_index_ms": 2326.059
+            "speed_index_ms": 2174.391
           }
         },
         {
@@ -45,11 +45,43 @@
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2257.208,
-            "lcp_ms": 2935.677,
-            "tbt_ms": 49,
+            "fcp_ms": 2304.428,
+            "lcp_ms": 2685.272,
+            "tbt_ms": 127.5,
             "cls": 0.001,
-            "speed_index_ms": 2257.208
+            "speed_index_ms": 2304.428
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 93,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2301.04,
+            "lcp_ms": 2829.821,
+            "tbt_ms": 74.0,
+            "cls": 0,
+            "speed_index_ms": 2301.04
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 92,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2257.861,
+            "lcp_ms": 2936.671,
+            "tbt_ms": 90,
+            "cls": 0,
+            "speed_index_ms": 2257.861
           }
         },
         {
@@ -61,11 +93,11 @@
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2311.713,
-            "lcp_ms": 3065.944,
-            "tbt_ms": 86,
+            "fcp_ms": 2303.984,
+            "lcp_ms": 2982.81,
+            "tbt_ms": 95.5,
             "cls": 0,
-            "speed_index_ms": 2311.713
+            "speed_index_ms": 2303.984
           }
         }
       ]
@@ -79,43 +111,27 @@
         "seo": 92
       },
       "metrics": {
-        "fcp_ms": 2299.066,
-        "lcp_ms": 2977.394,
-        "tbt_ms": 78,
-        "cls": 0,
-        "speed_index_ms": 2299.066
+        "fcp_ms": 2320.281,
+        "lcp_ms": 2849.194,
+        "tbt_ms": 101.5,
+        "cls": 0.012,
+        "speed_index_ms": 2320.281
       },
       "samples": [
         {
           "lighthouse_version": "12.8.2",
           "categories": {
-            "performance": 94,
+            "performance": 92,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2304.317,
-            "lcp_ms": 2682.179,
-            "tbt_ms": 54,
-            "cls": 0.014,
-            "speed_index_ms": 2304.317
-          }
-        },
-        {
-          "lighthouse_version": "12.8.2",
-          "categories": {
-            "performance": 91,
-            "accessibility": 100,
-            "best-practices": 100,
-            "seo": 92
-          },
-          "metrics": {
-            "fcp_ms": 2299.066,
-            "lcp_ms": 2977.461,
-            "tbt_ms": 100,
-            "cls": 0,
-            "speed_index_ms": 2299.066
+            "fcp_ms": 2320.281,
+            "lcp_ms": 2849.194,
+            "tbt_ms": 93,
+            "cls": 0.012,
+            "speed_index_ms": 2320.281
           }
         },
         {
@@ -127,11 +143,59 @@
             "seo": 92
           },
           "metrics": {
-            "fcp_ms": 2298.721,
-            "lcp_ms": 2977.394,
-            "tbt_ms": 78,
+            "fcp_ms": 2300.589,
+            "lcp_ms": 2829.106,
+            "tbt_ms": 93.5,
             "cls": 0,
-            "speed_index_ms": 2298.721
+            "speed_index_ms": 2300.589
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 92,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2302.089,
+            "lcp_ms": 2830.48,
+            "tbt_ms": 135,
+            "cls": 0.012,
+            "speed_index_ms": 2302.089
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 90,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2448.086,
+            "lcp_ms": 2975.79,
+            "tbt_ms": 101.5,
+            "cls": 0.004,
+            "speed_index_ms": 3124.316
+          }
+        },
+        {
+          "lighthouse_version": "12.8.2",
+          "categories": {
+            "performance": 92,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 92
+          },
+          "metrics": {
+            "fcp_ms": 2328.134,
+            "lcp_ms": 2856.493,
+            "tbt_ms": 103,
+            "cls": 0.014,
+            "speed_index_ms": 2328.134
           }
         }
       ]

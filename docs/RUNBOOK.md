@@ -90,17 +90,17 @@ Live smoke (API must be running with seed data):
 infrastructure/scripts/smoke-test.sh
 ```
 
-Expected current baseline: **52** backend tests, **13** frontend tests, **16** Playwright/axe checks,
+Expected current baseline: **52** backend tests, **13** frontend tests, **25** Playwright/axe checks,
 **33** smoke checks, a passing two-instance 60-second search/order soak, a passing 50-way stock race
-and 250K search p95 below 300 ms. Flyway now runs **V1–V7**; V7 adds lowercased search expression
-indexes.
+and 250K two-node search p95 below 300 ms. Flyway now runs **V1–V7**; V7 adds lowercased search
+expression indexes.
 
-The current gate is **still not** the v5 Part 8 gate. Public/customer/role Playwright/axe, a 250K
-search harness, a two-instance soak and a median-threshold Lighthouse report now exist, but
-Testcontainers/PostGIS, a Lighthouse CI threshold, a coverage threshold, 250K multi-instance load,
-console-subpage axe and full keyboard/screen-reader coverage are missing. The 50-way stock harness
-does not replace those gates. Do not claim Part 8 from a green CI run. See `docs/PERF.md` and
-`docs/A11Y.md`.
+The current gate is **still not** the v5 Part 8 gate. Public/customer/console/role Playwright/axe, a
+250K two-node search harness, a two-instance soak and a five-run Lighthouse CI job now exist, but
+Testcontainers/PostGIS, the 90 Lighthouse product target on shared CI hardware, a coverage
+threshold, production-network load and full keyboard/screen-reader coverage are missing. The 50-way
+stock harness does not replace those gates. Do not claim Part 8 from a green CI run. See
+`docs/PERF.md` and `docs/A11Y.md`.
 
 Browser/axe gate:
 
@@ -110,11 +110,12 @@ npm run build
 npm run test:e2e
 ```
 
-250K search gate (API and disposable PostgreSQL running):
+250K multi-node search gate (two APIs on one disposable PostgreSQL):
 
 ```bash
 python3 infrastructure/scripts/catalogue-load-check.py \
   --base-url http://127.0.0.1:8080 \
+  --base-url http://127.0.0.1:8081 \
   --rows 250000 --samples 100 --p95-ms 300 \
   --psql-container medidrop-gate
 ```
@@ -128,13 +129,13 @@ python3 infrastructure/scripts/soak-check.py \
   --duration-seconds 60 --search-workers 3 --order-interval-seconds 2
 ```
 
-Lighthouse (built preview with API proxied):
+Lighthouse (CI runs five samples and enforces a 75 hosted floor; local manual gate):
 
 ```bash
 cd frontend
 VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run preview -- --port 4174
 # second terminal, from the repository root
-python3 infrastructure/scripts/lighthouse-check.py --base-url http://127.0.0.1:4174
+python3 infrastructure/scripts/lighthouse-check.py --base-url http://127.0.0.1:4174 --runs 5
 ```
 
 `DEMO_MODE`, the v5 feature flags and `ComplianceSignoff` are not implemented. Do not set

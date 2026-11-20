@@ -14,7 +14,7 @@ Status: **M1 safety slice complete; the 50-way stock gate is closed. One-command
 - M0 backend baseline: **28 passed**; after the M1 safety slice, deep scan, substitute feature,
   fallback fix, 0.1.4 hardening, 0.1.5 provider-state checks, 0.1.6 edge hardening and 0.1.7
   measured-edge work: **52 passed**.
-- Ran frontend tests: **13 passed**; Playwright + axe public, customer and role gate: **16 passed**.
+- Ran frontend tests: **13 passed**; Playwright + axe public, customer, console and role gate: **25 passed**.
 - Ran the production frontend build on Vite 8.3.8: **passed**.
 - Ran `npm audit`: **0 vulnerabilities**.
 - Ran an OSV batch scan of 101 Maven runtime packages: **2 residual Spring WebMVC advisories**.
@@ -31,8 +31,8 @@ Status: **M1 safety slice complete; the 50-way stock gate is closed. One-command
 - Confirmed the v5 Part 4 engines and schema are absent: no node selection, ETA range/calibration,
   Rx Vault, Savings Engine, cold chain, rider dispatch, step events, DEMO_MODE, feature flags or
   ComplianceSignoff.
-- Confirmed the test stack is H2/JUnit + Vitest, not Testcontainers + Playwright + axe + Lighthouse,
-  and there is no coverage or 250K-product performance gate.
+- Confirmed the M0 test stack was H2/JUnit + Vitest, not Testcontainers, with no coverage gate.
+  0.1.7–0.1.8 later added Playwright/axe, Lighthouse CI, 250K and sustained-load harnesses.
 - Wrote `docs/AUDIT.md`, `docs/PROGRESS.md`, `docs/DECISIONS.md`, `docs/RUNBOOK.md`,
   `docs/DATA_SOURCES.md`, `docs/COMPLIANCE.md`, `docs/PERF.md` and `docs/A11Y.md`.
 
@@ -134,7 +134,7 @@ Still open in M1:
 - Live PostgreSQL 16 result: **10 × 200, 40 × 409, 10 orders, stock 0, 10 SALE ledger units, 0 errors**.
 - This closed the 50-way M1 evidence gap. 0.1.7 added the 250K search and public browser/axe gates;
   0.1.8 adds single- and two-instance search/order soaks plus customer and role axe coverage.
-  250K multi-instance load and full keyboard/screen-reader coverage remain open.
+  production-network load and full keyboard/screen-reader coverage remain open.
 
 ## Sustained and authenticated gates (0.1.8)
 
@@ -143,23 +143,24 @@ Still open in M1:
 - The required CI smoke job starts two API instances against one PostgreSQL database, then runs the
   soak across both after the 33-check smoke suite. It fails on any error, empty search, unused
   instance, non-confirmed order or p95 above target.
-- Two-instance local run: **4,263 searches** (2,132 / 2,131 per node) at p95 **16.8 ms**, and **31
-  cross-node orders** at p95 **93.9 ms**, zero errors, against 300 ms and 800 ms targets.
-- Two-instance CI run `44774274592`: **4,913 searches at p95 11.5 ms** and **31 orders at p95 51.6
+- Two-instance local run: **4,351 searches** (2,176 / 2,175 per node) at p95 **16.2 ms**, and **31
+  cross-node orders** at p95 **99.7 ms**, zero errors, against 300 ms and 800 ms targets.
+- Two-instance CI run `44780590024`: **4,883 searches at p95 13.1 ms** and **31 orders at p95 61.8
   ms**, zero errors.
-- Single-instance run remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
-- Extended Playwright + axe to cart, orders, order detail, prescriptions, profile, notifications,
-  public tracking, checkout, pharmacy, delivery and admin using role-scoped DTO fixtures and seeded
-  browser sessions. Result: **16 passed**, zero WCAG A/AA violations.
-- Added a pinned Lighthouse runner and mobile report with median thresholds of 90 performance, 100
-  accessibility, 100 best-practices and 90 SEO. Median of three runs: home performance **91**,
-  search performance **92**, accessibility **100** on both. One earlier sample scored 82, so this is
-  still a manual median gate rather than a CI threshold.
-- Fixed three real defects without suppressing a rule: the search heading order, the notification
-  bell's accessible name omitting its visible unread count, and a support-ticket timestamp with
-  sub-AA contrast.
+- Extended `catalogue-load-check.py` to repeated base URLs and measured the 250K catalogue across two
+  API nodes: **p50 189.3 ms, p95 286.5 ms, p99 293.4 ms, 0 errors**; slower node p95 **290.6 ms**.
+- Single-instance soak remains recorded at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
+- Extended Playwright + axe to all customer surfaces and all nine console subpages using role-scoped
+  DTO fixtures and seeded browser sessions. Result: **25 passed**, zero WCAG A/AA violations.
+- Added a five-run Lighthouse runner and CI job. Local median: home **93**, search **92**, with
+  accessibility **100** on both. Hosted CI measured **78 / 77** performance with accessibility and
+  best-practices **100**, so CI enforces a documented 75 floor while the product target remains 90.
+- Fixed six real defects without suppressing a rule: concurrent order-number collision, search
+  heading order, unread-count accessible name, support-ticket contrast, inventory stock-label
+  contrast, and keyboard access to the delivery-history scroll region.
 - Limits: the soak runs against the 18-row demo catalogue, not 250K; Lighthouse covers only home and
-  search; console subpages, keyboard, screen-reader, touch-target, Ops Night and i18n remain open.
+  search; production-network load, keyboard, screen-reader, touch-target, Ops Night and i18n remain
+  open.
 
 ## Measured edge (0.1.7)
 
@@ -193,11 +194,11 @@ reassignment. `v0.1.5` enforced suspended-provider state and recorded the measur
 result. `v0.1.6` closed realtime and inactive-pharmacy edges and added runtime/CI controls. `v0.1.7`
 is the latest tagged **foundation release**: it measures 250K search, adds a Playwright/axe CI gate and
 refreshes the deferred dependencies. The `0.1.8` mainline patch adds single- and two-instance
-search/order soaks, customer and role axe coverage, and a median-threshold Lighthouse report. It
-passes 52 backend tests, 13 frontend tests, 16 browser/axe checks, 33 live smoke checks, the
-two-instance soak, the 50-way stock gate and the 250K search gate. It is not the M1 milestone tag and
-is not launch-ready; keyboard/screen-reader, touch-target, 250K multi-instance load and M2–M15 remain
-open.
+search/order soaks, 25 customer/console/role axe journeys, 250K two-node search and a Lighthouse CI
+job. It passes 52 backend tests, 13 frontend tests, 25 browser/axe checks, 33 live smoke checks, the
+two-instance soak, the 50-way stock gate and the 250K two-node search gate. It is not the M1
+milestone tag and is not launch-ready; keyboard/screen-reader, touch-target, production-network load
+and M2–M15 remain open.
 
 ## In progress
 
@@ -215,10 +216,10 @@ The M1 safety slice is implemented and tested; remaining M1 items above are inte
    professional. No launch claim is allowed.
 4. **Original Section 10.** The exact order-state specification was not supplied; the audit uses
    `docs/order-lifecycle.md` and the implemented `OrderStateMachine`.
-5. **Production-scale and full accessibility environment.** The 250K synthetic search, 60-second
+5. **Production-scale and full accessibility environment.** The 250K two-node search, 60-second
    two-instance soak, 50-way stock race and mobile Lighthouse median now exist. Licensed data,
-   250K multi-instance load, PostGIS/nearby-node queries, N+1 proof, keyboard/screen-reader passes
-   and console-subpage axe coverage are still NOT VERIFIED.
+   production-network load, PostGIS/nearby-node queries, N+1 proof and keyboard/screen-reader passes
+   are still NOT VERIFIED.
 
 ## Next
 

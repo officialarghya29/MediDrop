@@ -31,7 +31,7 @@ MediDrop must not claim to be “launch-ready”, “compliant” or legally cle
 | C-18 | Data localisation / cross-border | Where health/payment data may be stored/processed | Single local deployment; no vendor/data-flow map | **NEEDS LEGAL VERIFICATION** |
 | C-19 | Record retention | Prescription, order, payment, audit and invoice retention periods | No retention schedule; append-only convention only | **NEEDS LEGAL VERIFICATION** |
 | C-20 | Breach response | Detection, notification, affected-person communication | No incident process, monitoring or breach playbook | **NEEDS LEGAL VERIFICATION / GAP** |
-| C-21 | Accessibility | WCAG AA / applicable accessibility expectations | Some semantic UI; no axe/Lighthouse gate | **NEEDS PRODUCT/LEGAL REVIEW** |
+| C-21 | Accessibility | WCAG AA / applicable accessibility expectations | 25 axe journeys and Lighthouse CI pass automated A/AA/accessibility checks; no manual WCAG, keyboard or screen-reader audit | **NEEDS PRODUCT/LEGAL REVIEW** |
 | C-22 | Language | English/Hindi/Bengali availability and clear consent text | English-only UI | **NEEDS PRODUCT/LEGAL REVIEW** |
 | C-23 | Telemedicine / remote care | Whether any future consultation feature triggers telemedicine rules | No consultation feature; do not add one without review | **NEEDS LEGAL VERIFICATION** |
 | C-24 | Grievance / escalation | Named grievance officer, response timelines, escalation | No published officer or SLA | **NEEDS LEGAL VERIFICATION / GAP** |

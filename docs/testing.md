@@ -8,18 +8,18 @@
 | API smoke (live stack) | `infrastructure/scripts/smoke-test.sh` | 33 end-to-end checks against a running API |
 | Stock race (live stack) | `infrastructure/scripts/stock-race-check.py` | 50 concurrent checkouts against stock 10 |
 | Frontend unit | `cd frontend && npm test` | Formatting helpers and shared UI primitives |
-| Browser + axe (built app) | `cd frontend && npm run test:e2e` | Public, customer and role journeys; WCAG A/AA in Chrome at 390 px |
+| Browser + axe (built app) | `cd frontend && npm run test:e2e` | Public, customer, console and role journeys; WCAG A/AA in Chrome at 390 px |
 | Frontend build | `cd frontend && npm run build` | TypeScript strict typecheck + production bundle |
-| 250K search (live stack) | `python3 infrastructure/scripts/catalogue-load-check.py` | Real HTTP search p95 over a 250,000-row catalogue |
+| 250K search (live stack) | `python3 infrastructure/scripts/catalogue-load-check.py` | Real HTTP search p95 over a 250,000-row catalogue across one or more nodes |
 | Sustained soak (live stack) | `python3 infrastructure/scripts/soak-check.py` | 60 seconds of concurrent search plus real COD orders across one or more nodes, with p95 gates |
-| Lighthouse (built app) | `python3 infrastructure/scripts/lighthouse-check.py` | Three mobile runs of home and search; median scores, thresholds and Web Vitals |
+| Lighthouse (built app) | CI job + `python3 infrastructure/scripts/lighthouse-check.py` | Five mobile runs of home and search; median scores, thresholds and Web Vitals |
 
 The backend test profile uses in-memory H2 in PostgreSQL compatibility mode, so `mvn test` needs no
 database. The JDBC URL declares `NON_KEYWORDS=VALUE` so Hibernate can create every table (the coupon
 `value` column is otherwise reserved by H2). The suite currently runs **52 tests**. The smoke script
 exercises the real PostgreSQL schema, Flyway V1–V7, HTTP security and the seeded order flow. CI runs the
-backend and frontend gates, the Playwright/axe gate, the same smoke script and the 60-second soak gate
-against a disposable PostgreSQL 16 service.
+backend and frontend gates, the Playwright/axe gate, a five-run Lighthouse job and the 60-second soak
+gate against disposable PostgreSQL 16 services.
 
 ## Backend tests
 
@@ -79,20 +79,21 @@ The 0.1.7 run passed all of those conditions on fresh PostgreSQL 16.
 ## 250K catalogue search
 
 The performance gate seeds **250,000** medicines and one inventory row each, then measures 100 real
-HTTP searches through the running API:
+HTTP searches distributed across one or more running APIs:
 
 ```bash
 python3 infrastructure/scripts/catalogue-load-check.py \
   --base-url http://127.0.0.1:8080 \
+  --base-url http://127.0.0.1:8081 \
   --rows 250000 --samples 100 --p95-ms 300 \
   --psql-container medidrop-gate
 ```
 
 It requires `psql`, or `--psql-container` for a Docker-only host. A run fails on any HTTP error, any
-empty result, or p95 at or above the target. The 0.1.7 run measured **p95 280.5 ms** on PostgreSQL 16
-after V7 added lowercased trigram expression indexes. This is a local single-node scale measurement;
-the separate soak gate below exercises sustained concurrency. See `docs/PERF.md` for the environment
-and open targets.
+empty result, an unused instance, or p95 at or above the target. The two-node run measured **p50 189.3
+ms · p95 286.5 ms · p99 293.4 ms · 0 errors** after V7 added lowercased trigram expression indexes;
+the slower node measured p95 **290.6 ms**. The separate soak gate below exercises sustained
+concurrency. See `docs/PERF.md` for the environment and open targets.
 
 ## Sustained soak
 
@@ -110,9 +111,9 @@ It logs in as the documented demo customer, ensures an address, then distributes
 across the nodes while placing real COD orders at two-second intervals. Each order is added on one
 node and submitted on the next, so the run exercises shared cart and token state. It fails on any
 transport/API error, empty search result, unused instance, order not reaching `PAYMENT_CONFIRMED`,
-search p95 ≥ 300 ms or order p95 ≥ 800 ms. CI run `44774274592` completed **4,913 searches** at p95
-**11.5 ms** and **31 orders** at p95 **51.6 ms**, zero errors. The local per-node run recorded 2,132 /
-2,131 searches at p95 **16.8 ms** and orders at p95 **93.9 ms**. A single-instance run remains recorded
+search p95 ≥ 300 ms or order p95 ≥ 800 ms. CI run `44780590024` completed **4,883 searches** at p95
+**13.1 ms** and **31 orders** at p95 **61.8 ms**, zero errors. The local per-node run recorded 2,176 /
+2,175 searches at p95 **16.2 ms** and orders at p95 **99.7 ms**. A single-instance run remains recorded
 at **5,001 searches p95 7.9 ms** and **31 orders p95 28.7 ms**.
 
 The search side uses the 18-row demo catalogue, not the 250K dataset; the 250K gate is the scale
@@ -131,25 +132,26 @@ Vitest uses jsdom with `src/test/setup.ts`. Component tests avoid network calls;
 through the API smoke script instead of mocking every endpoint. The browser gate uses deterministic
 API fixtures, so it does not require PostgreSQL. It checks four public pages and exercises search →
 medicine detail, then seeds a customer, pharmacy, delivery or admin browser session and checks cart,
-checkout, orders, order detail, prescriptions, profile, notifications, public tracking and all three
-role dashboards. All sixteen journeys run at 390 px in Chrome and fail on WCAG A/AA axe violations.
-The gate is automated coverage, not a substitute for keyboard or screen-reader audits.
+checkout, orders, order detail, prescriptions, profile, notifications, public tracking, all three
+role dashboards and all nine console subpages. All twenty-five journeys run at 390 px in Chrome and
+fail on WCAG A/AA axe violations. The gate is automated coverage, not a substitute for keyboard or
+screen-reader audits.
 
-Lighthouse is a separate manual gate against the built preview with the API proxied:
+Lighthouse runs in CI and as a local manual gate against the built preview with the API proxied:
 
 ```bash
 # Terminal 1: API on :8080
 cd frontend
 VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run preview -- --port 4174
 
-# Terminal 2: three mobile runs per URL
-python3 infrastructure/scripts/lighthouse-check.py --base-url http://127.0.0.1:4174
+# Terminal 2: five mobile runs per URL
+python3 infrastructure/scripts/lighthouse-check.py --base-url http://127.0.0.1:4174 --runs 5
 ```
 
-It writes `docs/assets/lighthouse-v018.json`. The 0.1.8 median is **91** performance on home and
-**92** on search, with accessibility **100** on both. The runner fails below median thresholds of 90
-performance, 100 accessibility, 100 best-practices and 90 SEO. Lighthouse is not in CI because an
-earlier sample varied between 82 and 93 on the same build.
+It writes `docs/assets/lighthouse-v018.json`. The local five-run median is **93** performance on home
+and **92** on search, with accessibility **100** on both. The local runner enforces 90/100/100/90.
+The CI job runs five samples and enforces a documented **75** performance floor because the hosted
+runner measured **78 / 77**; accessibility and best-practices remain 100.
 
 ## Not covered automatically
 
@@ -158,8 +160,8 @@ earlier sample varied between 82 and 93 on the same build.
 - Google Maps geocoding
 - OCR extraction
 - Cross-browser visual regression
-- 250K multi-instance load, PostGIS/nearby-node queries and N+1 proof
-- Lighthouse in CI as a hard threshold (the current report is a recorded manual median)
+- Production-network or 250K sustained mixed load, PostGIS/nearby-node queries and N+1 proof
+- The 90 Lighthouse performance target on shared CI hardware (the CI floor is 75)
 - Recorded keyboard and screen-reader passes
 - Touch-target, Ops Night, i18n and 1440 px audits
 
