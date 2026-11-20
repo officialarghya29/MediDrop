@@ -3,15 +3,16 @@
 All notable changes are recorded here. Versions follow `docs/VERSIONS.md`; a version is only tagged
 after its gate passes.
 
-## [0.2.0-m1] — in progress
+## [0.1.1] — 2026-11-20
+
+**Pre-release foundation hardening. Not pilot-ready and not `1.0.0`.**
 
 ### Fixed
 
 - Pharmacy invoice reads are scoped to the authenticated pharmacy.
 - Refund terminal states cannot be reached through the admin status endpoint; refunds flow through
   `REFUND_PENDING` and a gateway/ledger record.
-- Customer order detail returns the current handover OTP until it is verified; rider copy now says
-  four digits.
+- Customer order detail returns the current handover OTP only during an active delivery.
 - Audit-log listing no longer sends a nullable action parameter to PostgreSQL.
 - Inventory checkout uses a projection before locking, removing the stale-version 500; optimistic
   conflicts map to `409`.
@@ -23,16 +24,38 @@ after its gate passes.
   rejected by pharmacy and delivery registration.
 - Prescription review history is scoped to the calling pharmacy.
 - OTP request/verify no longer disclose whether an email has an account.
-- Pharmacy documents now require a matching PDF/JPEG/PNG signature.
+- Pharmacy documents require a matching PDF/JPEG/PNG signature.
 - Delivery failure is audited as a delivery action; completion requires `OUT_FOR_DELIVERY`.
 - Console SMS/email no longer log OTP or reset bodies; admin setting changes are audited.
-- Refund path/body order IDs must match; customer OTP is hidden once delivery is closed.
+- Refund path/body order IDs must match.
 
 ### Added
 
-- `docs/VERSIONS.md` and this changelog.
+- `docs/VERSIONS.md`, release notes and a visible GitHub pre-release.
+- Runtime build metadata through Spring Boot `build-info`.
 - Pharmacist verification endpoint and audit action.
-- Regression tests for refund bypass, invoice tenancy, audit listing, prescription authority, OTP enumeration, review-history tenancy and pharmacy-registration response leakage.
+- Regression tests for refund bypass, invoice tenancy, audit listing, prescription authority, OTP
+  enumeration, review-history tenancy and pharmacy-registration response leakage.
+
+### Verification
+
+- Backend: **37 passed, 0 failed**.
+- Frontend: **13 passed, 0 failed**.
+- Production frontend build: **passed**.
+- CI on the release commit: **backend, frontend and PostgreSQL smoke all successful**.
+
+### Known launch blockers
+
+- M2–M15 capabilities, including the separate pharmacist role, pilot gates, Node Selection, ETA,
+  Rx Vault, Savings, cold chain and dispatch engines.
+- Live Razorpay, SMTP, SMS, Maps, S3 and OCR certification.
+- 50-way inventory, 250K catalogue, axe, Lighthouse and browser-driven journey gates.
+- Legal, regulatory and operations sign-off.
+
+## [0.2.0-m1] — unreleased
+
+The M1 code is present and tested in `0.1.1`; the milestone tag remains withheld until the 50-way
+stock gate, one-command developer entry point and design-token pass close.
 
 ## [0.1.0-m0] — 2026-11-20
 

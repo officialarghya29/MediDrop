@@ -80,6 +80,12 @@ Still open in M1:
 - GitHub `main` protection, secret scanning/push protection and Dependabot are disabled; the
   repository is public. These are settings decisions, not code changes.
 
+## Release checkpoint
+
+`v0.1.1` is published as a **pre-release**: it contains the M1 safety slice and deep-scan fixes,
+passes 37 backend tests, 13 frontend tests and the production build, and is backed by green CI.
+It is not the M1 milestone tag and is not launch-ready; the remaining M1 gate and M2–M15 remain open.
+
 ## In progress
 
 The M1 safety slice is implemented and tested; remaining M1 items above are intentionally not marked complete.

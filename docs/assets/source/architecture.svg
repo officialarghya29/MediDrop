@@ -165,7 +165,7 @@
       <g transform="translate(1032,18)">
         <rect x="0" y="0" width="408" height="92" rx="14" fill="#0b2a26" stroke="#1c5c4c"/>
         <text x="18" y="30" fill="#a7f3d3" font-size="14" font-weight="700">Verified locally</text>
-        <text x="18" y="52" fill="#9fbfc7" font-size="12">PostgreSQL migrations · 28 backend tests</text>
+        <text x="18" y="52" fill="#9fbfc7" font-size="12">PostgreSQL migrations · 37 backend tests</text>
         <text x="18" y="74" fill="#9fbfc7" font-size="12">33 live API checks · 13 frontend tests</text>
       </g>
     </g>

@@ -180,7 +180,7 @@ npm run dev
 
 Demo accounts are in `README.md`; all are dev/demo only. Production must use `SPRING_PROFILES_ACTIVE=prod` with seeding disabled.
 
-> Operational trap found during M0: rebuilding `target/medidrop-api-1.0.0.jar` while a JVM is running from that jar corrupts lazy class loading (`NoClassDefFoundError: ch/qos/logback/classic/spi/ThrowableProxy`) and creates misleading timeouts. Stop the JVM before rebuilding, then start a clean process. The audit used a fresh `:8081` process for this reason.
+> Operational trap found during M0: rebuilding `target/medidrop-api-*.jar` while a JVM is running from that jar corrupts lazy class loading (`NoClassDefFoundError: ch/qos/logback/classic/spi/ThrowableProxy`) and creates misleading timeouts. Stop the JVM before rebuilding, then start a clean process. The audit used a fresh `:8081` process for this reason.
 
 ## 4. The 36-item acceptance matrix
 

@@ -106,7 +106,9 @@ jobs:
           MEDIDROP_SEED_ENABLED: 'true'
           MEDIDROP_STORAGE_PATH: /tmp/medidrop-storage
         run: |
-          nohup java -jar target/medidrop-api-1.0.0.jar > "$API_LOG" 2>&1 &
+          API_JAR=$(find target -maxdepth 1 -name 'medidrop-api-*.jar' ! -name '*.original' | head -1)
+          test -n "$API_JAR"
+          nohup java -jar "$API_JAR" > "$API_LOG" 2>&1 &
           # Health can be UP while the ApplicationRunner seed is still committing,
           # so readiness must also require a non-empty catalogue.
           for attempt in $(seq 1 60); do

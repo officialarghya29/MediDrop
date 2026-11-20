@@ -23,7 +23,7 @@ provided.
 
 **Decision:** Live tests run against a clean `:8081` process built from commit `0e9b76c`.
 
-**Reason:** Rebuilding `target/medidrop-api-1.0.0.jar` while the previous `:8080` JVM was
+**Reason:** Rebuilding `target/medidrop-api-*.jar` while the previous `:8080` JVM was
 running caused `NoClassDefFoundError` and misleading timeouts. Those were audit-environment
 artifacts, not product bugs. The clean process produced valid results. The runbook now records
 the “stop before rebuild” rule.

@@ -134,14 +134,26 @@ Then requests can hang or return misleading 5xx errors. Use:
 # Stop the API process first.
 cd backend
 mvn -B -ntp -DskipTests package
-java -jar target/medidrop-api-1.0.0.jar
+java -jar target/medidrop-api-*.jar
 ```
 
 For parallel audit work, run the fresh build on another port:
 
 ```bash
-java -jar target/medidrop-api-1.0.0.jar --server.port=8081
+java -jar target/medidrop-api-*.jar --server.port=8081
 ```
+
+## Publishing a release
+
+1. Confirm `CHANGELOG.md` has a dated section and `backend/pom.xml` / `frontend/package.json`
+   carry the same version.
+2. Run `mvn -B -ntp verify` and `npm test && npm run build`; wait for CI on the exact commit.
+3. Create an annotated tag and push it:
+   `git tag -a v0.1.1 -m "MediDrop 0.1.1" && git push origin v0.1.1`.
+4. Publish a **pre-release** while the project is pre-pilot:
+   `gh release create v0.1.1 --verify-tag --prerelease --notes-file docs/releases/v0.1.1.md`.
+5. Never label a build `1.0.0` or “launch-ready” until the Part 8/original-36 gate, provider
+   certification and legal/ops sign-off are complete.
 
 ## Environment variables
 

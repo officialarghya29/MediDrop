@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml"><img src="https://github.com/officialarghya29/MediDrop/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/officialarghya29/MediDrop/releases"><img src="https://img.shields.io/github/v/release/officialarghya29/MediDrop?include_prereleases&label=release&color=0b8b68" alt="Latest pre-release" /></a>
   <img src="https://img.shields.io/badge/Java-21-0b8b68" alt="Java 21" />
   <img src="https://img.shields.io/badge/Spring_Boot-3.5.16-0b8b68" alt="Spring Boot 3.5.16" />
   <img src="https://img.shields.io/badge/React-18-17313d" alt="React 18" />
@@ -31,6 +32,10 @@
 ---
 
 ## The 30-second version
+
+**Current release:** [v0.1.1 — foundation hardening (pre-release)](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1).
+It is verified by CI but is **not** a pilot or `1.0.0` release; the launch gates are listed in
+[Versions](docs/VERSIONS.md) and [Progress](docs/PROGRESS.md).
 
 MediDrop is a production-shaped hyperlocal medicine delivery platform built for Kolkata. A customer searches
 medicine stock held by licensed pharmacies nearby, uploads a prescription when required, and receives the
@@ -159,13 +164,13 @@ keep-alive, **150 sequential requests per endpoint after 20 warm-up requests**. 
 ### Quality gates
 
 <p align="center">
-  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 33 backend tests, 13 frontend tests" width="100%" />
+  <img src="docs/assets/quality.png" alt="Verification gates: 33 API checks, 37 backend tests, 13 frontend tests" width="100%" />
 </p>
 
 | Gate | Command | Executed | Result |
 | --- | --- | ---: | --- |
 | Live API smoke | `infrastructure/scripts/smoke-test.sh` | 33 checks | **33 passed, 0 failed** |
-| Backend | `cd backend && mvn test` | 33 tests | **33 passed, 0 failed** |
+| Backend | `cd backend && mvn test` | 37 tests | **37 passed, 0 failed** |
 | Frontend | `cd frontend && npm test` | 13 tests | **13 passed, 0 failed** |
 | Production build | `cd frontend && npm run build` | 1 bundle | **Typecheck + build passed** |
 | Compose validation | `docker compose config` | 3 services | **Valid** |
@@ -355,6 +360,7 @@ under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.m
 | [Architecture](docs/architecture.md) | How the modules fit, what stays consistent, where providers plug in |
 | [Order lifecycle](docs/order-lifecycle.md) | Every state, transition, role, cancellation and refund rule |
 | [Versions](docs/VERSIONS.md) | Pre-pilot SemVer, milestone tags and checkpoint rules |
+| [Releases](https://github.com/officialarghya29/MediDrop/releases) | Published pre-releases, notes and downloadable artifacts |
 | [API reference](docs/api.md) | Conventions and the complete endpoint catalogue |
 | [Deployment](docs/deployment.md) | Docker, environment matrix, operations, go-live checklist |
 | [Testing](docs/testing.md) | Test layers, commands, coverage and known gaps |
@@ -365,7 +371,7 @@ under the development profile. Full endpoint catalogue: [docs/api.md](docs/api.m
 
 | Status | Item |
 | --- | --- |
-| Verified | PostgreSQL migrations, API boot with seed data, 28 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
+| Verified | PostgreSQL migrations, API boot with seed data, 37 backend tests, 33-check smoke suite, 13 frontend tests, production bundle, compose configuration |
 | Pending credentials | Live Razorpay payments and refunds; Google Maps geocoding; SMTP email |
 | Pending implementation | SMS gateway, S3 storage adapter, OCR provider, push notifications |
 

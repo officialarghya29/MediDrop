@@ -16,7 +16,8 @@ claim `1.0.0` yet.
 ### Rules
 
 - A milestone tag is created **only after** its gate passes and the commit is pushed.
-- Tags use annotated Git tags, for example `v0.1.0-m1`, and are signed by the project identity.
+- Tags use annotated Git tags authored by the project identity. GPG signing is used when a signing
+  key is configured.
 - The changelog records the gate, not just the code changed.
 - A minor version never means “feature complete”; it means the milestone gate is green.
 - `docs/AUDIT.md` and `docs/PROGRESS.md` remain the source of truth. A tag without a green gate is
@@ -26,9 +27,13 @@ claim `1.0.0` yet.
 
 | Version | Scope | State |
 | --- | --- | --- |
-| `v0.1.0-m0` | Repository audit only; no application code | Complete |
-| `v0.2.0-m1` | Safety fixes for the existing flow | In progress |
+| [`v0.1.0-m0`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.0-m0) | Repository audit only; no application code | **Released pre-release** |
+| [`v0.1.1`](https://github.com/officialarghya29/MediDrop/releases/tag/v0.1.1) | M1 safety slice and deep-scan hardening; pre-pilot | **Released pre-release** |
+| `v0.2.0-m1` | Remaining M1 gate: 50-way stock, one-command run, design tokens | In progress |
 | `v0.3.0-m2` | Five roles, pilot gates, DEMO_MODE and ComplianceSignoff | Not started |
+
+`v0.1.1` is intentionally a pre-release. It is the current downloadable foundation build, not a
+claim that the product is pilot-ready.
 
 ## Why this helps
 
