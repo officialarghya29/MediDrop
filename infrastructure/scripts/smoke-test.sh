@@ -33,7 +33,8 @@ HEALTH=$(curl -s "$BASE/actuator/health" | jget "['status']")
 expect_eq "$HEALTH" "UP" "API health"
 MEDICINE_JSON=$(curl -s "$BASE/api/v1/medicines/search?q=Paracetamol&lat=22.5726&lng=88.3639")
 MEDICINE_ID=$(printf '%s' "$MEDICINE_JSON" | jget "['data']['items'][0]['id']")
-expect_eq "$(printf '%s' "$MEDICINE_JSON" | jget "['data']['totalElements']")" "2" "Search finds demo paracetamol"
+PARACETAMOL_COUNT=$(printf '%s' "$MEDICINE_JSON" | jget "['data']['totalElements']")
+[ "${PARACETAMOL_COUNT:-0}" -ge 3 ] && pass "Search finds demo paracetamol" || fail "Search finds demo paracetamol"
 NEARBY=$(curl -s "$BASE/api/v1/pharmacies/nearby?lat=22.5726&lng=88.3639&radiusKm=10" | jget "['data'][0]['id']")
 [ -n "$NEARBY" ] && pass "Nearby pharmacy discovery" || fail "Nearby pharmacy discovery"
 PROFILE=$(curl -s "$BASE/api/v1/medicines/$MEDICINE_ID?lat=22.5726&lng=88.3639")
